@@ -1,0 +1,162 @@
+  /* 背景色と文字色を設定 */
+  body {
+    background-color: #4b0082; 
+    font-size: 16px;
+    color: white; 
+  }
+
+  /* 通常のリンクの色を変更 */
+  a {
+    color: #FFFFFF; 
+  }
+
+  /* リンクがホバーされたときの色を変更 */
+  a:hover {
+    color: #00FF00; 
+  }
+
+  #GameStartButton {
+    color: #000000;
+  }
+
+  #ReplayButton {
+    color: #000000;
+  }
+
+  #NextButton {
+    color: #000000;
+  }
+
+  #TweetButton {
+    color: #000000;
+  }
+
+  #CollectionButton {
+    color: #000000;
+  }
+
+  #GachaButton {
+    color: #000000;
+  }
+
+  #BackButton {
+    color: #000000;
+  }
+
+  /* スタイルを追加 */
+  /* HighボタンとLowボタンのスタイル */
+  .game-button {
+    background-color: transparent;
+    color: white;
+    font-size: 24px; /* フォントサイズを大きくする */
+    padding: 15px 30px; /* パディングを設定してボタンのサイズを大きくする */
+    border: 2px solid white; /* 枠線を追加 */
+    border-radius: 10px; /* 角丸にする */
+    cursor: pointer;
+  }
+
+  .game-button.white {
+    background-color: #d3d3d3;
+  }
+
+
+  .game-button.red {
+    background-color: #ff6347; 
+  }
+
+  .game-button.blue {
+    background-color: #4169e1; 
+  }
+
+  .highlow-text.high {
+    color         : #FFFFFF;
+    background    : #ff6347; 
+  }
+
+  .highlow-text.low {
+    color         : #FFFFFF;
+    background    : #4169e1; 
+  }
+
+  .result-text.win {
+    display       : inline-block;              
+    font-size     : 150%;
+    color         : #000000;
+    background    : #4b0082; 
+    border-top    : 5px solid #4b0082;         
+    border-bottom : 5px solid #4b0082;         
+    animation     : textAnimeWin 2s alternate infinite;
+  }
+  @keyframes textAnimeWin {
+    0% { 
+	color            : #ffffff;
+	border-top-color : #ffffff;
+	border-bottom-color : #ffffff;
+    }
+    100% { 
+	color            : #ffff00;
+	border-top-color : #ffff00; 
+	border-bottom-color : #ffff00; 
+    }
+  }
+  .result-text.lose {
+    display       : inline-block;              
+    font-size     : 150%;
+    color         : #000000;
+    background    : #4b0082; 
+    border-top    : 5px solid #4b0082;         
+    border-bottom : 5px solid #4b0082;         
+    animation     : textAnimeLose 2s alternate infinite;
+  }
+  @keyframes textAnimeLose {
+    0% { 
+	color            : #ffffff;
+	border-top-color : #ffffff;
+	border-bottom-color : #ffffff;
+    }
+    100% { 
+	color            : #c0c0c0;
+	border-top-color : #c0c0c0; 
+	border-bottom-color : #c0c0c0; 
+    }
+  }
+
+
+  .card {
+    width: 80px;
+    height: 80px;
+    background-size: cover;
+    background-repeat: no-repeat;
+    border: 1px solid #000;
+    margin: 1px; /* カードとカードの間隔を調整 */
+    display: inline-block;
+    transform-style: preserve-3d;
+    transition: transform 0.5s;
+  }
+  .card-container {
+    perspective: 1000px;
+  }
+  .card-inner {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+  }
+  .card.back {
+    transform: rotateY(0deg);
+    background-image: url('card_ura.png'); /* 裏面の画像を指定 */
+  }
+  .card.front {
+    transform: rotateY(0deg);
+  }
+  #card-list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px; /* カードとカードの横の間隔を調整 */
+  }
+  #reset-button {
+    margin-top: 20px;
+    cursor: pointer;
+    color: blue;
+    text-decoration: underline;
+  }

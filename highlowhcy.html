@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
+<title>High-Low Challenger YAMADA</title>
+<link rel="stylesheet" type="text/css" href="styles.css">
+<script type="text/javascript" src="highlow.js"></script>
+</head>
+<body>
+<h2>High-Low Challenger YAMADA</h2>
+<div style="position: relative;">
+  <p id="Round">Round 1 / 5</p>
+  <img id="card_first" src="card_0.png" width="150"> <img id="card_second" src="card_0.png" width="150">
+</div>
+<p id="Before"></p>
+<p id="After"></p>
+<p id="Result"></p>
+<p id="PlayAvailableTime"></p>
+
+<input type="button" class="game-button red" id="HighButton" value="High" onclick="High_Low(1);" style="display: none;"/>
+<input type="button"  class="game-button blue" id="LowButton" value="Low" onclick="High_Low(0);" style="display: none;"/>
+<button class="game-button white" id="GameStartButton" onclick="startGame();">ゲームスタート</button>
+<button class="game-button white" id="NextButton" style="display: none;" onclick="nextRound();">次へ</button>
+<button class="game-button white" id="ReplayButton" style="display: none;" onclick="replayGame();">再挑戦</button>
+<button class="game-button white" id="CollectionButton" onclick="location.href='./collection.html'">コレクション</button>
+
+<p id="Rule">
+<br>
+<strong>【ルール】</strong><br>
+<li>右側のカードの数字が、左側のカードの数字よりも【大きい(High)】か【小さい(Low)】か予想するゲームです。</li>
+<li>カードの数字は「A(1)」が最も小さく、「K(13)」が最も大きいです。</li>
+<li>スート（絵柄）は1種類のみです。</li>
+<li>5回連続で予想を的中させると勝利、予想が外れた時点で敗北となります。</li>
+<li>勝敗が決まるまで、一度場に出たカードが場に再び出ることはありません。</li>
+<li>勝利でチケットを1枚獲得、コレクション画面でチケットを消費してキャラクターカードを1枚ランダムに獲得できます。</li>
+</p>
+
+制作：<a href="https://x.com/intrm" target="_blank">int</a>
+<br>
+グラフィック：<a href="https://x.com/NEEDLE_SANDMAN" target="_blank">ニードル・サンドマン</a>
+<br>
+<br>
+
+</body>
+</html>
