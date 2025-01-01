@@ -169,54 +169,67 @@ function High_Low(highLow) {
 
     drawnCard = drawCard();
 
-    document.getElementById("card_first").src = "card_" + currentCard + ".png";
+    // 現在のカード画像をセット
+    const currentCardImage = document.getElementById("card_first");
+    const nextCardImage = document.getElementById("card_second");
 
-    var choiceText = "";
-    var resultText = "";
-   
-    document.getElementById("card_second").src = "card_" + drawnCard + ".png";
-    document.getElementById("card_second").alt = drawnCard;
-    document.getElementById("Before").style.display = "none";
-    document.getElementById("After").style.display = "block";
-    document.getElementById("Result").style.display = "block";
+    currentCardImage.src = "card_" + currentCard + ".png";
 
-    if (highLow === 1) {
-	choiceText = text_choice + text_high;	
-    } else {
-	choiceText = text_choice + text_low;
-    }
+    // 新しいカードの画像を設定するが、結果の更新は画像読み込み後に行う
+    nextCardImage.src = "card_" + drawnCard + ".png";
 
-    if ((currentCard < drawnCard && highLow === 1) || (currentCard > drawnCard && highLow === 0)) {
-	resultText = text_win;
-        winCount++;
-    } else {
-        loseCount++;
-    }
+    // 画像が読み込まれるまで結果表示を待つ
+    nextCardImage.onload = function () {
+        document.getElementById("Before").style.display = "none";
+        document.getElementById("After").style.display = "block";
+        document.getElementById("Result").style.display = "block";
 
-    if (winCount === 5) {
-        // ガチャチケットを1枚獲得
-        gachaTickets++;
-        localStorage.setItem('gachaTickets', gachaTickets.toString());
+        var choiceText = "";
+        var resultText = "";
 
-        document.getElementById("After").innerHTML = choiceText;
-        document.getElementById("Result").innerHTML = text_congrats;
-        gameOver = true;
-        document.getElementById("CollectionButton").style.display = "block"; 
-        document.getElementById("HighButton").style.display = "none"; 
-        document.getElementById("LowButton").style.display = "none"; 
-        document.getElementById("NextButton").style.display = "none"; ; 
-    } else if (loseCount === 1) {
-        document.getElementById("After").innerHTML = choiceText;
-        document.getElementById("Result").innerHTML = text_gameover;
-        gameOver = true;
-        document.getElementById("ReplayButton").style.display = "block"; 
-        document.getElementById("CollectionButton").style.display = "block"; 
-        document.getElementById("HighButton").style.display = "none"; 
-        document.getElementById("LowButton").style.display = "none"; 
-        document.getElementById("NextButton").style.display = "none"; ;
-    } else {
-        document.getElementById("After").innerHTML = choiceText;
-        document.getElementById("Result").innerHTML = resultText;
-        showNextButton();
-    }
+        if (highLow === 1) {
+            choiceText = text_choice + text_high;
+        } else {
+            choiceText = text_choice + text_low;
+        }
+
+        if ((currentCard < drawnCard && highLow === 1) || (currentCard > drawnCard && highLow === 0)) {
+            resultText = text_win;
+            winCount++;
+        } else {
+            loseCount++;
+        }
+
+        if (winCount === 5) {
+            // ガチャチケットを1枚獲得
+            gachaTickets++;
+            localStorage.setItem('gachaTickets', gachaTickets.toString());
+
+            document.getElementById("After").innerHTML = choiceText;
+            document.getElementById("Result").innerHTML = text_congrats;
+            gameOver = true;
+            document.getElementById("CollectionButton").style.display = "block"; 
+            document.getElementById("HighButton").style.display = "none"; 
+            document.getElementById("LowButton").style.display = "none"; 
+            document.getElementById("NextButton").style.display = "none"; 
+        } else if (loseCount === 1) {
+            document.getElementById("After").innerHTML = choiceText;
+            document.getElementById("Result").innerHTML = text_gameover;
+            gameOver = true;
+            document.getElementById("ReplayButton").style.display = "block"; 
+            document.getElementById("CollectionButton").style.display = "block"; 
+            document.getElementById("HighButton").style.display = "none"; 
+            document.getElementById("LowButton").style.display = "none"; 
+            document.getElementById("NextButton").style.display = "none"; 
+        } else {
+            document.getElementById("After").innerHTML = choiceText;
+            document.getElementById("Result").innerHTML = resultText;
+            showNextButton();
+        }
+    };
+
+    // 読み込みエラーが発生した場合のデバッグ用
+    nextCardImage.onerror = function () {
+        console.error("画像の読み込みに失敗しました: " + nextCardImage.src);
+    };
 }
