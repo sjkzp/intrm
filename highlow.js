@@ -170,16 +170,13 @@ function High_Low(highLow) {
     drawnCard = drawCard();
 
     // 現在のカード画像をセット
-    const currentCardImage = document.getElementById("card_first");
-    const nextCardImage = document.getElementById("card_second");
+    document.getElementById("card_first").src = "card_" + currentCard + ".png";
 
-    currentCardImage.src = "card_" + currentCard + ".png";
+    // 次のカード画像を設定
+    document.getElementById("card_second").src = "card_" + drawnCard + ".png";
 
-    // 新しいカードの画像を設定するが、結果の更新は画像読み込み後に行う
-    nextCardImage.src = "card_" + drawnCard + ".png";
-
-    // 画像が読み込まれるまで結果表示を待つ
-    nextCardImage.onload = function () {
+    // 2秒後に結果を表示
+    setTimeout(() => {
         document.getElementById("Before").style.display = "none";
         document.getElementById("After").style.display = "block";
         document.getElementById("Result").style.display = "block";
@@ -226,10 +223,6 @@ function High_Low(highLow) {
             document.getElementById("Result").innerHTML = resultText;
             showNextButton();
         }
-    };
-
-    // 読み込みエラーが発生した場合のデバッグ用
-    nextCardImage.onerror = function () {
-        console.error("画像の読み込みに失敗しました: " + nextCardImage.src);
-    };
+    }, 200); // 0.2秒待つ
 }
+
