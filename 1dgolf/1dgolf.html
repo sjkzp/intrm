@@ -186,8 +186,8 @@ button:active{opacity:.75}
    =========================== */
 #scEnd{background:#000;align-items:center;justify-content:center;gap:12px;padding:20px}
 #endFig{width:120px;height:120px;border-radius:50%;border:3px solid #336;background:#06060f;display:flex;align-items:center;justify-content:center;font-size:56px}
-#endTitle{color:#ffdd44;font-size:20px;font-weight:bold}
-#endCrs{color:#668;font-size:12px;margin-top:-8px}
+#endTitle{color:#ffdd44;font-size:20px;font-weight:bold;margin-top:8px}
+#endCrs{color:#668;font-size:12px;margin-top:2px}
 #endStatBox{background:#060610;border:1px solid #1a1a2a;border-radius:10px;width:100%;max-width:320px;padding:14px}
 #endStatBox .row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #0f0f1a;font-size:13px;color:#889}
 #endStatBox .row span{color:#fff;font-weight:bold}
@@ -409,6 +409,13 @@ button:active{opacity:.75}
 
       <div style="color:#4df;font-weight:bold;margin:10px 0 4px">⛳ 基本操作</div>
       <p>クラブを選んで「打つ」ボタンを<b>長押し</b>するとゲージが動きます。ボタンを離すとショット。ゲージが高いほど飛距離が伸びます。</p>
+      <div style="background:#08101e;border:1px solid #1a3050;border-radius:8px;padding:8px 12px;margin:4px 0 8px;font-size:12px">
+        <div style="color:#8bc;font-weight:bold;margin-bottom:4px">📱 スマホ操作</div>
+        <div>「打つ」ボタンを<b>長押し</b> → 離すとショット</div>
+        <div style="margin-top:4px">「›」などの確認ボタンは<b>タップ</b>で次へ</div>
+        <div style="color:#6af;font-weight:bold;margin:6px 0 2px">🖥️ PC操作</div>
+        <div>「打つ」ボタンを<b>クリック長押し</b> → 離すとショット</div>
+      </div>
 
       <div style="color:#4df;font-weight:bold;margin:10px 0 4px">💨 風待ち</div>
       <p>「風を待つ n」ボタンを押すと風の値が変わります。＋なら飛距離が伸び、－なら縮みます。n回まで使用可能。</p>
@@ -520,12 +527,12 @@ function seSelect(){
   _playTone(660,'sine',0.06,0.12);
   setTimeout(()=>_playTone(880,'sine',0.1,0.15),80);
 }
-// オングリーン チャイム（ドミソド）
+// オングリーン ファン！（高めの短い上昇音）
 function seChime(){
-  _playTone(523,'sine',0.15,0.18);
-  setTimeout(()=>_playTone(659,'sine',0.15,0.18),200);
-  setTimeout(()=>_playTone(784,'sine',0.15,0.18),400);
-  setTimeout(()=>_playTone(1047,'sine',0.2,0.3),600);
+  _playTone(880,'sine',0.04,0.22);
+  setTimeout(()=>_playTone(1100,'sine',0.04,0.22),50);
+  setTimeout(()=>_playTone(1320,'sine',0.04,0.22),100);
+  setTimeout(()=>_playTone(1760,'sine',0.18,0.35),150);
 }
 
 
@@ -771,7 +778,7 @@ function showScoreCard(){
     const scoreCol=d=>d<=-2?'#f80':d===-1?'#4df':d===0?'#fff':d===1?'#fa4':'#f66';
     const pars=G.holePars;
     function makeCol(label,col,scores){
-      if(!scores||scores.length===0) return `<div style="flex:1;color:#666;text-align:center;padding:8px">${label}<br>まだなし</div>`;
+      if(!scores||scores.length===0) return `<div style="flex:1;color:#666;text-align:center;padding:8px">${label}</div>`;
       let h=`<div style="flex:1;background:#060612;border:1px solid ${col}44;border-radius:8px;padding:6px;min-width:0">`;
       h+=`<div style="color:${col};font-size:11px;font-weight:bold;text-align:center;margin-bottom:4px">${label}</div>`;
       h+=`<table style="width:100%;border-collapse:collapse;font-size:10px;font-family:monospace">`;
@@ -1462,6 +1469,7 @@ function cpuDropChk(){
     if(G.ns>=(G.par+4)){cpuFinishHole();return;}
   }
   if(G.ji===5){
+    seChime(); // オングリーン（CPUも同じ効果音）
     G.y2=Math.abs(G.y1-G.cp);
     // ちょうどカップ位置に着地した場合は即カップイン
     if(G.y2===0){G.bon=0;updHUD();updPos();cpuJudgeShot();return;}
@@ -2683,7 +2691,9 @@ function enterShop(){
   T('vYd4','Par '+G.par);
   updMap();
   T('uYd1','yd');T('uYd2','yd');T('uYd3','yd');
-  T('vYd2',G.y1);
+  // 次のホールのデータを取得して表示（全長=次ホール全長、残り=全長と同じ、飛距離=0）
+  { const db2=G.cr===2?C2:C1; const nh=db2[G.nH]||db2[1];
+    T('vYd1',nh.y); T('vYd2',nh.y); T('vYd3',0); }
   S('bVwC',''); // bVwSは非表示のまま
   E('bWnd',false);E('bSpe',false);
   document.getElementById('bPro').style.display='block';
@@ -2846,7 +2856,7 @@ function endGame(){
   const d=CD[G.ch];
   const endImgSrc = END_IMG[G.ch] || CHARA_IMG[G.ch] || '';
   document.getElementById('endFig').innerHTML = endImgSrc
-    ? `<img src="${endImgSrc}" style="width:200px;height:200px;object-fit:contain;image-rendering:pixelated">`
+    ? `<img src="${endImgSrc}" style="width:110px;height:110px;object-fit:contain;image-rendering:pixelated">`
     : `<span style="font-size:56px">${d.ic}</span>`;
   document.getElementById('endFig').style.borderColor=d.col;
   const cr={1:'練習コース',2:'選手権コース',3:'エディット'};
