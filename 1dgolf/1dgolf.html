@@ -2359,16 +2359,9 @@ function yesClick(){
   }
 }
 function noClick(){
-  G.cr=0;
+  G.cr=0; G.ch=0; vsStep=0; VS.active=false;
   document.getElementById('crConfirm').style.display='none';
-  if(vsStep===2){
-    // 対戦相手選択中キャンセル → 自分のキャラを保持したまま相手選択に戻る
-    // G.chは既に自分キャラが設定済み
-    drawSlotsVS(2); sc('scC'); G.cmd=1;
-  } else {
-    G.ch=0;
-    drawSlots(); sc('scC'); G.cmd=1;
-  }
+  sc('scT');
 }
 
 // =============================================
