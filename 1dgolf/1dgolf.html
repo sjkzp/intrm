@@ -185,8 +185,8 @@ button:active{opacity:.75}
    エンディング画面
    =========================== */
 #scEnd{background:#000;align-items:center;justify-content:center;gap:12px;padding:20px}
-#endFig{width:120px;height:120px;border-radius:50%;border:3px solid #336;background:#06060f;display:flex;align-items:center;justify-content:center;font-size:56px}
-#endTitle{color:#ffdd44;font-size:20px;font-weight:bold;margin-top:8px}
+#endFig{width:180px;height:180px;display:flex;align-items:center;justify-content:center;font-size:80px}
+#endTitle{color:#ffdd44;font-size:20px;font-weight:bold;margin-top:4px}
 #endCrs{color:#668;font-size:12px;margin-top:2px}
 #endStatBox{background:#060610;border:1px solid #1a1a2a;border-radius:10px;width:100%;max-width:320px;padding:14px}
 #endStatBox .row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #0f0f1a;font-size:13px;color:#889}
@@ -444,7 +444,7 @@ button:active{opacity:.75}
       <p>選手権コース（9H）のみ。1Pがホールをプレイした後、CPUが同じホールをプレイします。ショップで強化できるのは1Pのみ。</p>
 
       <div style="margin-top:14px;border-top:1px solid #1a2a3a;padding-top:10px;color:#778;font-size:11px;text-align:center;line-height:1.8">
-        制作：int　／　キャラグラフィック：YUU（海無軒）<br>コードアシスト：Claude
+        制作：int　／　キャラグラフィック：YUU（海無軒）
       </div>
       <button onclick="document.getElementById('dlgHowto').style.display='none'" style="margin-top:12px;width:100%;background:#061228;border:1px solid #2a5a8a;color:#88ccee;border-radius:8px;padding:10px 0;font-size:14px;cursor:pointer;touch-action:manipulation">閉じる</button>
     </div>
@@ -1229,6 +1229,7 @@ function cpuFireShot(){
   }
   // 計算式を保存（着地後にshowFormula）
   G._formula = buildFormula(_ng, _gW, _gMax, _wind, _ji, G.drv, _ji===5);
+  seShot(); // CPUショット効果音
   // pts消費
   VS.cpuPts=Math.max(0,VS.cpuPts-G.mpt);
   G.pts=VS.cpuPts; T('gPtsV',G.pts);
@@ -2856,9 +2857,9 @@ function endGame(){
   const d=CD[G.ch];
   const endImgSrc = END_IMG[G.ch] || CHARA_IMG[G.ch] || '';
   document.getElementById('endFig').innerHTML = endImgSrc
-    ? `<img src="${endImgSrc}" style="width:110px;height:110px;object-fit:contain;image-rendering:pixelated">`
+    ? `<img src="${endImgSrc}" style="width:165px;height:165px;object-fit:contain;image-rendering:pixelated">`
     : `<span style="font-size:56px">${d.ic}</span>`;
-  document.getElementById('endFig').style.borderColor=d.col;
+  document.getElementById('endFig').style.borderColor='';
   const cr={1:'練習コース',2:'選手権コース',3:'エディット'};
   T('endCrs',cr[G.cr]||'');
   const s=G.sc, sg=s<0?'－':s>0?'＋':'±';
@@ -2874,12 +2875,6 @@ function endGame(){
   rows+=`<div class="row">最長ショット<span>${G.maxy}yd</span></div>`;
   document.getElementById('endStatBox').innerHTML=rows;
   sc('scEnd');
-  const msgs=[];
-  if(G.uf3)msgs.push('柴田 綴が使用可能になりました');
-  if(G.uf4)msgs.push('神 響子が使用可能になりました');
-  if(G.uf5)msgs.push('フィリップ 北崎が使用可能になりました');
-  if(G.uf6)msgs.push('一之瀬 旗雄が使用可能になりました');
-  if(msgs.length)setTimeout(()=>msgs.forEach(m=>alert(m)),400);
 }
 function goT(){
   // アニメーション・ゲージインターバルを完全クリア
