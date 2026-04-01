@@ -2258,6 +2258,7 @@ function drawSlots(){
 function tapChara(n){
   const ok = n<=2||G['uf'+n];
   if(!ok) return;
+  if(vsStep===2 && n===G.ch) return; // VS相手選択時は自キャラを選択不可
   seSelect();
   pendingChara=n;
   if(vsStep!==2) G.ch=n; // 相手選択ステップではG.chを上書きしない
