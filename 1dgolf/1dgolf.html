@@ -420,7 +420,7 @@ button:active{opacity:.75}
       <p>クラブを選んで「打つ」ボタンを押すとゲージが動きます。ショットするとボールが飛びます。ゲージが高いほど飛距離が伸びます。</p>
       <div style="background:#08101e;border:1px solid #1a3050;border-radius:8px;padding:8px 12px;margin:4px 0 8px;font-size:12px">
         <div style="color:#8bc;font-weight:bold;margin-bottom:4px">📱 スマホ操作</div>
-        <div>「打つ」ボタンを<b>長押し</b> → ■STOPボタンを押すとショット</div>
+        <div>「打つ」ボタンを<b>長押し</b> → 「■STOP」ボタンを押すとショット</div>
         <div style="color:#6af;font-weight:bold;margin:6px 0 2px">🖥️ PC操作</div>
         <div>「打つ」ボタンを<b>クリック長押し</b> → 離すとショット</div>
       </div>
@@ -692,7 +692,7 @@ function driveK(){
   const wt={'-9':56,'-8':63,'-7':69,'-6':74,'-5':78,'-4':84,'-3':89,'-2':93,'-1':96,
     '0':100,'1':104,'2':107,'3':111,'4':116,'5':122,'6':126,'7':131,'8':137,'9':144};
   drv=Math.round(drv*(wt[String(G.wind)]||100)/100);
-  // 乱数ぶれ: Pascal bukiyo = Round(Random*range+min)
+  // ブレ: Pascal bukiyo = Round(Random*range+min)
   // n = Round(Random*2): 0→加算, 1or2→減算 (1/3加 2/3減)
   let bu=0;const ch=G.ch;
   if(ch===2) bu=Math.round(Math.random()*7+2);      // 2..9
@@ -1019,7 +1019,7 @@ function showVSInterScore(afterCPU){
     $('bShot').textContent='>';
     G.cmd=16; // 16=CPU番終了後の1P開始待機
   } else {
-    $('bShot').textContent='▶ CPU番へ';
+    $('bShot').textContent='>';
     G.cmd=17; // 17=1P終了後のCPU開始待機
   }
   $('bShot').className='ready';
@@ -1684,14 +1684,14 @@ function buildFormula(ng, gW, gMax, wind, ji, result, isPutt){
       terStr=' ×バンカー(×28%)';
     }
     const afterWind=Math.round(afterTer*(wtVal/100));
-    // 乱数（G._bu, G._buSign から）
+    // ブレ（G._bu, G._buSign から）
     const bu=G._bu||0, sgn=G._buSign||0;
     let buStr='';
     if(bu>0){
       const dir=sgn>=0?'+':'−';
-      buStr=` ${dir}${bu}(乱数)`;
+      buStr=` ${dir}${bu}(ブレ)`;
     }
-    // 乱数を計算の一部として先に表示: ng×ゲージ×風±乱数 = result
+    // ブレを計算の一部として先に表示: ng×ゲージ×風±ブレ = result
     return `${ng}yd × ${gPct}%ゲージ${terStr} × 風${wind>=0?'+':''}${wind}(×${wtVal}%)${buStr} = ${result}yd`;
   }
 }
@@ -2026,6 +2026,7 @@ function doUndo(){
     } else {
       document.getElementById('bWnd').style.display='';
       E('bWnd',G.nw>0);
+      T('uYd2','yd'); T('uYd3','yd'); // グリーン外に戻る時は単位をydに戻す
     }
   }else if(G.cmd===13){
     G.nwz--;T('bSpeN',G.nwz); // 使用確定時に減算
@@ -2274,10 +2275,49 @@ function tapChara(n){
 function confirmChara(){
   if(!pendingChara) return;
   if(vsStep===1){
-    // VSモード: 自分選択完了 → 相手選択へ
+    // VSモード: 自分選択完了 → 選択したカードの中身を非表示にして空ボックスを残す
     G.ch=pendingChara; G.hcy=false; applyStats();
+    const selCard=document.getElementById('cs'+pendingChara);
+    if(selCard){
+      selCard.innerHTML=''; // 顔グラと名前だけ消す（ボックス自体は残す）
+      selCard.style.opacity='0.3';
+    }
     vsStep=2;
-    drawSlotsVS(2);
+    // 相手選択UIに切り替え（grid再描画はしない）
+    const hdr=document.getElementById('cHeader');
+    hdr.querySelector('h2').textContent='対戦相手選択';
+    hdr.querySelector('p').textContent='CPUのキャラクターを選んでください';
+    document.getElementById('cBtnNormal').style.display='none';
+    document.getElementById('cBtnVSoppo').style.display='';
+    // 自分のカード以外を相手候補として再描画（自分のカードは空ボックスのまま）
+    for(let n=1;n<=6;n++){
+      if(n===pendingChara) continue; // 自分は空ボックスのまま残す
+      const card=document.getElementById('cs'+n);
+      if(!card) continue;
+      const ok=n<=2||G['uf'+n];
+      const d=CD[n];
+      card.className='csCard'+(ok?'':' locked');
+      card.style.borderColor=ok?d.col+'55':'#1a1a2a';
+      card.style.opacity='';
+      if(ok){
+        const imgSrc=CHARA_IMG[n]||'';
+        card.innerHTML=(imgSrc
+          ?`<img src="${imgSrc}" style="max-width:80%;max-height:72px;width:72px;height:72px;object-fit:contain;image-rendering:pixelated">`
+          :`<div class="csIcon" style="color:${d.col}">${d.ic}</div>`)+
+          `<div class="csName" style="color:${d.col}aa">${d.n}</div>`;
+      } else {
+        card.innerHTML=`<div class="csLockMark">🔒</div><div class="csName" style="color:#333">???</div>`;
+      }
+      // イベントを付け直す
+      card.replaceWith(card.cloneNode(true));
+      const newCard=document.getElementById('cs'+n);
+      newCard.addEventListener('click',()=>tapChara(n));
+      newCard.addEventListener('touchend',e=>{e.preventDefault();tapChara(n);});
+    }
+    pendingChara=0;
+    document.getElementById('cDetailName').textContent='キャラを選択してください';
+    document.getElementById('cDetailName').style.color='#888';
+    ['dPow','dTch','dGeo','dSpe'].forEach(id=>{document.getElementById(id).textContent='';});
     return;
   }
   G.ch=pendingChara; G.hcy=false;
@@ -2707,9 +2747,10 @@ function enterShop(){
   T('vYd4','Par '+G.par);
   updMap();
   T('uYd1','yd');T('uYd2','yd');T('uYd3','yd');
-  // 次のホールのデータを取得して表示（全長=次ホール全長、残り=全長と同じ、飛距離=0）
+  // 次のホールのデータを取得して表示（全長のみ表示、残り・飛距離・現在地は非表示）
   { const db2=G.cr===2?C2:C1; const nh=db2[G.nH]||db2[1];
-    T('vYd1',nh.y); T('vYd2',nh.y); T('vYd3',0); }
+    T('vYd1',nh.y); }
+  S('lRest','none'); S('uYd2','none'); S('lFly','none'); S('uYd3','none');
   S('bVwC',''); // bVwSは非表示のまま
   E('bWnd',false);E('bSpe',false);
   document.getElementById('bPro').style.display='block';
