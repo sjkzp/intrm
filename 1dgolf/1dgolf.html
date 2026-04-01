@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta property="og:title" content="1D GOLF">
+<meta property="og:description" content="1次元のゴルフゲーム。クラブを選んでショット！">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://example.com/1dgolf_sp.html">
+<meta property="og:image" content="1dgolf_ogp.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="1D GOLF">
+<meta name="twitter:description" content="1次元のゴルフゲーム。クラブを選んでショット！">
+<meta name="twitter:image" content="1dgolf_ogp.png">
 <title>1D GOLF</title>
 <style>
 /* ── リセット & ベース ── */
@@ -915,9 +924,10 @@ function afterJVS(){
   VS.playerScores.push(G.ns);
   rankime();
   VS.playerTurn=false;
-  // 最終ホール(H9)ならショップをスキップしてCPU番へ
+  // 最終ホール(H9)はショップをスキップしてスコア確認→CPU番へ
+  // ※直接vsStartCPUを呼ぶとG.cmdが残留してH9を再プレイするバグが発生するためenterShopVS経由
   if(G.nH>=9){
-    vsStartCPU(); // 直接CPU H9プレイへ
+    enterShopVS();
   } else {
     enterShop(); // 1Pショップ（買い物）
   }
@@ -2604,7 +2614,7 @@ function judgeShot(){
   else if(df===3) G.mpt=100+Math.trunc(G.bon/4);
   else if(df>=4)  G.mpt=20+Math.trunc(G.bon/4);
   G.sc+=(G.ns-G.par);
-  if(G.ji===5&&G.ns>1)G.nCHP++;
+  if(G.cmd===5)G.nCHP++; // チップイン: ドライブ（グリーン外）からの直接カップイン（HIOも含む）
   const SL=[{d:-99,n:'ホールインワン！',c:'#ff0',sub:'HOLE IN ONE!'},{d:-4,n:'コンドル',c:'#f80',sub:'CONDOR'},{d:-3,n:'アルバトロス',c:'#f80',sub:'ALBATROSS'},
     {d:-2,n:'イーグル',c:'#4f4',sub:'EAGLE'},{d:-1,n:'バーディー',c:'#4df',sub:'BIRDIE'},{d:0,n:'パー',c:'#fff',sub:'PAR'},
     {d:1,n:'ボギー',c:'#fa4',sub:'BOGEY'},{d:2,n:'ダブルボギー',c:'#f84',sub:'DOUBLE BOGEY'},{d:3,n:'トリプルボギー',c:'#f44',sub:'TRIPLE BOGEY'},{d:99,n:'クアドラボギー',c:'#f22',sub:'QUAD BOGEY'}];
