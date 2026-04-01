@@ -2279,8 +2279,9 @@ function confirmChara(){
     G.ch=pendingChara; G.hcy=false; applyStats();
     const selCard=document.getElementById('cs'+pendingChara);
     if(selCard){
-      selCard.innerHTML=''; // 顔グラと名前だけ消す（ボックス自体は残す）
-      selCard.style.opacity='0.3';
+      selCard.innerHTML=''; // 顔グラと名前だけ消す（枠線・ボックスは残す）
+      selCard.style.opacity='';
+      selCard.style.borderColor=CD[pendingChara].col+'55'; // 枠線色はキャラカラーのまま維持
     }
     vsStep=2;
     // 相手選択UIに切り替え（grid再描画はしない）
