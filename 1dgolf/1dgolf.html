@@ -1533,6 +1533,12 @@ function cpuFinishHole(){
 
 function skipCPU(){
   VS._cpuSkip=true;
+  // ドライブアニメ中断時: G.cpをショット結果の確定値に進める
+  if(G.mv && G.drv>0 && G.y3>0 && G.y3<G.drv){
+    G.cp=Math.min(G.y1+G.gz, G.cp+G.drv);
+    G.y2=G.y1-G.cp;
+    G.cp2=G.cp; G.y3=G.drv;
+  }
   if(G.gIv){clearInterval(G.gIv);G.gIv=null;}
   if(G.mv){clearInterval(G.mv);G.mv=null;}
   if(VS._cpuFireTimer){clearTimeout(VS._cpuFireTimer);VS._cpuFireTimer=null;}
