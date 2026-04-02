@@ -18,12 +18,12 @@
 /* ── リセット & ベース ── */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none}
 html,body{width:100%;height:100%;overflow:hidden;background:#111;font-family:"Hiragino Kaku Gothic ProN","ヒラギノ角ゴ ProN","MS Gothic","ＭＳ ゴシック",monospace}
-body{display:flex;justify-content:center;}
+body{display:flex;justify-content:center;align-items:flex-start;}
 button{font-family:inherit;cursor:pointer;border:none;outline:none}
 button:active{opacity:.75}
 
 /* ── ゲーム本体：縦持ち全画面 ── */
-#app{width:100%;height:100dvh;display:flex;flex-direction:column;background:#0a0a0a;overflow:hidden;max-width:420px;margin:0 auto;position:relative}
+#app{width:100%;max-width:420px;height:100dvh;min-height:100dvh;display:flex;flex-direction:column;background:#0a0a0a;overflow:hidden;margin:0 auto;position:relative}
 
 /* 各画面 */
 .sc{position:absolute;inset:0;display:none;flex-direction:column}
@@ -1527,9 +1527,10 @@ function cpuJudgeShot(){
   else if(df>=3)G.mpt=20+Math.trunc(G.bon/4);
   VS.cpuSc+=(G.ns-G.par); // CPUスコアはVS.cpuScに記録（G.scに混入しない）
   VS.cpuPts=Math.max(0,VS.cpuPts-G.mpt);
-  // seHoleIn はstartPtCPU側で鳴らし済み（ドライブHIOは別）
-  showScoreFlash(G.ns, G.par, null, 1300); // CPUカップイン結果ダイアログ
-  setTimeout(()=>cpuFinishHole(), 1300);
+  // フラッシュ表示してからcpuFinishHole（スキップ時も表示するが操作をブロック）
+  showScoreFlash(G.ns, G.par, null, 1300);
+  const _prevCmd=G.cmd; G.cmd=0; // フラッシュ中はsCkを無効化
+  setTimeout(()=>{ G.cmd=_prevCmd; cpuFinishHole(); }, 1300);
 }
 
 function cpuFinishHole(){
