@@ -97,7 +97,7 @@ button:active{opacity:.75}
 /* 確認ダイアログ */
 #crConfirm{position:absolute;inset:0;background:#000a;display:none;align-items:center;justify-content:center;z-index:50}
 #crConfirmBox{background:#0a0a14;border:2px solid #446;border-radius:12px;padding:20px;width:80%;max-width:300px;display:flex;flex-direction:column;gap:12px}
-#crConfirmTitle{color:#aac;font-size:14px;text-align:center}
+#crConfirmTitle{color:#aac;font-size:14px;text-align:center;font-weight:bold}
 #crConfirmInfo{color:#ffdd44;font-size:18px;font-weight:bold;text-align:center}
 #crConfirmBtns{display:flex;gap:10px}
 #bYes{flex:1;background:#0a1a0a;border:2px solid #4a8;color:#8fa;border-radius:8px;font-size:15px;padding:12px;touch-action:manipulation}
@@ -277,7 +277,7 @@ button:active{opacity:.75}
     <!-- 確認オーバーレイ -->
     <div id="crConfirm">
       <div id="crConfirmBox">
-        <div id="crConfirmTitle">ゲームを開始しますか？</div>
+        <div id="crConfirmTitle">ARE YOU READY?</div>
         <div id="crConfirmInfo"></div>
         <div id="crConfirmBtns">
           <button id="bYes" onclick="yesClick()">YES</button>
@@ -923,8 +923,11 @@ function startGameVS(){
 function afterJVS(){
   // プレイヤーターン終了
   G.pts+=G.mpt; T('gPtsV',G.pts); S('scBox','none'); S('terBox','flex');
-  G.holeScores.push(G.ns); G.holePars.push(G.par);
-  VS.playerScores.push(G.ns);
+  // 重複push防止: このホールがまだ記録されていない場合のみpush
+  if(G.holeScores.length < G.nH){
+    G.holeScores.push(G.ns); G.holePars.push(G.par);
+    VS.playerScores.push(G.ns);
+  }
   rankime();
   VS.playerTurn=false;
   // 最終ホール(H9)はショップをスキップしてスコア確認→CPU番へ
@@ -1525,7 +1528,8 @@ function cpuJudgeShot(){
   VS.cpuSc+=(G.ns-G.par); // CPUスコアはVS.cpuScに記録（G.scに混入しない）
   VS.cpuPts=Math.max(0,VS.cpuPts-G.mpt);
   // seHoleIn はstartPtCPU側で鳴らし済み（ドライブHIOは別）
-  cpuFinishHole();
+  showScoreFlash(G.ns, G.par, null, 1300); // CPUカップイン結果ダイアログ
+  setTimeout(()=>cpuFinishHole(), 1300);
 }
 
 function cpuFinishHole(){
@@ -1533,7 +1537,7 @@ function cpuFinishHole(){
   VS._cpuNs=G.ns;
   VS.cpuScores.push(G.ns); VS.cpuPars.push(G.par);
   // cpuSc: カップイン時はcpuJudgeShotで更新済み、ギブアップ時はここで計算
-  if(G.y2>0) VS.cpuSc+=(G.ns-G.par); // y2>0=ホール未完了(ギブアップ)
+  if(G.y2>0){ VS.cpuSc+=(G.ns-G.par); showGiveUpFlash(); } // y2>0=ホール未完了(ギブアップ)
   // スキップボタン非表示
   const skipBtn=document.getElementById('gCpuSkipBtn');
   if(skipBtn) skipBtn.style.display='none';
@@ -1806,7 +1810,7 @@ function startPt(){
         G.cp=G.y1-G.y2;updHUD();updPos();
         const lastP=G.cr===2?9:6;
         if(G.ns>=(G.par+4)){
-          S('gUp','block');S('speBox','none');
+          S('gUp','block');S('speBox','none');showGiveUpFlash();
           if(G.nH===lastP){G.ns+=2;G.sc+=(G.ns-G.par);T('bPro','コース終了');S('bPro','block');}
           else{E('bShot',true);T('bShot','>');G.cmd=15;}
           showFormula();
@@ -1845,7 +1849,7 @@ function dropChk(){
     G.y2=Math.abs(G.y1-G.cp); // カップを超えた場合も絶対値で残距離
     // ギブアップ判定
     if(((G.ji===4||G.ji===6)&&G.ns>=(G.par+3))||G.ns>=(G.par+4)){
-      S('gUp','block');S('speBox','none');
+      S('gUp','block');S('speBox','none');showGiveUpFlash();
       if(G.nH===last){
       G.ns+=2;G.sc+=(G.ns-G.par);
       if(VS.active){
@@ -1866,7 +1870,7 @@ function dropChk(){
 
   // ギブアップ判定
   if(((G.ji===4||G.ji===6)&&G.ns>=(G.par+3))||G.ns>=(G.par+4)){
-    S('gUp','block');S('speBox','none');
+    S('gUp','block');S('speBox','none');showGiveUpFlash();
     if(G.nH===last){
       G.ns+=2;G.sc+=(G.ns-G.par);
       if(VS.active){
@@ -2648,6 +2652,35 @@ function selC(n){
   } else document.getElementById('gGaugeMey').style.display='none';
 }
 
+// スコアフラッシュを表示する共通関数（1P・CPU共用）
+function showScoreFlash(ns, par, bon, dur){
+  const df=ns-par;
+  const SL=[{d:-99,n:'ホールインワン！',c:'#ff0',sub:'HOLE IN ONE!'},{d:-4,n:'コンドル',c:'#f80',sub:'CONDOR'},{d:-3,n:'アルバトロス',c:'#f80',sub:'ALBATROSS'},
+    {d:-2,n:'イーグル',c:'#4f4',sub:'EAGLE'},{d:-1,n:'バーディー',c:'#4df',sub:'BIRDIE'},{d:0,n:'パー',c:'#fff',sub:'PAR'},
+    {d:1,n:'ボギー',c:'#fa4',sub:'BOGEY'},{d:2,n:'ダブルボギー',c:'#f84',sub:'DOUBLE BOGEY'},{d:3,n:'トリプルボギー',c:'#f44',sub:'TRIPLE BOGEY'},{d:99,n:'クアドラボギー',c:'#f22',sub:'QUAD BOGEY'}];
+  const entry=(ns===1?SL[0]:SL.slice(1).find(e=>df<=e.d))||SL[SL.length-1];
+  const sf=document.getElementById('gScoreFlash');
+  const st=document.getElementById('gScoreFlashTxt');
+  const ss=document.getElementById('gScoreFlashSub');
+  sf.style.borderColor=entry.c+'88';
+  st.style.color=entry.c; st.textContent=entry.n;
+  ss.textContent=bon!==null?`+${bon}pts`:'';
+  sf.style.display='block';
+  setTimeout(()=>sf.style.display='none', dur||1300);
+}
+
+// ギブアップ時のフラッシュ表示
+function showGiveUpFlash(){
+  const sf=document.getElementById('gScoreFlash');
+  const st=document.getElementById('gScoreFlashTxt');
+  const ss=document.getElementById('gScoreFlashSub');
+  sf.style.borderColor='#f4488888';
+  st.style.color='#f88'; st.textContent='ギブアップ';
+  ss.textContent='GIVE UP';
+  sf.style.display='block';
+  setTimeout(()=>sf.style.display='none', 1300);
+}
+
 // =============================================
 // スコア結果表示
 // =============================================
@@ -2672,14 +2705,7 @@ function judgeShot(){
   const entry=(G.ns===1?SL[0]:SL.slice(1).find(e=>df<=e.d))||SL[SL.length-1];
   seHoleIn();
   showFormula();
-  const sf=document.getElementById('gScoreFlash');
-  const st=document.getElementById('gScoreFlashTxt');
-  const ss=document.getElementById('gScoreFlashSub');
-  sf.style.borderColor=entry.c+'88';
-  st.style.color=entry.c; st.textContent=entry.n;
-  ss.textContent=`+${G.mpt}pts`;
-  sf.style.display='block';
-  setTimeout(()=>sf.style.display='none', 1300);
+  showScoreFlash(G.ns, G.par, G.mpt, 1300);
   G.cmd=14; // カップイン後待機（タップで afterJ へ）
   E('bShot',true); $('bShot').textContent='>';
   // パットボタンを無効化（カップイン後は操作不可）
