@@ -336,9 +336,9 @@ button:active{opacity:.75}
       </div>
       <div id="gStatCard">
         <div class="gSt"><div class="gStLb">全長</div><div class="gStVl"><span id="vYd1">0</span><span class="gStUnit" id="uYd1">yd</span></div></div>
-        <div class="gSt"><div class="gStLb">残り</div><div class="gStVl"><span id="vYd2">0</span><span class="gStUnit" id="uYd2">yd</span></div></div>
-        <div class="gSt"><div class="gStLb">飛距離</div><div class="gStVl"><span id="vYd3">0</span><span class="gStUnit" id="uYd3">yd</span></div></div>
-        <div class="gSt"><div class="gStLb">現在</div><div class="gStVl"><span id="vCp">0</span><span class="gStUnit">yd</span></div></div>
+        <div class="gSt" id="gStRest"><div class="gStLb">残り</div><div class="gStVl"><span id="vYd2">0</span><span class="gStUnit" id="uYd2">yd</span></div></div>
+        <div class="gSt" id="gStFly"><div class="gStLb">飛距離</div><div class="gStVl"><span id="vYd3">0</span><span class="gStUnit" id="uYd3">yd</span></div></div>
+        <div class="gSt" id="gStCp"><div class="gStLb">現在</div><div class="gStVl"><span id="vCp">0</span><span class="gStUnit">yd</span></div></div>
         <div class="gSt" id="gStYd4" style="display:none"><div class="gStLb">Par</div><div class="gStVl par sm" id="vYd4">-</div></div>
       </div>
     </div>
@@ -969,6 +969,8 @@ function vsRestoreForPlayer(){
 
 // CPU番スコア確認後 → 1Pホール開始
 function vsStartPlayer(){
+  // G.nHが最終ホールを超えていたらリザルトへ（H9再プレイ防止）
+  if(G.nH>9){ VS.playerSc=G.sc; showVSResult(); return; }
   // 背景・UIをゲームモードに戻す
   const scg=document.getElementById('scG'); if(scg) scg.style.background='';
   const gt=document.getElementById('gTop'); if(gt) gt.style.background='';
@@ -1159,6 +1161,11 @@ function startCPUHole(){
   T('bSpeN',G.nwz); E('bSpe',false);
   document.getElementById('bSpe').style.display='none'; // CPU番は非表示
   document.getElementById('mPos').style.display='';
+  // 単位・ラベルをydに戻す（ショップ画面やグリーン上から来た場合の残留を防ぐ）
+  T('uYd1','yd');T('uYd2','yd');T('uYd3','yd');
+  document.getElementById('gStRest').style.display='';
+  document.getElementById('gStFly').style.display='';
+  document.getElementById('gStYd4').style.display='none';
   const sfEl=document.getElementById('gShotFormula');
   if(sfEl){sfEl.textContent='';sfEl.style.display='none';}
   G._formula='';
@@ -1168,6 +1175,9 @@ function startCPUHole(){
   // スキップボタン表示
   const skipBtn=document.getElementById('gCpuSkipBtn');
   if(skipBtn) skipBtn.style.display='block';
+  // CPU番中はクラブボタンをプレイヤーが操作できないように無効化
+  document.getElementById('gClubNormal').style.pointerEvents='none';
+  document.getElementById('gClubNormal').style.opacity='0.4';
   setTimeout(()=>cpuTakeTurn(), CPU_DELAY);
 }
 
@@ -1490,6 +1500,7 @@ function cpuDropChk(){
     // グリーン傾斜設定
     G.wa=G.gwa;G.wz=G.gwz;G.kz=G.gkz;windK();
     G.wind=Math.max(-5,Math.min(5,G.wind));
+    T('uYd2','m'); T('uYd3','m'); // グリーン上は単位をmに
   }
   if(G.ns>=(G.par+4)){cpuFinishHole();return;}
   G.lp=G.cp;
@@ -1535,6 +1546,9 @@ function cpuFinishHole(){
   const pCh=VS._savedCh||G.ch;
   if(ci&&CHARA_IMG[pCh]){ci.src=CHARA_IMG[pCh];ci.style.display='block';}
   VS.playerTurn=true;
+  // クラブボタンをプレイヤー操作可能に戻す
+  document.getElementById('gClubNormal').style.pointerEvents='';
+  document.getElementById('gClubNormal').style.opacity='';
   G.nH++; // CPUホール終了後に次ホールへ
   if(G.nH>9){
     VS.playerSc=G.sc; showVSResult(); return;
@@ -2125,10 +2139,9 @@ function holeStart(){
   E('bShot',false); T('bShot','打つ');
   S('lWind','block');S('vPlmi','block');S('vWind','block');
   S('lPar','block');S('vPar','block');S('lShot','block');S('vShot','block');
-  S('lZen','block');S('lRest','block');S('lFly','block');
-  S('uYd2','block');S('uYd3','block');
+  document.getElementById('gStRest').style.display='';
+  document.getElementById('gStFly').style.display='';
   T('uYd1','yd');T('uYd2','yd');T('uYd3','yd');
-  T('lZen','全：');T('lRest','残：');T('lFly','飛：');
 }
 
 function onStart(){
@@ -2186,7 +2199,7 @@ const ID_MAP = {
   bx1:null, terBox:null,
   lWind:null, vPlmi:null, vWind:null,
   lPar:null, vPar:null, lShot:null, vShot:null,
-  lZen:null, lRest:null, lFly:null,
+  lZen:null, lRest:'gStRest', lFly:'gStFly',
   lHls:null, vHls:null,
   // 新UIでの直接アクセス対応
   cFace:null,
@@ -2742,13 +2755,14 @@ function enterShop(){
   if(gPtsElR) gPtsElR.style.visibility='';
   document.getElementById('bShot').style.visibility='';
   document.getElementById('gStYd4').style.display='flex';
-  T('vYd4','Par '+G.par);
+  T('vYd4',G.par); // gStYd4のラベルはHTML固定で「Par」なので値のみセット
   updMap();
   T('uYd1','yd');T('uYd2','yd');T('uYd3','yd');
-  // 次のホールのデータを取得して表示（全長のみ表示、残り・飛距離・現在地は非表示）
+
+  S('lRest','none'); S('lFly','none'); // ショップ中は残り・飛距離行を非表示
+  // 次のホールのデータを取得して表示（全長のみ表示）
   { const db2=G.cr===2?C2:C1; const nh=db2[G.nH]||db2[1];
     T('vYd1',nh.y); }
-  S('lRest','none'); S('uYd2','none'); S('lFly','none'); S('uYd3','none');
   S('bVwC',''); // bVwSは非表示のまま
   E('bWnd',false);E('bSpe',false);
   document.getElementById('bPro').style.display='block';
