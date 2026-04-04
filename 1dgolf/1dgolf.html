@@ -1198,7 +1198,7 @@ function cpuTakeTurn(){
   // ===== CPU特技AI =====
   const cpuCh=VS.cpuCh;
   G.spc=0;
-  if(G.nwz>0 && G.ji!==5){ // グリーン外かつ特技残あり
+  if(G.ji!==5){ // グリーン外
 
     // 水無(ch=1): パワーショット
     // 条件1: 水ゾーンが目前にあり100%では越えられないが120%なら越えられる
@@ -1228,7 +1228,7 @@ function cpuTakeTurn(){
         cond2=isRisky(land100) && !isRisky(land120);
       }
       if(cond1||cond2){
-        G.gMax=120; G.spc=1; G.nwz--;
+        G.gMax=120; G.spc=1;
         seSpecial();
         T('speBox',CD[cpuCh].s||'特技使用'); S('speBox','flex');
         updGaugeWaku(); updGauge();
@@ -1241,21 +1241,21 @@ function cpuTakeTurn(){
       const zones=cpuWaterZonesInRange(G.ng+30);
       const needIgnore=zones.length>0 && zones.some(z=>z.wa<=G.ng*1.3 && z.wz>G.ng*0.7);
       if(needIgnore){
-        G.spc=2; G.nwz--;
+        G.spc=2;
         seSpecial();
         T('speBox',CD[cpuCh].s||'特技使用'); S('speBox','flex');
       }
     }
 
     // 響子(ch=4): 風消し
-    // H8は風<=0なら常に発動（負の風が不利）、他は風<=0かつ水ゾーンリスク
+    // H8は風<0なら常に発動（負の風が不利）、他は風<0かつ水ゾーンリスク
     else if(cpuCh===4){
       const isH8=(G.nH===8);
-      const negWind=(G.wind<=0);
+      const negWind=(G.wind<0);
       const zones=cpuWaterZonesInRange(G.ng+30);
       const waterRisk=zones.length>0;
       if(negWind && (isH8 || waterRisk)){
-        G.wind=0; G.spc=4; G.nwz--;
+        G.wind=0; G.spc=4;
         seSpecial();
         T('speBox',CD[cpuCh].s||'特技使用'); S('speBox','flex');
         showWind(); // 風表示を±0に更新
@@ -1284,11 +1284,11 @@ function cpuChargeGauge(){
   let gDir=false, gW=0;
   if(G.gIv){clearInterval(G.gIv);G.gIv=null;}
   // 往路で finalGW を通過したら止める（折り返しなし）
-  // タイムアウト: 最大3000ms で強制発射（フリーズ防止）
+  // タイムアウト: 最大30000ms で強制発射（フリーズ防止）
   const chargeStart=Date.now();
   const maxChargeSafe=Math.max(1,scl); // sclが0なら1に
   G.gIv=setInterval(()=>{
-    if(VS._cpuSkip || Date.now()-chargeStart>3000){
+    if(VS._cpuSkip || Date.now()-chargeStart>30000){
       clearInterval(G.gIv);G.gIv=null;
       G.gW=finalGW; updGauge();
       cpuFireShot(); return;
