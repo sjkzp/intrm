@@ -713,9 +713,22 @@ function driveK(){
 function puttK(){
   const wt={'-5':40,'-4':52,'-3':64,'-2':76,'-1':88,'0':100,'1':112,'2':124,'3':136,'4':148,'5':160};
   // gW/gMax で正規化（ドライブと同じスケール）
-  G.drv=Math.round(G.ng*(G.gW/100)*(wt[String(Math.max(-5,Math.min(5,G.wind)))]||100)/100);
-  if(G.drv<=0)G.drv=1;
-  if(G.drv>=G.y2&&G.drv<=G.y2+1)G.drv=G.y2;
+  let drv = G.ng * (G.gW / 100) * (wt[String(Math.max(-5, Math.min(5, G.wind)))] || 100) / 100;
+
+  // ★切り上げで丸める（1mつぶれ対策）
+  drv = Math.ceil(drv);
+
+  // ★0以下なら1
+  if (drv < 1) drv = 1;
+
+  // ★カップイン補正（1mパットは除外）
+  if (G.y2 > 1 && drv >= G.y2 && drv <= G.y2 + 1) {
+      drv = G.y2;
+  }
+
+  G.drv = drv;
+
+  // if(G.drv>=G.y2&&G.drv<=G.y2+1)G.drv=G.y2;
 }
 
 // ============================================================
@@ -1428,38 +1441,38 @@ function cpuCalcGauge(){
   const wt_d={'-9':56,'-8':63,'-7':69,'-6':74,'-5':78,'-4':84,'-3':89,'-2':93,'-1':96,
     '0':100,'1':104,'2':107,'3':111,'4':116,'5':122,'6':126,'7':131,'8':137,'9':144};
   const wt_p={'-5':40,'-4':52,'-3':64,'-2':76,'-1':88,'0':100,'1':112,'2':124,'3':136,'4':148,'5':160};
-  const wt=G.ji===5?(wt_p[String(Math.max(-5,Math.min(5,G.wind)))]||100)
-                   :(wt_d[String(G.wind)]||100);
-  const target=G._cpuTargetDist||G.y2;
-  let targetGW=G.ng>0?target*100/(G.ng*(wt/100)):50;
-  const tLv=CD[VS.cpuCh].t.split('★').length-1; // 器用さ1-5
-  const pLv=CD[VS.cpuCh].p.split('★').length-1; // 腕力1-6
-  const ch=VS.cpuCh;
-  const isPutt=G.ji===5;
-  // パットは距離が短いので誤差を抑える（器用さ+腕力で決定）
-  // ドライブ誤差: 強キャラ小, 弱キャラ大
-  // パット誤差: 全体的に小さめ（最大±8程度）
+
+  const isPutt = G.ji === 5;
+  const wt = isPutt
+    ? (wt_p[String(Math.max(-5, Math.min(5, G.wind)))] || 100)
+    : (wt_d[String(G.wind)] || 100);
+
+  // ★★★ パット時は絶対に残り距離だけをターゲットにする ★★★
+  let target = isPutt ? G.y2 : (G._cpuTargetDist || G.y2);
+
+  let targetGW = G.ng>0 ? target*100/(G.ng*(wt/100)) : 50;
+
+  const tLv = CD[VS.cpuCh].t.split('★').length-1;
+  const ch  = VS.cpuCh;
+
   let acc;
   if(isPutt){
-    // パット精度: 器用さ主体（高器用さほど正確）
-    // ch1水無(t=5)・ch6旗雄(t=5): 非常に正確
-    // ch3綴(t=1): かなりぶれる
-    acc=(6-tLv)*1.5; // 1～7.5
-    // 強キャラはさらに正確
-    if(ch===5||ch===6) acc*=0.5;
+    acc = (6 - tLv) * 1.5;
+    if(ch===5 || ch===6) acc *= 0.5; // 超精密
   } else {
-    acc=(ch===5||ch===6)?(6-tLv)*1.5:(6-tLv)*4;
+    acc = (ch===5||ch===6)?(6-tLv)*1.5:(6-tLv)*4;
   }
-  targetGW+=(Math.random()-0.5)*2*acc;
-  
-  // targetGWをgMaxでクランプする
-  targetGW = Math.min(targetGW, G.gMax);
-  const gWmin2 = isPutt ? Math.max(1, Math.round(G.gMax*0.20)) : 1;
-  G.gW = Math.max(gWmin2, Math.round(targetGW));
 
-  // パット時はgWが低すぎると実質ほぼ動かない → 最低20%を保証
-  // const gWmin2 = isPutt ? Math.max(1, Math.round(G.gMax*0.20)) : 1;
-  // G.gW=Math.max(gWmin2,Math.min(G.gMax,Math.round(targetGW)));
+  targetGW += (Math.random() - 0.5) * 2 * acc;
+
+  // gMax の範囲に収める
+  if(targetGW > G.gMax) targetGW = G.gMax;
+  if(targetGW < 1)      targetGW = 1;
+
+  // パットは最低 20% を保証
+  const gWmin2 = isPutt ? Math.max(1, Math.round(G.gMax * 0.20)) : 1;
+
+  G.gW = Math.max(gWmin2, Math.min(G.gMax, Math.round(targetGW)));
 }
 
 // CPU専用のドライブアニメ（startMv相当、終了後にcpuDropChk）
@@ -1492,7 +1505,121 @@ function startMvCPU(){
   },16);
 }
 
-// CPU専用パットアニメ
+// CPU専用パットアニメ（カップイン時に mp を非表示）
+function startPtCPU() {
+  const y2init = G.y2;
+  if (y2init <= 0) {
+    seHoleIn();
+    setTimeout(() => cpuJudgeShot(), 800);
+    return;
+  }
+
+  const mp = $('mPos'); // ← 先に取得しておく
+
+  const stopAt = G.drv;
+  const willHole = (stopAt >= y2init && stopAt <= y2init + 1);
+
+  let spd =
+    stopAt < 6 ? 300 :
+    stopAt < 12 ? 200 :
+    stopAt < 18 ? 130 :
+    stopAt < 24 ? 100 :
+    stopAt < 30 ?  80 :
+    stopAt < 36 ?  67 :
+    stopAt < 42 ?  55 : 47;
+
+  let st = 0;
+  G.t0 = Date.now();
+  G.y3 = 0;
+
+  if (G.mv) clearInterval(G.mv);
+
+  G.mv = setInterval(() => {
+
+    // CPUスキップ時
+    if (VS._cpuSkip) {
+      clearInterval(G.mv); G.mv = null;
+
+      const moved = stopAt;
+      G.y3 = moved;
+      G.y2 = Math.max(0, y2init - moved);
+      G.cp = G.y1 - G.y2;
+
+      // ★スキップではカップインしていなければ表示維持
+      // カップイン時は非表示
+      if (G.y2 === 0 && mp) mp.style.display = "none";
+
+      updHUD(); updPos();
+
+      if (G.y2 === 0) {
+        seHoleIn();
+        setTimeout(() => cpuJudgeShot(), 800);
+      } else {
+        // カップインしてない → バーは表示したまま
+        if (mp) mp.style.display = "block";
+        setTimeout(() => cpuTakeTurn(), CPU_DELAY);
+      }
+      return;
+    }
+
+    // 時間待ち
+    if (Date.now() - G.t0 < spd) return;
+    G.t0 = Date.now();
+
+    if (willHole) {
+      spd = Math.min(120, spd + (st < 50 ? 2 : st < 100 ? 4 : 6));
+    } else {
+      spd = Math.min(300, spd + (st < 100 ? 4 : st < 170 ? 8 : 12));
+    }
+
+    st++;
+
+    // 移動
+    G.y3++;
+    const moved = G.y3;
+    G.y2 = Math.max(0, y2init - moved);
+
+    // mp अपडेट（表示のまま）
+    if (mp) {
+      const pct = Math.min(97, Math.round((G.cp + moved) * 100 / G.y1));
+      mp.style.left = pct + '%';
+    }
+
+    updHUD();
+
+    // 停止
+    if (moved >= stopAt) {
+      clearInterval(G.mv); G.mv = null;
+
+      if (G.y2 === 0 || willHole) {
+        // ★カップイン → mp を非表示
+        if (mp) mp.style.display = "none";
+
+        G.y2 = 0;
+        G.y3 = y2init;
+        G.cp = G.y1;
+        showFormula();
+        updHUD(); updPos();
+        seHoleIn();
+        setTimeout(() => cpuJudgeShot(), 800);
+
+      } else {
+        // 入らなかった → mp を表示
+        if (mp) mp.style.display = "block";
+
+        G.cp = G.y1 - G.y2;
+        showFormula();
+        updHUD(); updPos();
+        setTimeout(() => cpuTakeTurn(), CPU_DELAY);
+      }
+
+      return;
+    }
+
+  }, 16);
+}
+
+/**
 function startPtCPU(){
   const y2init=G.y2;
   // y2=0は既にカップイン位置（cpuDropChkから来た場合など）
@@ -1543,6 +1670,7 @@ function startPtCPU(){
     }
   },16);
 }
+**/
 
 function cpuDropChk(){
   // ショット着地後に特技効果をリセット
