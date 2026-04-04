@@ -23,7 +23,7 @@ button{font-family:inherit;cursor:pointer;border:none;outline:none}
 button:active{opacity:.75}
 
 /* ── ゲーム本体：縦持ち全画面 ── */
-#app{width:100%;max-width:420px;height:100dvh;min-height:100dvh;display:flex;flex-direction:column;background:#0a0a0a;overflow:hidden;margin:0 auto;position:relative}
+#app{position:fixed;top:0;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;display:flex;flex-direction:column;background:#0a0a0a;overflow:hidden}
 
 /* 各画面 */
 .sc{position:absolute;inset:0;display:none;flex-direction:column}
@@ -1194,6 +1194,76 @@ function cpuTakeTurn(){
   // gMax をショット種別に合わせて設定
   const cpuD=CD[VS.cpuCh];
   if(G.ji===5){ G.gMax=cpuD.x7; } else { G.gMax=cpuD.mx; }
+
+  // ===== CPU特技AI =====
+  const cpuCh=VS.cpuCh;
+  G.spc=0;
+  if(G.nwz>0 && G.ji!==5){ // グリーン外かつ特技残あり
+
+    // 水無(ch=1): パワーショット
+    // 条件1: 水ゾーンが目前にあり100%では越えられないが120%なら越えられる
+    // 条件2: 1打目で100%ゲージ(ng)でROUGH/WATER/BUNKER着地リスク、120%なら回避できる
+    if(cpuCh===1){
+      const ng100=G.ng; // 100%飛距離
+      const ng120=Math.round(ng100*1.2); // 120%飛距離（風補正前）
+      const wt=({'-9':56,'-8':63,'-7':69,'-6':74,'-5':78,'-4':84,'-3':89,'-2':93,'-1':96,'0':100,'1':104,'2':107,'3':111,'4':116,'5':122,'6':126,'7':131,'8':137,'9':144})[String(G.wind)]||100;
+      const drv100=Math.round(ng100*(wt/100));
+      const drv120=Math.round(ng120*(wt/100));
+      const zones=cpuWaterZonesInRange(drv120+30);
+      // 条件1: 水ゾーンを100%では越えられないが120%なら越えられる
+      const cond1=zones.length>0 && zones.some(z=>z.wz>drv100 && drv120>z.wz);
+      // 条件2: 1打目、100%着地がROUGH/BUNKER/WATERリスク、120%で回避
+      let cond2=false;
+      if(G.ns===1){
+        const land100=G.cp+drv100;
+        const land120=G.cp+drv120;
+        const isRisky=(pos)=>{
+          for(let i=0;i<3;i++){
+            if(pos>=G.Ra[i]&&pos<=G.Rz[i]) return true;
+            if(pos>=G.Wa[i]&&pos<=G.Wz[i]) return true;
+            if(pos>=G.Ba[i]&&pos<=G.Bz[i]) return true;
+          }
+          return false;
+        };
+        cond2=isRisky(land100) && !isRisky(land120);
+      }
+      if(cond1||cond2){
+        G.gMax=120; G.spc=1; G.nwz--;
+        seSpecial();
+        T('speBox',CD[cpuCh].s||'特技使用'); S('speBox','flex');
+        updGaugeWaku(); updGauge();
+        cpuCalcGauge(); // gMax=120で再計算
+      }
+    }
+
+    // 走馬(ch=2): 地形無視。ROUGH/BUNKER上で水回避に飛距離が必要な時に使用
+    else if(cpuCh===2 && (G.ji===2||G.ji===3)){
+      const zones=cpuWaterZonesInRange(G.ng+30);
+      const needIgnore=zones.length>0 && zones.some(z=>z.wa<=G.ng*1.3 && z.wz>G.ng*0.7);
+      if(needIgnore){
+        G.spc=2; G.nwz--;
+        seSpecial();
+        T('speBox',CD[cpuCh].s||'特技使用'); S('speBox','flex');
+      }
+    }
+
+    // 響子(ch=4): 風消し
+    // H8は風<=0なら常に発動（負の風が不利）、他は風<=0かつ水ゾーンリスク
+    else if(cpuCh===4){
+      const isH8=(G.nH===8);
+      const negWind=(G.wind<=0);
+      const zones=cpuWaterZonesInRange(G.ng+30);
+      const waterRisk=zones.length>0;
+      if(negWind && (isH8 || waterRisk)){
+        G.wind=0; G.spc=4; G.nwz--;
+        seSpecial();
+        T('speBox',CD[cpuCh].s||'特技使用'); S('speBox','flex');
+        showWind(); // 風表示を±0に更新
+        cpuCalcGauge(); // 風0で再計算
+      }
+    }
+  }
+
   // ゲージアニメーション開始 → 終了後にショット計算してアニメ開始
   cpuChargeGauge();
 }
@@ -1246,8 +1316,8 @@ function cpuFireShot(){
     const wtVal2=(wtP2[String(Math.max(-5,Math.min(5,G.wind)))]||100)/100;
     // カップインに必要な最低gW (y2に対応する値)
     const neededGW=G.ng>0&&wtVal2>0?Math.ceil(G.y2*100/(G.ng*wtVal2)):G.gMax;
+    // 届かない場合(drv<y2)は補正してputtK再実行
     if(neededGW<=G.gMax && G.drv<G.y2){
-      // gWを必要値に補正してputtK再実行
       G.gW=Math.min(G.gMax, neededGW);
       puttK();
     }
@@ -1469,6 +1539,13 @@ function startPtCPU(){
 }
 
 function cpuDropChk(){
+  // ショット着地後に特技効果をリセット
+  if(G.spc===1){ G.gMax=CD[VS.cpuCh].mx; updGaugeWaku(); } // 水無: ゲージ100%に戻す
+  // 走馬(spc=2)はdriveK内で参照後リセット不要（次ショット前にspc=0にする）
+  if(G.spc===4){ // 響子: 風・傾斜消し解除（コースの風パラメータ復元）
+    loadHD(); // wa/wz/kzをコース値に戻す
+  }
+  if(G.spc!==0){ S('speBox','none'); G.spc=0; }
   G.ji=1;
   for(let i=0;i<3;i++){
     if(G.cp>=G.Ra[i]&&G.cp<=G.Rz[i])G.ji=2;
@@ -1596,6 +1673,10 @@ function cpuAutoFinish(){
     cpuCalcGauge();
     // ショット計算（アニメなし）
     if(G.ji===5){ puttK(); } else { driveK(); }
+    // ショット後の特技効果リセット
+    if(G.spc===1){ G.gMax=CD[VS.cpuCh].mx; }
+    if(G.spc===4){ loadHD(); }
+    G.spc=0;
     // 位置更新
     const remaining=G.y1-G.cp;
     if(G.drv>=remaining&&G.drv<=remaining+1){
@@ -2726,10 +2807,10 @@ function buildShop(){
   const nc=document.getElementById('gClubNormal');
   pChk();
   nc.innerHTML=[
-    {n:1,lb:`1W+${G.kw1===3?'20':'10'}yd\n-${G.pw1}pts`,dis:G.kw1>3||G.pts<G.pw1},
-    {n:2,lb:`3W+${G.kw2===3?'20':'10'}yd\n-${G.pw2}pts`,dis:G.kw2>3||G.pts<G.pw2},
-    {n:3,lb:`5I+${G.ki1===3?'20':'10'}yd\n-${G.pi1}pts`,dis:G.ki1>3||G.pts<G.pi1},
-    {n:4,lb:`8I+${G.ki2===3?'20':'10'}yd\n-${G.pi2}pts`,dis:G.ki2>3||G.pts<G.pi2},
+    {n:1,k:G.kw1,lb:G.kw1>=4?'-':`1W+${G.kw1===3?'20':'10'}yd\n-${G.pw1}pts`,dis:G.kw1>=4||G.pts<G.pw1},
+    {n:2,k:G.kw2,lb:G.kw2>=4?'-':`3W+${G.kw2===3?'20':'10'}yd\n-${G.pw2}pts`,dis:G.kw2>=4||G.pts<G.pw2},
+    {n:3,k:G.ki1,lb:G.ki1>=4?'-':`5I+${G.ki1===3?'20':'10'}yd\n-${G.pi1}pts`,dis:G.ki1>=4||G.pts<G.pi1},
+    {n:4,k:G.ki2,lb:G.ki2>=4?'-':`8I+${G.ki2===3?'20':'10'}yd\n-${G.pi2}pts`,dis:G.ki2>=4||G.pts<G.pi2},
   ].map(c=>`<button class="cBtn${c.dis?' dis':''}" id="rb${c.n}" onclick="selShop(${c.n})" style="white-space:pre-line;font-size:10px;line-height:1.3;flex:1">${c.lb}</button>`).join('');
   sc2.innerHTML=G.nwz<9?`<button class="cBtn" id="rb7" onclick="selShop(7)" style="font-size:11px;flex:1">特技+1<br><span style="font-size:10px;color:#f88">-${G.pw}pts</span></button>`:'';
   if(G.pw<=0||G.nwz>=9) {const e=$(7);if(e)e.classList.add('dis');}
