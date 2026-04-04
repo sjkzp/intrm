@@ -1451,9 +1451,15 @@ function cpuCalcGauge(){
     acc=(ch===5||ch===6)?(6-tLv)*1.5:(6-tLv)*4;
   }
   targetGW+=(Math.random()-0.5)*2*acc;
-  // パット時はgWが低すぎると実質ほぼ動かない → 最低20%を保証
+  
+  // targetGWをgMaxでクランプする
+  targetGW = Math.min(targetGW, G.gMax);
   const gWmin2 = isPutt ? Math.max(1, Math.round(G.gMax*0.20)) : 1;
-  G.gW=Math.max(gWmin2,Math.min(G.gMax,Math.round(targetGW)));
+  G.gW = Math.max(gWmin2, Math.round(targetGW));
+
+  // パット時はgWが低すぎると実質ほぼ動かない → 最低20%を保証
+  // const gWmin2 = isPutt ? Math.max(1, Math.round(G.gMax*0.20)) : 1;
+  // G.gW=Math.max(gWmin2,Math.min(G.gMax,Math.round(targetGW)));
 }
 
 // CPU専用のドライブアニメ（startMv相当、終了後にcpuDropChk）
