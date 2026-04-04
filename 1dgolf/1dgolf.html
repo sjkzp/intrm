@@ -1119,12 +1119,14 @@ function cpuApplyStats(){
     c1:G.c1,c2:G.c2,d1:G.d1,d2:G.d2,e1:G.e1,e2:G.e2,
     nwz:G.nwz,nwt:G.nwt,pw:G.pw,gMax:G.gMax,gWakuW:G.gWakuW,
     kw1:G.kw1,kw2:G.kw2,ki1:G.ki1,ki2:G.ki2,
+    sc:G.sc, // 1Pスコアを保存
   };
   G.ch=VS.cpuCh;
   G.w1=d.w1;G.w2=d.w2;G.i1=d.i1;G.i2=d.i2;G.p1=d.p1;G.p2=d.p2;
   G.c1=d.c1;G.c2=d.c2;G.d1=d.d1;G.d2=d.d2;G.e1=d.e1;G.e2=d.e2;
   G.nwz=d.wz;G.nwt=d.wt;G.pw=d.pw;G.gMax=d.mx;G.gWakuW=d.gW;
   G.kw1=0;G.kw2=0;G.ki1=0;G.ki2=0;
+  G.sc=0; // CPU番中はG.scを0から使う（cpuJudgeShotではVS.cpuScに加算するが念のため）
 }
 
 function cpuRestoreStats(){
@@ -1134,6 +1136,7 @@ function cpuRestoreStats(){
   G.c1=s.c1;G.c2=s.c2;G.d1=s.d1;G.d2=s.d2;G.e1=s.e1;G.e2=s.e2;
   G.nwz=s.nwz;G.nwt=s.nwt;G.pw=s.pw;G.gMax=s.gMax;G.gWakuW=s.gWakuW;
   G.kw1=s.kw1;G.kw2=s.kw2;G.ki1=s.ki1;G.ki2=s.ki2;
+  if(s.sc!==undefined) G.sc=s.sc; // 1Pスコアを復元
 }
 
 function startCPUHole(){
@@ -1240,7 +1243,7 @@ function cpuTakeTurn(){
         };
         cond2=isRisky(land100) && !isRisky(land120);
       }
-      if(cond1||cond2){
+      if((cond1||cond2) && G.nwz>0){
         G.gMax=120; G.spc=1;
         seSpecial();
         T('speBox',CD[cpuCh].s||'特技使用'); S('speBox','flex');
@@ -1253,7 +1256,7 @@ function cpuTakeTurn(){
     else if(cpuCh===2 && (G.ji===2||G.ji===3)){
       const zones=cpuWaterZonesInRange(G.ng+30);
       const needIgnore=zones.length>0 && zones.some(z=>z.wa<=G.ng*1.3 && z.wz>G.ng*0.7);
-      if(needIgnore){
+      if(needIgnore && G.nwz>0){
         G.spc=2;
         seSpecial();
         T('speBox',CD[cpuCh].s||'特技使用'); S('speBox','flex');
@@ -1267,7 +1270,7 @@ function cpuTakeTurn(){
       const negWind=(G.wind<0);
       const zones=cpuWaterZonesInRange(G.ng+30);
       const waterRisk=zones.length>0;
-      if(negWind && (isH8 || waterRisk)){
+      if(negWind && (isH8 || waterRisk) && G.nwz>0){
         G.wind=0; G.spc=4;
         seSpecial();
         T('speBox',CD[cpuCh].s||'特技使用'); S('speBox','flex');
@@ -1505,20 +1508,21 @@ function startMvCPU(){
   },16);
 }
 
-// CPU専用パットアニメ（カップイン時に mp を非表示）
+// CPU専用パットアニメ
 function startPtCPU() {
   const y2init = G.y2;
   if (y2init <= 0) {
+    // すでにカップイン地点
     seHoleIn();
     setTimeout(() => cpuJudgeShot(), 800);
     return;
   }
 
-  const mp = $('mPos'); // ← 先に取得しておく
-
-  const stopAt = G.drv;
+  // CPU の意図したパット距離（ゲージから算出された距離）
+  const stopAt = G.drv; // ★絶対にこの距離だけ進ませる★
   const willHole = (stopAt >= y2init && stopAt <= y2init + 1);
 
+  // 初期速度（プレイヤーと同じ段差式）
   let spd =
     stopAt < 6 ? 300 :
     stopAt < 12 ? 200 :
@@ -1536,50 +1540,48 @@ function startPtCPU() {
 
   G.mv = setInterval(() => {
 
-    // CPUスキップ時
+    // CPU スキップ（デバッグ用）
     if (VS._cpuSkip) {
       clearInterval(G.mv); G.mv = null;
-
+      // ★必ず stopAt だけ進める★
       const moved = stopAt;
       G.y3 = moved;
       G.y2 = Math.max(0, y2init - moved);
       G.cp = G.y1 - G.y2;
-
-      // ★スキップではカップインしていなければ表示維持
-      // カップイン時は非表示
-      if (G.y2 === 0 && mp) mp.style.display = "none";
-
       updHUD(); updPos();
 
       if (G.y2 === 0) {
+        G.bon = 0;
         seHoleIn();
         setTimeout(() => cpuJudgeShot(), 800);
       } else {
-        // カップインしてない → バーは表示したまま
-        if (mp) mp.style.display = "block";
         setTimeout(() => cpuTakeTurn(), CPU_DELAY);
       }
       return;
     }
 
-    // 時間待ち
+    // 時間経過で進行
     if (Date.now() - G.t0 < spd) return;
     G.t0 = Date.now();
 
+    // スピード調整（肥大化しないよう安全処理）
     if (willHole) {
       spd = Math.min(120, spd + (st < 50 ? 2 : st < 100 ? 4 : 6));
     } else {
-      spd = Math.min(300, spd + (st < 100 ? 4 : st < 170 ? 8 : 12));
+      spd = Math.min(300, spd + (st < 100 ? 4 : st < 170 ? 8 : st < 250 ? 12 : 18));
     }
 
     st++;
 
-    // 移動
+    // ★必ず y3++ する（アニメーション本体）★
     G.y3++;
     const moved = G.y3;
+
+    // カップからの残り距離（表示用）
     G.y2 = Math.max(0, y2init - moved);
 
-    // mp अपडेट（表示のまま）
+    // 表示用移動ポインタ
+    const mp = $('mPos');
     if (mp) {
       const pct = Math.min(97, Math.round((G.cp + moved) * 100 / G.y1));
       mp.style.left = pct + '%';
@@ -1587,26 +1589,23 @@ function startPtCPU() {
 
     updHUD();
 
-    // 停止
+    // ★本当の停止条件：stopAt に到達したかどうか★
     if (moved >= stopAt) {
       clearInterval(G.mv); G.mv = null;
 
+      // ▼ カップイン判定
       if (G.y2 === 0 || willHole) {
-        // ★カップイン → mp を非表示
-        if (mp) mp.style.display = "none";
-
+        // カップイン
         G.y2 = 0;
         G.y3 = y2init;
+        G.bon = 0;
         G.cp = G.y1;
         showFormula();
         updHUD(); updPos();
         seHoleIn();
         setTimeout(() => cpuJudgeShot(), 800);
-
       } else {
-        // 入らなかった → mp を表示
-        if (mp) mp.style.display = "block";
-
+        // 入らなかった場合
         G.cp = G.y1 - G.y2;
         showFormula();
         updHUD(); updPos();
