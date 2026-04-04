@@ -1374,7 +1374,7 @@ function cpuSelectClub(){
     return;
   }
   const ch=VS.cpuCh;
-  const isStrong=(ch===5||ch===6); // フィリップ・旗雄=強キャラ
+  const isStrong=(ch===4||ch===5||ch===6); // 響子・フィリップ・旗雄=強キャラ
   // 水回避レベル: ch3綴=回避しない(0), 強キャラ=超え優先(2), それ以外=手前(1)
   const avoidance=ch===3?0:(isStrong?2:1);
 
@@ -1407,7 +1407,7 @@ function cpuSelectClub(){
       best=null;
       for(const c of valid){
         const gWneed=c.ng>0?targetDist*100/c.ng:999;
-        if(gWneed>=50 && gWneed<=90){
+        if(gWneed>=50 && gWneed<=cpuD2.mx){
           if(!best||c.ng>best.ng) best=c;
         }
       }
@@ -1478,8 +1478,8 @@ function startMvCPU(){
       const remaining=G.y1-G.cp;
       G.cp=G.cp+G.drv;G.cp2=G.cp;G.y2=G.y1-G.cp;G.y3=G.drv;
       if(G.drv>=remaining&&G.drv<=remaining+1){
-        G.y2=0;G.bon=800;updHUD();updPos();
-        seHoleIn(); setTimeout(()=>cpuJudgeShot(),600);return;
+        G.y2=0;G.bon=800;showFormula(); updHUD();updPos();
+        seHoleIn(); setTimeout(()=>cpuJudgeShot(),800);return;
       }
       showFormula(); updHUD();updPos();cpuDropChk();
     }
@@ -1490,7 +1490,7 @@ function startMvCPU(){
 function startPtCPU(){
   const y2init=G.y2;
   // y2=0は既にカップイン位置（cpuDropChkから来た場合など）
-  if(y2init<=0){ seHoleIn(); setTimeout(()=>cpuJudgeShot(), 800); return; }
+  if(y2init<=0){ seHoleIn(); setTimeout(()=>cpuJudgeShot(), 30000); return; }
   const willHole=G.drv>=y2init&&G.drv<=y2init+1; // 元仕様: drv∈[y2, y2+1]のみカップイン
   const stopAt=G.drv;
   // カップイン時は一定速度でアニメ（プレイヤーと同じspdロジック）
@@ -1519,14 +1519,14 @@ function startPtCPU(){
     updHUD();
     if(G.y2<=0&&!willHole){ // y2が0になったらカップイン（willHole未設定でも）
       clearInterval(G.mv);G.mv=null;
-      G.y2=0;G.y3=y2init;G.bon=0;G.cp=G.y1;updHUD();updPos();
+      G.y2=0;G.y3=y2init;G.bon=0;G.cp=G.y1;showFormula();updHUD();updPos();
       seHoleIn(); setTimeout(()=>cpuJudgeShot(), 800); return;
     }
     if(G.y3>=stopAt){
       clearInterval(G.mv);G.mv=null;
       if(willHole){
         G.y2=0;G.y3=y2init;G.bon=0;
-        G.cp=G.y1;updHUD();updPos();
+        G.cp=G.y1;showFormula();updHUD();updPos();
         // カップインのSEを鳴らして少し間を置く
         seHoleIn();
         setTimeout(()=>cpuJudgeShot(), 800);
