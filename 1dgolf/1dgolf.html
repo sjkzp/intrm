@@ -1342,8 +1342,9 @@ function cpuFireShot(){
   G._formula = buildFormula(_ng, _gW, _gMax, _wind, _ji, G.drv, _ji===5);
   seShot(); // CPUショット効果音
   // pts消費
-  VS.cpuPts=Math.max(0,VS.cpuPts-G.mpt);
-  G.pts=VS.cpuPts; T('gPtsV',G.pts);
+  // VS.cpuPts=Math.max(0,VS.cpuPts-G.mpt);
+  // G.pts=VS.cpuPts; 
+  // T('gPtsV',G.pts);
   G.t0=Date.now();
   if(G.ji===5){ startPtCPU(); } else { startMvCPU(); }
 }
