@@ -252,7 +252,7 @@ function puttK(){
   let drv = G.ng * (G.gW / 100) * (wt[String(Math.max(-5, Math.min(5, G.wind)))] || 100) / 100;
 
   // ★切り上げで丸める（1mつぶれ対策）
-  drv = Math.ceil(drv);
+  drv = Math.round(drv);
 
   // ★0以下なら1
   if (drv < 1) drv = 1;
@@ -1010,7 +1010,10 @@ function cpuCalcGauge(){
   if(targetGW < 1)      targetGW = 1;
 
   // パットは最低 20% を保証
-  const gWmin2 = isPutt ? Math.max(1, Math.round(G.gMax * 0.20)) : 1;
+  // const gWmin2 = isPutt ? Math.max(1, Math.round(G.gMax * 0.20)) : 1;
+
+  // 最低1保証
+  const gWmin2 = 1;
 
   G.gW = Math.max(gWmin2, Math.min(G.gMax, Math.round(targetGW)));
 }
