@@ -177,7 +177,7 @@ button:active{opacity:.75}
 /* ===========================
    エンディング画面
    =========================== */
-#scEnd{background:#000;align-items:center;justify-content:center;gap:12px;padding:20px}
+#scEnd{background:#000;align-items:center;justify-content:flex-start;gap:12px;padding:20px;overflow-y:auto}
 #endFig{width:180px;height:180px;display:flex;align-items:center;justify-content:center;font-size:80px}
 #endTitle{color:#ffdd44;font-size:20px;font-weight:bold;margin-top:4px}
 #endCrs{color:#668;font-size:12px;margin-top:2px}
