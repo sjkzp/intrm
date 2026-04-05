@@ -867,7 +867,7 @@ function cpuFireShot(){
     const wtP2={'-5':40,'-4':52,'-3':64,'-2':76,'-1':88,'0':100,'1':112,'2':124,'3':136,'4':148,'5':160};
     const wtVal2=(wtP2[String(Math.max(-5,Math.min(5,G.wind)))]||100)/100;
     // カップインに必要な最低gW (y2に対応する値)
-    const neededGW=G.ng>0&&wtVal2>0?Math.ceil(G.y2*100/(G.ng*wtVal2)):G.gMax;
+    const neededGW=G.ng>0&&wtVal2>0?Math.round(G.y2*100/(G.ng*wtVal2)):G.gMax;
     // 届かない場合(drv<y2)は補正してputtK再実行
     if(neededGW<=G.gMax && G.drv<G.y2){
       G.gW=Math.min(G.gMax, neededGW);
