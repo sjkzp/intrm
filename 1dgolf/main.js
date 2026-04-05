@@ -967,7 +967,7 @@ function cpuSelectClub(){
     for(const c of clubsWithReach){
       if(c.effectiveMax>=G.y2){
         // このクラブでy2を狙うのに必要なゲージ率（風込み）
-        const neededGW=c.ng>0?G.y2*100/(c.ng*windFactor):999;
+        const neededGW=c.ng>0?G.y2*100/(c.ng*windFactor):G.y2;
         if(neededGW>=50 && neededGW<=gMax){
           if(!greenClub||Math.abs(neededGW-100)<Math.abs(greenClub.neededGW-100)){
             greenClub={...c,neededGW};
@@ -993,32 +993,74 @@ function cpuSelectClub(){
     // WATERが邪魔で直接グリーンに届かない → 後続の通常処理へ（水回避）
   }
 
-  // ★STEP2: グリーンに届かない（またはWATER経由不可）→ 最大距離を目標に水回避
-  // 水回避レベル: ch3綴=回避しない(0), 強キャラ=超え優先(2), それ以外=手前(1)
-  // 池ポチャ後は強制的に手前狙い(1)へ格下げ
+  // ★STEP2: グリーンに届かない（またはWATER経由不可）
+  // 基本方針: 最大飛距離クラブで飛ばし、できるだけグリーンに近いフェアウェイに着地させる
   let avoidance=ch===3?0:(isStrong?2:1);
   if(VS._cpuLastWater && avoidance!==0) avoidance=1;
 
   // 最大飛距離クラブ（風込み最大射程が最大のもの）を基準に
   let best=clubsWithReach.reduce((a,b)=>b.effectiveMax>a.effectiveMax?b:a);
-  let targetDist=G.y2;
 
-  if(avoidance>0){
-    const maxReach=best.effectiveMax;
-    const safeDist=cpuSafeDist(G.y2, avoidance, maxReach, VS._cpuLastWater);
-    if(safeDist!==G.y2){
-      targetDist=safeDist;
-      // targetDistに合うクラブを再選択（gW範囲50%〜gMax%に収まるもの優先）
-      let safeClub=null;
-      for(const c of clubsWithReach){
-        const neededGW=c.ng>0?targetDist*100/(c.ng*windFactor):999;
-        if(neededGW>=50 && neededGW<=gMax){
-          if(!safeClub||c.ng>safeClub.ng) safeClub=c;
-        }
-      }
-      if(safeClub) best=safeClub;
-      else best=clubsWithReach.reduce((a,b)=>Math.abs(b.ng-targetDist)<Math.abs(a.ng-targetDist)?b:a);
+  // ★最大飛距離の着地点がFAIRWAYかチェック。ROUGH/BUNKER/WATERなら安全な手前を探す
+  // 安全な目標距離を求める関数
+  function cpuFindSafeTarget(maxReach){
+    // まず水回避
+    if(avoidance>0){
+      const sDist=cpuSafeDist(G.y2, avoidance, maxReach, VS._cpuLastWater);
+      if(sDist!==G.y2) return sDist; // 水に引っかかるので手前
     }
+    // 着地点(G.cp + maxReach)が地形ゾーンに入るか確認
+    const landPos=G.cp+maxReach;
+    // グリーン内なら問題なし
+    if(landPos>=(G.y1-G.gz) && landPos<=(G.y1+G.gz)) return maxReach;
+    // ROUGH/BUNKER/WATERに入るか確認
+    for(let i=0;i<3;i++){
+      // WATER
+      if(G.Wa[i]&&G.Wz[i] && landPos>=G.Wa[i] && landPos<=G.Wz[i]){
+        if(avoidance===0) return maxReach; // 綴は無視
+        return Math.max(1, G.Wa[i]-G.cp-15); // 水手前15yd
+      }
+      // BUNKER
+      if(G.Ba[i]&&G.Bz[i] && landPos>=G.Ba[i] && landPos<=G.Bz[i]){
+        // バンカー手前かバンカー超えどちらが良いか
+        const overDist=G.Bz[i]-G.cp+30; // 超えた先30yd
+        const underDist=Math.max(1, G.Ba[i]-G.cp-20); // 手前20yd
+        if(overDist<=maxReach) return overDist; // 超えられるなら超える
+        return underDist; // 超えられなければ手前
+      }
+      // ROUGH
+      if(G.Ra[i]&&G.Rz[i] && landPos>=G.Ra[i] && landPos<=G.Rz[i]){
+        // ラフ超えが可能かチェック
+        const overDist=G.Rz[i]-G.cp+30;
+        const underDist=Math.max(1, G.Ra[i]-G.cp-5);
+        if(overDist<=maxReach) return overDist;
+        return underDist;
+      }
+      if (maxReach > G.y2) {
+        // グリーンまでの距離
+        return Math.max(1, G.y2);
+      }      
+    }
+    return maxReach; // フェアウェイなら最大距離でOK
+  }
+
+  const rawTarget=cpuFindSafeTarget(best.effectiveMax);
+  let targetDist;
+  if(rawTarget>=best.effectiveMax){
+    // 最大飛距離で飛ばす → 風込み最大飛距離をターゲットに設定（cpuCalcGaugeがgMax%を狙う）
+    targetDist=best.effectiveMax;
+  } else {
+    targetDist=rawTarget;
+    // targetDistに合うクラブを再選択（gW範囲50%〜gMax%に収まるもの優先）
+    let safeClub=null;
+    for(const c of clubsWithReach){
+      const neededGW=c.ng>0?targetDist*100/(c.ng*windFactor):999;
+      if(neededGW>=50 && neededGW<=gMax){
+        if(!safeClub||c.ng>safeClub.ng) safeClub=c;
+      }
+    }
+    if(safeClub) best=safeClub;
+    else best=clubsWithReach.reduce((a,b)=>Math.abs(b.ng-targetDist)<Math.abs(a.ng-targetDist)?b:a);
   }
 
   G.ng=best.ng; G.mpt=best.mpt; G.cmd=best.cmd; G.sel=best.sel;
@@ -2780,6 +2822,8 @@ function endGame(){
   if(G.nBIR>0)rows+=`<div class="row">バーディー<span>${G.nBIR}回</span></div>`;
   if(G.nCHP>0)rows+=`<div class="row">チップイン<span>${G.nCHP}回</span></div>`;
   rows+=`<div class="row">最長ショット<span>${G.maxy}yd</span></div>`;
+  // スコアカード
+  rows+=`<div style="margin-top:10px;border-top:1px solid #1a1a2a;padding-top:8px">${buildScoreCardHTML()}</div>`;
   document.getElementById('endStatBox').innerHTML=rows;
   sc('scEnd');
 }
