@@ -901,10 +901,17 @@ function cpuWaterZonesInRange(maxDist){
 // CPU: 水ゾーンを避けた安全な目標飛距離を返す（クラブ最大射程も考慮）
 // avoidance: 1=手前停止, 2=超え優先（強キャラ）
 // maxReach: そのクラブの最大飛距離（gW=gMax時）
-function cpuSafeDist(requested, avoidance, maxReach){
+// forceUnder: true=池ポチャ後。最初の水ゾーンの手前に必ず止まる（超えを試みない）
+function cpuSafeDist(requested, avoidance, maxReach, forceUnder){
   const reach = maxReach || requested;
   const zones = cpuWaterZonesInRange(reach+30);
   if(zones.length===0) return requested;
+
+  // ★池ポチャ後: 最初のWATERゾーンの手前に必ず止まる（超え判定をスキップ）
+  if(forceUnder){
+    const z=zones[0];
+    return Math.max(1, z.wa-15); // より大きめのマージンで確実に手前
+  }
 
   // avoidance=1: 余裕+5yd、avoidance=2: 余裕+15yd
   // どちらも「超えられるゾーンは超え、超えられないゾーンの手前で止まる」
@@ -924,13 +931,18 @@ function cpuSelectClub(){
   if(G.ji===5){
     if(G.y2<=G.p2*1.3){G.ng=G.p2;G.mpt=G.e2;G.cmd=7;G.sel=6;}
     else{G.ng=G.p1;G.mpt=G.e1;G.cmd=7;G.sel=5;}
-    G._cpuTargetDist=G.y2; // パット時は残り距離をそのまま目標に
+    G._cpuTargetDist=G.y2;
     return;
   }
+
   const ch=VS.cpuCh;
+  const cpuD2=CD[ch];
   const isStrong=(ch===4||ch===5||ch===6); // 響子・フィリップ・旗雄=強キャラ
-  // 水回避レベル: ch3綴=回避しない(0), 強キャラ=超え優先(2), それ以外=手前(1)
-  const avoidance=ch===3?0:(isStrong?2:1);
+
+  // 風補正テーブル（cpuCalcGaugeと同じ）
+  const wt_d={'-9':56,'-8':63,'-7':69,'-6':74,'-5':78,'-4':84,'-3':89,'-2':93,'-1':96,
+    '0':100,'1':104,'2':107,'3':111,'4':116,'5':122,'6':126,'7':131,'8':137,'9':144};
+  const windFactor=(wt_d[String(G.wind)]||100)/100;
 
   const clubs=[
     {ng:G.w1,mpt:G.c1,cmd:5,sel:1},
@@ -940,37 +952,72 @@ function cpuSelectClub(){
   ];
   const valid=G.ji===3?clubs.slice(2):clubs;
 
-  // まず targetDist の初期値を設定
+  // 各クラブの風込み最大飛距離を計算
+  // effectiveMax = ng * windFactor * (gMax/100)
+  const gMax=cpuD2?cpuD2.mx:100;
+  const clubsWithReach=valid.map(c=>({
+    ...c,
+    effectiveMax:Math.round(c.ng*windFactor*gMax/100)
+  }));
+
+  // ★STEP1: グリーンに1打で届くか判定（池ポチャ後は除外）
+  // 届くクラブのうち、最も必要ゲージが100%に近いものを選ぶ
+  let greenClub=null;
+  if(!VS._cpuLastWater){
+    for(const c of clubsWithReach){
+      if(c.effectiveMax>=G.y2){
+        // このクラブでy2を狙うのに必要なゲージ率（風込み）
+        const neededGW=c.ng>0?G.y2*100/(c.ng*windFactor):999;
+        if(neededGW>=50 && neededGW<=gMax){
+          if(!greenClub||Math.abs(neededGW-100)<Math.abs(greenClub.neededGW-100)){
+            greenClub={...c,neededGW};
+          }
+        }
+      }
+    }
+  }
+
+  if(greenClub){
+    // グリーンに届く → グリーンへの経路にWATERがないか確認
+    // グリーンへ届くクラブの実効最大射程で水チェック
+    const greenMaxReach=greenClub.effectiveMax;
+    // avoidance=2（強キャラ）は水を超えようとする、それ以外は手前停止
+    const greenAvoidance=isStrong?2:1;
+    const safeDist=cpuSafeDist(G.y2, greenAvoidance, greenMaxReach, false);
+    if(safeDist===G.y2){
+      // 経路に問題なし → グリーン狙い確定
+      G.ng=greenClub.ng; G.mpt=greenClub.mpt; G.cmd=greenClub.cmd; G.sel=greenClub.sel;
+      G._cpuTargetDist=G.y2;
+      return;
+    }
+    // WATERが邪魔で直接グリーンに届かない → 後続の通常処理へ（水回避）
+  }
+
+  // ★STEP2: グリーンに届かない（またはWATER経由不可）→ 最大距離を目標に水回避
+  // 水回避レベル: ch3綴=回避しない(0), 強キャラ=超え優先(2), それ以外=手前(1)
+  // 池ポチャ後は強制的に手前狙い(1)へ格下げ
+  let avoidance=ch===3?0:(isStrong?2:1);
+  if(VS._cpuLastWater && avoidance!==0) avoidance=1;
+
+  // 最大飛距離クラブ（風込み最大射程が最大のもの）を基準に
+  let best=clubsWithReach.reduce((a,b)=>b.effectiveMax>a.effectiveMax?b:a);
   let targetDist=G.y2;
 
-  // 仮クラブ選択（y2に最も近いもの）
-  let best=valid[0];
-  for(const c of valid){
-    if(Math.abs(c.ng-targetDist)<Math.abs(best.ng-targetDist)) best=c;
-  }
-  // そのクラブのgMax射程
-  const cpuD2=CD[VS.cpuCh];
-  const maxReach=Math.round(best.ng*(cpuD2?cpuD2.mx:100)/100);
-
-  // 水回避: avoidance>0は常に確認（強キャラは余裕多め）
   if(avoidance>0){
-    const safeDist=cpuSafeDist(G.y2, avoidance, maxReach);
+    const maxReach=best.effectiveMax;
+    const safeDist=cpuSafeDist(G.y2, avoidance, maxReach, VS._cpuLastWater);
     if(safeDist!==G.y2){
       targetDist=safeDist;
-      // 新targetDistで再クラブ選択（gW範囲優先）
-      best=null;
-      for(const c of valid){
-        const gWneed=c.ng>0?targetDist*100/c.ng:999;
-        if(gWneed>=50 && gWneed<=cpuD2.mx){
-          if(!best||c.ng>best.ng) best=c;
+      // targetDistに合うクラブを再選択（gW範囲50%〜gMax%に収まるもの優先）
+      let safeClub=null;
+      for(const c of clubsWithReach){
+        const neededGW=c.ng>0?targetDist*100/(c.ng*windFactor):999;
+        if(neededGW>=50 && neededGW<=gMax){
+          if(!safeClub||c.ng>safeClub.ng) safeClub=c;
         }
       }
-      if(!best){
-        best=valid[0];
-        for(const c of valid){
-          if(Math.abs(c.ng-targetDist)<Math.abs(best.ng-targetDist)) best=c;
-        }
-      }
+      if(safeClub) best=safeClub;
+      else best=clubsWithReach.reduce((a,b)=>Math.abs(b.ng-targetDist)<Math.abs(a.ng-targetDist)?b:a);
     }
   }
 
@@ -1231,6 +1278,8 @@ function cpuDropChk(){
   if(G.cp===0)G.ji=1;
   setTer(G.ji,G.ji===5);
   if(G.ji===6){const mp=$('mPos');if(mp)mp.style.display='none';}
+  // ★今ターンに水落ち/OBが発生したか記録
+  const thisHitWater=(G.ji===4||G.ji===6);
   // OB/ウォーター: ペナルティ
   if(G.ji===4||G.ji===6){
     if(G.ji===4) VS._cpuLastWater=true; // 池ポチャ記録
@@ -1258,6 +1307,8 @@ function cpuDropChk(){
   }
   if(G.ns>=(G.par+4)){cpuFinishHole();return;}
   G.lp=G.cp;
+  // ★池ポチャ後フラグのリセット: 今ターンが安全着地（水落ち/OBなし）の場合のみ
+  if(VS._cpuLastWater && !thisHitWater) VS._cpuLastWater=false;
   // 着地後に次打の風を更新（1打目はstartCPUHoleで設定済み）
   if(G.ji!==5) windK(); // グリーン以外は次打の風を変更
   updHUD();
@@ -1389,6 +1440,8 @@ function cpuAutoFinish(){
       G.wind=Math.max(-5,Math.min(5,G.wind));
       G.y2=Math.abs(G.y1-G.cp);
     }
+    // ★池ポチャ後に安全着地できた→フラグリセット
+    if(VS._cpuLastWater && G.ji!==4 && G.ji!==6) VS._cpuLastWater=false;
     G.lp=G.cp;
   }
   // ギブアップ
