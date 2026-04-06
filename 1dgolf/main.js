@@ -755,6 +755,7 @@ function cpuTakeTurn(){
     // 水無(ch=1): パワーショット
     // 条件1: 水ゾーンが目前にあり100%では越えられないが120%なら越えられる
     // 条件2: 1打目で100%ゲージ(ng)でROUGH/WATER/BUNKER着地リスク、120%なら回避できる
+    // 条件3: 100%ではグリーンに届かないが120%なら届く
     if(cpuCh===1){
       const ng100=G.ng; // 100%飛距離
       const ng120=Math.round(ng100*1.2); // 120%飛距離（風補正前）
@@ -779,8 +780,15 @@ function cpuTakeTurn(){
         };
         cond2=isRisky(land100) && !isRisky(land120);
       }
-      if((cond1||cond2) && G.nwz>0){
+      // 条件3: 100%では届かないがが120%ならグリーンに届く（グリーン圏 y1±gz 内）
+      const greenNear=G.y1-G.gz, greenFar=G.y1+G.gz;
+      const land100g=G.cp+drv100, land120g=G.cp+drv120;
+      const cond3=!(land100g>=greenNear && land100g<=greenFar) &&
+                  (land120g>=greenNear && land120g<=greenFar);
+      if((cond1||cond2||cond3) && G.nwz>0){
         G.gMax=120; G.spc=1;
+        // 条件3の場合はグリーンを狙うためtargetDistをG.y2に更新
+        if(cond3 && !cond1 && !cond2) G._cpuTargetDist=G.y2;
         seSpecial();
         T('speBox',CD[cpuCh].s||'特技使用'); S('speBox','flex');
         updGaugeWaku(); updGauge();
@@ -998,6 +1006,14 @@ function cpuSelectClub(){
   let avoidance=ch===3?0:(isStrong?2:1);
   if(VS._cpuLastWater && avoidance!==0) avoidance=1;
 
+  // ★forceUnder有効判定: 池ポチャ後でも、次のWATERゾーンまでの距離が40yd以下なら
+  // 手前に止まれる余裕がないため通常の水回避(avoidance=1)を使う
+  let useForceUnder=VS._cpuLastWater;
+  if(useForceUnder){
+    const nearZones=cpuWaterZonesInRange(200);
+    if(nearZones.length>0 && nearZones[0].wa<=40) useForceUnder=false;
+  }
+
   // 最大飛距離クラブ（風込み最大射程が最大のもの）を基準に
   let best=clubsWithReach.reduce((a,b)=>b.effectiveMax>a.effectiveMax?b:a);
 
@@ -1006,7 +1022,7 @@ function cpuSelectClub(){
   function cpuFindSafeTarget(maxReach){
     // まず水回避
     if(avoidance>0){
-      const sDist=cpuSafeDist(G.y2, avoidance, maxReach, VS._cpuLastWater);
+      const sDist=cpuSafeDist(G.y2, avoidance, maxReach, useForceUnder);
       if(sDist!==G.y2) return sDist; // 水に引っかかるので手前
     }
     // 着地点(G.cp + maxReach)が地形ゾーンに入るか確認
@@ -2798,6 +2814,12 @@ function csend(){afterJ();}
 // エンディング UI
 // =============================================
 function endGame(){
+  // 最終ホールのスコアが未記録の場合（ギブアップ経由など）は補完
+  const _lastH=G.cr===2?9:6;
+  if(G.holeScores.length < _lastH && G.ns > 0){
+    G.holeScores.push(G.ns);
+    G.holePars.push(G.par);
+  }
   rankime();
   if(!G.uf3&&G.sc<=3)G.uf3=true;
   if(!G.uf4&&(G.maxy>=450||G.nHIO>=1))G.uf4=true;
