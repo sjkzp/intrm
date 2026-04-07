@@ -2723,7 +2723,7 @@ function selShop(n){
   const pr={1:G.pw1,2:G.pw2,3:G.pi1,4:G.pi2,7:G.pw};
   G.price=pr[n]||0;
   T('gGaugeCost',`-${G.price}pts`);
-  E('bShot',true); $('bShot').textContent='購入する'; $('bShot').className='ready';
+  E('bShot',true); $('bShot').textContent='購入'; $('bShot').className='ready';
 }
 function shopBuy(){
   if(!G.sel||G.pts<G.price)return;
