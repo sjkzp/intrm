@@ -851,10 +851,31 @@ function cpuTakeTurn(){
         cpuCalcGauge(); // 風0で再計算
       }
     }
-  }
+  } // end if(G.ji!==5) グリーン外特技AI
 
-  // ゲージアニメーション開始 → 終了後にショット計算してアニメ開始
-  cpuChargeGauge();
+  // ===== グリーン上特技AI（パット時）=====
+  // 水無(ch=1): グリーン上でもパワーショット。100%で届かないが120%で届く場合
+  if(G.ji===5 && cpuCh===1 && G.nwz>0){
+    const wt_p={'-5':40,'-4':52,'-3':64,'-2':76,'-1':88,'0':100,'1':112,'2':124,'3':136,'4':148,'5':160};
+    const wtP=(wt_p[String(Math.max(-5,Math.min(5,G.wind)))]||100)/100;
+    const putt100reach=Math.round(G.p1*(cpuD.x7/100)*wtP); // p1(30m)を100%で打った時の飛距離
+    const putt120reach=Math.round(G.p1*1.2*(cpuD.x7/100)*wtP); // 120%
+    if(G.y2>putt100reach && G.y2<=putt120reach){
+      G.gMax=120; G.spc=1;
+      seSpecial();
+      T('speBox',CD[cpuCh].s||'特技使用'); S('speBox','flex');
+      updGaugeWaku(); updGauge();
+      cpuCalcGauge();
+    }
+  }
+  // 響子(ch=4): グリーン上でも向かい風(-値)なら風消し
+  if(G.ji===5 && cpuCh===4 && G.nwz>0 && G.wind<0){
+    G.wind=0; G.spc=4;
+    seSpecial();
+    T('speBox',CD[cpuCh].s||'特技使用'); S('speBox','flex');
+    showWind();
+    cpuCalcGauge();
+  }
 }
 
 // ゲージをアニメーションで充填してから発射
@@ -966,8 +987,16 @@ function cpuSafeDist(requested, avoidance, maxReach, forceUnder){
 
 function cpuSelectClub(){
   if(G.ji===5){
-    if(G.y2<=G.p2*1.3){G.ng=G.p2;G.mpt=G.e2;G.cmd=7;G.sel=6;}
-    else{G.ng=G.p1;G.mpt=G.e1;G.cmd=7;G.sel=5;}
+    // p1=30mパター、p2=15mパター
+    // 残距離がp2の射程内（p2*gMax/100 以下）ならp2の方が精度が出る
+    // 残距離がp2射程を超えるならp1を使う
+    const cpuDp=CD[VS.cpuCh];
+    const p2maxReach=Math.round(G.p2*(cpuDp?cpuDp.x7:100)/100);
+    if(G.y2<=p2maxReach){
+      G.ng=G.p2;G.mpt=G.e2;G.cmd=7;G.sel=6; // 15mパター
+    } else {
+      G.ng=G.p1;G.mpt=G.e1;G.cmd=7;G.sel=5; // 30mパター
+    }
     G._cpuTargetDist=G.y2;
     return;
   }
@@ -1093,45 +1122,50 @@ function cpuSelectClub(){
   }
 
   // ★候補距離リストを生成し「最もグリーンに近い安全な着地点」を選ぶ
-  // 候補: 最大飛距離、各ゾーン境界の手前・直後、グリーン手前
+  // 候補: グリーン圏、最大飛距離、各ゾーン境界の手前・直後、グリーン手前
   const candidates=[];
 
-  // 最大飛距離をまず追加
+  // グリーン圏（y1±gz）を最優先候補として追加
+  const greenCenterRel=G.y2; // グリーン中心（カップ）への相対距離
+  const greenNearEdgeRel=(G.y1-G.gz)-G.cp; // グリーン手前端への相対距離
+  if(greenCenterRel>0 && greenCenterRel<=maxReach) candidates.push(greenCenterRel);
+  if(greenNearEdgeRel>0 && greenNearEdgeRel<=maxReach) candidates.push(greenNearEdgeRel);
+
+  // 最大飛距離
   candidates.push(maxReach);
 
-  // 各WATERゾーンの手前とその後ろ（後ろがデッドリーでなければ）
+  // 各WATERゾーンの手前(5yd)とその後ろ(10yd)
   for(let i=0;i<3;i++){
     if(!G.Wa[i]&&!G.Wz[i]) continue;
     const waRel=G.Wa[i]-G.cp, wzRel=G.Wz[i]-G.cp;
-    if(wzRel<=0) continue; // 既に通過済み
-    if(waRel>maxReach) continue; // 射程外
-    if(waRel>5) candidates.push(waRel-5);    // 水の5yd手前
-    if(wzRel+1<=maxReach) candidates.push(wzRel+1); // 水ゾーン直後
+    if(wzRel<=0) continue;
+    if(waRel>maxReach) continue;
+    if(waRel>5) candidates.push(waRel-5);
+    if(wzRel+10<=maxReach) candidates.push(wzRel+10);
   }
 
-  // 各BANKERゾーンの手前とその後ろ
+  // 各BANKERゾーンの手前(5yd)とその後ろ(10yd)
   for(let i=0;i<3;i++){
     if(!G.Ba[i]&&!G.Bz[i]) continue;
     const baRel=G.Ba[i]-G.cp, bzRel=G.Bz[i]-G.cp;
     if(bzRel<=0) continue;
     if(baRel>maxReach) continue;
-    if(baRel>5) candidates.push(baRel-5);    // バンカー5yd手前
-    if(bzRel+1<=maxReach) candidates.push(bzRel+1); // バンカー直後
+    if(baRel>5) candidates.push(baRel-5);
+    if(bzRel+10<=maxReach) candidates.push(bzRel+10);
   }
 
-  // 各ROUGHゾーンの手前とその後ろ
+  // 各ROUGHゾーンの手前(5yd)とその後ろ(10yd)
   for(let i=0;i<3;i++){
     if(!G.Ra[i]&&!G.Rz[i]) continue;
     const raRel=G.Ra[i]-G.cp, rzRel=G.Rz[i]-G.cp;
     if(rzRel<=0) continue;
     if(raRel>maxReach) continue;
     if(raRel>5) candidates.push(raRel-5);
-    if(rzRel+1<=maxReach) candidates.push(rzRel+1);
+    if(rzRel+10<=maxReach) candidates.push(rzRel+10);
   }
 
-  // グリーン手前
-  const greenEdgeRel=(G.y1-G.gz)-G.cp;
-  if(greenEdgeRel>5 && greenEdgeRel<=maxReach) candidates.push(greenEdgeRel-5);
+  // グリーン手前フェアウェイ（グリーン前縁の5yd手前）
+  if(greenNearEdgeRel>10 && greenNearEdgeRel<=maxReach) candidates.push(greenNearEdgeRel-5);
 
   // 各候補をフィルタ・評価して最善を選ぶ
   // 評価基準: 1) 致命的(WATER/OB)を除外 2) 地形ランク小 3) グリーンに近い（絶対座標大）
@@ -2799,7 +2833,11 @@ function proCk(){
     } else {
       G.cmd=4; holeStart();
     }
-  } else { endGame(); }
+  } else {
+    // コース終了ボタン: VS時はafterJ→afterJVSを経由してVSリザルトへ
+    if(VS.active) afterJ();
+    else endGame();
+  }
 }
 
 // =============================================
