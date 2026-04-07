@@ -787,8 +787,20 @@ function cpuTakeTurn(){
                   (land120g>=greenNear && land120g<=greenFar);
       if((cond1||cond2||cond3) && G.nwz>0){
         G.gMax=120; G.spc=1;
-        // 条件3の場合はグリーンを狙うためtargetDistをG.y2に更新
-        if(cond3 && !cond1 && !cond2) G._cpuTargetDist=G.y2;
+        // 条件1: WATERを超えるのでdrv120直後（水ゾーン終端+マージン）をターゲットに
+        if(cond1){
+          // 超えられる最初の水ゾーンの終端+10ydをtargetに設定（120%で超えた先を狙う）
+          const overZone=zones.find(z=>z.wz>drv100 && drv120>z.wz);
+          if(overZone) G._cpuTargetDist=overZone.wz+10;
+        }
+        // 条件2: 120%で地形リスク回避 → drv120をそのままターゲットに
+        else if(cond2){
+          G._cpuTargetDist=drv120;
+        }
+        // 条件3: グリーンを狙う
+        else if(cond3){
+          G._cpuTargetDist=G.y2;
+        }
         seSpecial();
         T('speBox',CD[cpuCh].s||'特技使用'); S('speBox','flex');
         updGaugeWaku(); updGauge();
