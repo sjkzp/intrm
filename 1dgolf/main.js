@@ -736,146 +736,232 @@ function startCPUHole(){
   setTimeout(()=>cpuTakeTurn(), CPU_DELAY);
 }
 
-// CPU 1打分の処理
-function cpuTakeTurn(){
-  if(VS._cpuSkip){ cpuFinishHole(); return; }
+// =============================================================
+//  CPU 1打分の処理（フリーズ完全防止 & 120%定数化版）
+// =============================================================
+function cpuTakeTurn() {
+
+  // ★120% を定数化
+  const CPU_SPECIAL_POWER = 120;           // ゲージ上限値
+  const CPU_SPECIAL_RATE  = CPU_SPECIAL_POWER / 100; // 1.2 倍
+
+  if (VS._cpuSkip) {
+    cpuFinishHole();
+    return;
+  }
+
   G.ns++;
-  VS._cpuNs=G.ns;
-  // クラブ選択
+  VS._cpuNs = G.ns;
+
+  // =========================================================
+  // ① CPUクラブ選択
+  // =========================================================
   cpuSelectClub();
-  // gMax をショット種別に合わせて設定
-  const cpuD=CD[VS.cpuCh];
-  if(G.ji===5){ G.gMax=cpuD.x7; } else { G.gMax=cpuD.mx; }
 
-  // ===== CPU特技AI =====
-  const cpuCh=VS.cpuCh;
-  G.spc=0;
-  if(G.ji!==5){ // グリーン外
+  const cpuD = CD[VS.cpuCh];
+  G.gMax = (G.ji === 5) ? cpuD.x7 : cpuD.mx;
 
-    // 水無(ch=1): パワーショット
-    // 条件1: 水ゾーンが目前にあり100%では越えられないが120%なら越えられる
-    // 条件2: 1打目で100%ゲージ(ng)でROUGH/WATER/BUNKER着地リスク、120%なら回避できる
-    // 条件3: 100%ではグリーンに届かないが120%なら届く
-    if(cpuCh===1){
-      const ng100=G.ng; // 100%飛距離
-      const ng120=Math.round(ng100*1.2); // 120%飛距離（風補正前）
-      const wt=({'-9':56,'-8':63,'-7':69,'-6':74,'-5':78,'-4':84,'-3':89,'-2':93,'-1':96,'0':100,'1':104,'2':107,'3':111,'4':116,'5':122,'6':126,'7':131,'8':137,'9':144})[String(G.wind)]||100;
-      const drv100=Math.round(ng100*(wt/100));
-      const drv120=Math.round(ng120*(wt/100));
-      const zones=cpuWaterZonesInRange(drv120+30);
-      // 条件1: 水ゾーンを100%では越えられないが120%なら越えられる
-      const cond1=zones.length>0 && zones.some(z=>z.wz>drv100 && drv120>z.wz);
-      // 条件2: 100%着地がROUGH/BUNKER/WATERリスク、120%で回避（全打目対象）
-      let cond2=false;
-      {
-        const land100=G.cp+drv100;
-        const land120=G.cp+drv120;
-        const isRisky=(pos)=>{
-          for(let i=0;i<3;i++){
-            if(pos>=G.Ra[i]&&pos<=G.Rz[i]) return true;
-            if(pos>=G.Wa[i]&&pos<=G.Wz[i]) return true;
-            if(pos>=G.Ba[i]&&pos<=G.Bz[i]) return true;
-          }
-          return false;
-        };
-        // ROUGH/BUNKER上の場合、現在地のゾーンは除外して判定
-        const isRiskySafe=(pos)=>{
-          for(let i=0;i<3;i++){
-            // 現在地が含まれるゾーンへの着地は「現在と同じ地形」なので回避対象外
-            const inCurRough=G.ji===2&&G.cp>=G.Ra[i]&&G.cp<=G.Rz[i];
-            const inCurBunk=G.ji===3&&G.cp>=G.Ba[i]&&G.cp<=G.Bz[i];
-            if(pos>=G.Ra[i]&&pos<=G.Rz[i]&&!inCurRough) return true;
-            if(pos>=G.Wa[i]&&pos<=G.Wz[i]) return true; // WATERは常にリスク
-            if(pos>=G.Ba[i]&&pos<=G.Bz[i]&&!inCurBunk) return true;
-          }
-          return false;
-        };
-        cond2=isRiskySafe(land100) && !isRiskySafe(land120);
-      }
-      // 条件3: 100%では届かないがが120%ならグリーンに届く（グリーン圏 y1±gz 内）
-      const greenNear=G.y1-G.gz, greenFar=G.y1+G.gz;
-      const land100g=G.cp+drv100, land120g=G.cp+drv120;
-      const cond3=!(land100g>=greenNear && land100g<=greenFar) &&
-                  (land120g>=greenNear && land120g<=greenFar);
-      if((cond1||cond2||cond3) && G.nwz>0){
-        G.gMax=120; G.spc=1;
-        // 条件1: WATERを超えるので、水ゾーン直後からグリーンまでの間で最善の着地点を狙う
-        // 水ゾーン終端の直後（相対距離）をターゲットとして設定し、cpuCalcGaugeが調整
-        if(cond1){
-          const overZone=zones.find(z=>z.wz>drv100 && drv120>z.wz);
-          // 水を超えた先でグリーンに最も近い安全地点 = グリーン手前 or グリーン圏を狙う
-          if(overZone){
-            const afterWater=overZone.wz+1; // 水直後（相対）
-            // グリーン圏に届くならG.y2、届かないなら水直後からできるだけグリーン寄り
-            G._cpuTargetDist=(drv120>=(G.y2-G.gz)?G.y2:afterWater);
-          }
-        }
-        // 条件2: 120%で地形リスク回避 → drv120をそのままターゲットに
-        else if(cond2){
-          G._cpuTargetDist=drv120;
-        }
-        // 条件3: グリーンを狙う
-        else if(cond3){
-          G._cpuTargetDist=G.y2;
-        }
-        seSpecial();
-        T('speBox',CD[cpuCh].s||'特技使用'); S('speBox','flex');
-        updGaugeWaku(); updGauge();
-        cpuCalcGauge(); // gMax=120で再計算
-      }
-    }
+  // =========================================================
+  // ② 特技AIの多重発動防止フラグ
+  // =========================================================
+  let usedSpecial = false;
 
-    // 走馬(ch=2): 地形無視。ROUGH/BUNKER上で水回避に飛距離が必要な時に使用
-    else if(cpuCh===2 && (G.ji===2||G.ji===3)){
-      const zones=cpuWaterZonesInRange(G.ng+30);
-      const needIgnore=zones.length>0 && zones.some(z=>z.wa<=G.ng*1.3 && z.wz>G.ng*0.7);
-      if(needIgnore && G.nwz>0){
-        G.spc=2;
-        seSpecial();
-        T('speBox',CD[cpuCh].s||'特技使用'); S('speBox','flex');
-      }
-    }
-
-    // 響子(ch=4): 風消し
-    // H8は風<0なら常に発動（負の風が不利）、他は風<0かつ水ゾーンリスク
-    else if(cpuCh===4){
-      const isH8=(G.nH===8);
-      const negWind=(G.wind<0);
-      const zones=cpuWaterZonesInRange(G.ng+30);
-      const waterRisk=zones.length>0;
-      if(negWind && (isH8 || waterRisk) && G.nwz>0){
-        G.wind=0; G.spc=4;
-        seSpecial();
-        T('speBox',CD[cpuCh].s||'特技使用'); S('speBox','flex');
-        showWind(); // 風表示を±0に更新
-        cpuCalcGauge(); // 風0で再計算
-      }
-    }
-  } // end if(G.ji!==5) グリーン外特技AI
-
-  // ===== グリーン上特技AI（パット時）=====
-  // 水無(ch=1): グリーン上でもパワーショット。100%で届かないが120%で届く場合
-  if(G.ji===5 && cpuCh===1 && G.nwz>0){
-    const wt_p={'-5':40,'-4':52,'-3':64,'-2':76,'-1':88,'0':100,'1':112,'2':124,'3':136,'4':148,'5':160};
-    const wtP=(wt_p[String(Math.max(-5,Math.min(5,G.wind)))]||100)/100;
-    const putt100reach=Math.round(G.p1*(cpuD.x7/100)*wtP); // p1(30m)を100%で打った時の飛距離
-    const putt120reach=Math.round(G.p1*1.2*(cpuD.x7/100)*wtP); // 120%
-    if(G.y2>putt100reach && G.y2<=putt120reach){
-      G.gMax=120; G.spc=1;
-      seSpecial();
-      T('speBox',CD[cpuCh].s||'特技使用'); S('speBox','flex');
-      updGaugeWaku(); updGauge();
+  // gMax変更後、cpuCalcGauge を1回だけ行うためのラッパー
+  let recalced = false;
+  const safeCpuCalcGauge = () => {
+    if (!recalced) {
+      recalced = true;
       cpuCalcGauge();
     }
+  };
+
+  // =========================================================
+  // ③ 特技AI（グリーン外）
+  // =========================================================
+  if (G.ji !== 5) {
+
+    const cpuCh = VS.cpuCh;
+
+    // ---------------------------------------------------------
+    // 水無 (ch=1)
+    // ---------------------------------------------------------
+    if (cpuCh === 1 && !usedSpecial) {
+
+      const ng100 = G.ng;
+      const ng120 = Math.round(ng100 * CPU_SPECIAL_RATE);
+
+      const wt = ({'-9':56,'-8':63,'-7':69,'-6':74,'-5':78,'-4':84,'-3':89,'-2':93,'-1':96,
+        '0':100,'1':104,'2':107,'3':111,'4':116,'5':122,'6':126,'7':131,'8':137,'9':144})[String(G.wind)] || 100;
+
+      const drv100 = Math.round(ng100 * (wt / 100));
+      const drv120 = Math.round(ng120 * (wt / 100));
+      const zones = cpuWaterZonesInRange(drv120 + 30);
+
+      // 条件1: 120%で水越え
+      const cond1 = zones.length > 0 &&
+                    zones.some(z => z.wz > drv100 && drv120 > z.wz);
+
+      // 条件2: 120%で地形リスク回避
+      let cond2 = false;
+      {
+        const land100 = G.cp + drv100;
+        const land120 = G.cp + drv120;
+
+        const isRisky = (pos) => {
+          for (let i = 0; i < 3; i++) {
+            if (pos >= G.Ra[i] && pos <= G.Rz[i]) return true;
+            if (pos >= G.Wa[i] && pos <= G.Wz[i]) return true;
+            if (pos >= G.Ba[i] && pos <= G.Bz[i]) return true;
+          }
+          return false;
+        };
+        cond2 = isRisky(land100) && !isRisky(land120);
+      }
+
+      // 条件3: 120%でグリーンに届く
+      const greenNear = G.y1 - G.gz;
+      const greenFar  = G.y1 + G.gz;
+
+      const land100g = G.cp + drv100;
+      const land120g = G.cp + drv120;
+
+      const cond3 = !(land100g >= greenNear && land100g <= greenFar) &&
+                     (land120g >= greenNear && land120g <= greenFar);
+
+      if ((cond1 || cond2 || cond3) && G.nwz > 0) {
+
+        usedSpecial = true;
+        G.spc = 1;
+
+        // ★120 を定数で指定
+        G.gMax = CPU_SPECIAL_POWER;
+
+        // ターゲット設定
+        if (cond1) {
+          const overZone = zones.find(z => z.wz > drv100 && drv120 > z.wz);
+          if (overZone) {
+            const afterWater = overZone.wz + 1;
+            G._cpuTargetDist = (drv120 >= (G.y2 - G.gz) ? G.y2 : afterWater);
+          }
+        }
+        else if (cond2) {
+          G._cpuTargetDist = drv120;
+        }
+        else if (cond3) {
+          G._cpuTargetDist = G.y2;
+        }
+
+        // 演出
+        seSpecial();
+        T("speBox", CD[cpuCh].s || "特技使用");
+        S("speBox", "flex");
+
+        safeCpuCalcGauge();
+      }
+    }
+
+    // ---------------------------------------------------------
+    // 走馬 (ch=2)
+    // ---------------------------------------------------------
+    if (cpuCh === 2 && !usedSpecial && (G.ji === 2 || G.ji === 3)) {
+
+      const zones = cpuWaterZonesInRange(G.ng + 30);
+      const needIgnore = zones.length > 0 &&
+                         zones.some(z => z.wa <= G.ng * 1.3 && z.wz > G.ng * 0.7);
+
+      if (needIgnore && G.nwz > 0) {
+
+        usedSpecial = true;
+        G.spc = 2;
+
+        seSpecial();
+        T("speBox", CD[cpuCh].s || "特技使用");
+        S("speBox", "flex");
+
+        safeCpuCalcGauge();
+      }
+    }
+
+    // ---------------------------------------------------------
+    // 響子 (ch=4)
+    // ---------------------------------------------------------
+    if (cpuCh === 4 && !usedSpecial) {
+
+      const isH8 = (G.nH === 8);
+      const negWind = (G.wind < 0);
+      const zones = cpuWaterZonesInRange(G.ng + 30);
+      const waterRisk = zones.length > 0;
+
+      if (negWind && (isH8 || waterRisk) && G.nwz > 0) {
+
+        usedSpecial = true;
+        G.spc = 4;
+        G.wind = 0;
+
+        seSpecial();
+        T("speBox", CD[cpuCh].s || "特技使用");
+        S("speBox", "flex");
+        showWind();
+
+        safeCpuCalcGauge();
+      }
+    }
+
+  } // end グリーン外
+
+  // =========================================================
+  // ④ グリーン上特技AI
+  // =========================================================
+  if (G.ji === 5) {
+
+    const cpuCh = VS.cpuCh;
+
+    // 水無：120%で届く
+    if (cpuCh === 1 && !usedSpecial && G.nwz > 0) {
+
+      const wt_p = {'-5':40,'-4':52,'-3':64,'-2':76,'-1':88,'0':100,'1':112,'2':124,'3':136,'4':148,'5':160};
+      const wtP = (wt_p[String(Math.max(-5, Math.min(5, G.wind)))] || 100) / 100;
+
+      const putt100 = Math.round(G.p1 * (cpuD.x7 / 100) * wtP);
+      const putt120 = Math.round(G.p1 * CPU_SPECIAL_RATE * (cpuD.x7 / 100) * wtP);
+
+      if (G.y2 > putt100 && G.y2 <= putt120) {
+
+        usedSpecial = true;
+        G.spc = 1;
+
+        // ★定数の120を採用
+        G.gMax = CPU_SPECIAL_POWER;
+        G._cpuTargetDist = G.y2;
+
+        seSpecial();
+        T('speBox', CD[cpuCh].s || '特技使用');
+        S('speBox', 'flex');
+
+        safeCpuCalcGauge();
+      }
+    }
+
+    // 響子：風消し
+    if (cpuCh === 4 && !usedSpecial && G.nwz > 0 && G.wind < 0) {
+
+      usedSpecial = true;
+      G.spc = 4;
+      G.wind = 0;
+
+      seSpecial();
+      T('speBox', CD[cpuCh].s || '特技使用');
+      S('speBox', 'flex');
+      showWind();
+
+      safeCpuCalcGauge();
+    }
   }
-  // 響子(ch=4): グリーン上でも向かい風(-値)なら風消し
-  if(G.ji===5 && cpuCh===4 && G.nwz>0 && G.wind<0){
-    G.wind=0; G.spc=4;
-    seSpecial();
-    T('speBox',CD[cpuCh].s||'特技使用'); S('speBox','flex');
-    showWind();
-    cpuCalcGauge();
-  }
+
+  // =========================================================
+  // ⑤ 発射
+  // =========================================================
+  cpuChargeGauge();
 }
 
 // ゲージをアニメーションで充填してから発射
