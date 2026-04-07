@@ -765,9 +765,9 @@ function cpuTakeTurn(){
       const zones=cpuWaterZonesInRange(drv120+30);
       // 条件1: 水ゾーンを100%では越えられないが120%なら越えられる
       const cond1=zones.length>0 && zones.some(z=>z.wz>drv100 && drv120>z.wz);
-      // 条件2: 1打目、100%着地がROUGH/BUNKER/WATERリスク、120%で回避
+      // 条件2: 100%着地がROUGH/BUNKER/WATERリスク、120%で回避（全打目対象）
       let cond2=false;
-      if(G.ns===1){
+      {
         const land100=G.cp+drv100;
         const land120=G.cp+drv120;
         const isRisky=(pos)=>{
@@ -778,7 +778,19 @@ function cpuTakeTurn(){
           }
           return false;
         };
-        cond2=isRisky(land100) && !isRisky(land120);
+        // ROUGH/BUNKER上の場合、現在地のゾーンは除外して判定
+        const isRiskySafe=(pos)=>{
+          for(let i=0;i<3;i++){
+            // 現在地が含まれるゾーンへの着地は「現在と同じ地形」なので回避対象外
+            const inCurRough=G.ji===2&&G.cp>=G.Ra[i]&&G.cp<=G.Rz[i];
+            const inCurBunk=G.ji===3&&G.cp>=G.Ba[i]&&G.cp<=G.Bz[i];
+            if(pos>=G.Ra[i]&&pos<=G.Rz[i]&&!inCurRough) return true;
+            if(pos>=G.Wa[i]&&pos<=G.Wz[i]) return true; // WATERは常にリスク
+            if(pos>=G.Ba[i]&&pos<=G.Bz[i]&&!inCurBunk) return true;
+          }
+          return false;
+        };
+        cond2=isRiskySafe(land100) && !isRiskySafe(land120);
       }
       // 条件3: 100%では届かないがが120%ならグリーンに届く（グリーン圏 y1±gz 内）
       const greenNear=G.y1-G.gz, greenFar=G.y1+G.gz;
@@ -787,11 +799,16 @@ function cpuTakeTurn(){
                   (land120g>=greenNear && land120g<=greenFar);
       if((cond1||cond2||cond3) && G.nwz>0){
         G.gMax=120; G.spc=1;
-        // 条件1: WATERを超えるのでdrv120直後（水ゾーン終端+マージン）をターゲットに
+        // 条件1: WATERを超えるので、水ゾーン直後からグリーンまでの間で最善の着地点を狙う
+        // 水ゾーン終端の直後（相対距離）をターゲットとして設定し、cpuCalcGaugeが調整
         if(cond1){
-          // 超えられる最初の水ゾーンの終端+10ydをtargetに設定（120%で超えた先を狙う）
           const overZone=zones.find(z=>z.wz>drv100 && drv120>z.wz);
-          if(overZone) G._cpuTargetDist=overZone.wz+10;
+          // 水を超えた先でグリーンに最も近い安全地点 = グリーン手前 or グリーン圏を狙う
+          if(overZone){
+            const afterWater=overZone.wz+1; // 水直後（相対）
+            // グリーン圏に届くならG.y2、届かないなら水直後からできるだけグリーン寄り
+            G._cpuTargetDist=(drv120>=(G.y2-G.gz)?G.y2:afterWater);
+          }
         }
         // 条件2: 120%で地形リスク回避 → drv120をそのままターゲットに
         else if(cond2){
@@ -1014,85 +1031,138 @@ function cpuSelectClub(){
   }
 
   // ★STEP2: グリーンに届かない（またはWATER経由不可）
-  // 基本方針: 最大飛距離クラブで飛ばし、できるだけグリーンに近いフェアウェイに着地させる
+  // 方針: できるだけグリーンに近い安全な場所（グリーン > フェアウェイ > ラフ）を狙う
+  // WATERとOBは絶対回避。BANKERは避ける。ROUGHは許容（BANKERよりグリーン側なら可）
   let avoidance=ch===3?0:(isStrong?2:1);
   if(VS._cpuLastWater && avoidance!==0) avoidance=1;
 
-  // ★forceUnder有効判定: 池ポチャ後でも、次のWATERゾーンまでの距離が40yd以下なら
-  // 手前に止まれる余裕がないため通常の水回避(avoidance=1)を使う
+  // ★forceUnder有効判定: 池ポチャ後でも次のWATERまで40yd以下なら余裕がないので通常回避
   let useForceUnder=VS._cpuLastWater;
   if(useForceUnder){
     const nearZones=cpuWaterZonesInRange(200);
     if(nearZones.length>0 && nearZones[0].wa<=40) useForceUnder=false;
   }
 
-  // 最大飛距離クラブ（風込み最大射程が最大のもの）を基準に
-  let best=clubsWithReach.reduce((a,b)=>b.effectiveMax>a.effectiveMax?b:a);
-
-  // ★最大飛距離の着地点がFAIRWAYかチェック。ROUGH/BUNKER/WATERなら安全な手前を探す
-  // 安全な目標距離を求める関数
-  function cpuFindSafeTarget(maxReach){
-    // まず水回避
-    if(avoidance>0){
-      const sDist=cpuSafeDist(G.y2, avoidance, maxReach, useForceUnder);
-      if(sDist!==G.y2) return sDist; // 水に引っかかるので手前
-    }
-    // 着地点(G.cp + maxReach)が地形ゾーンに入るか確認
-    const landPos=G.cp+maxReach;
-    // グリーン内なら問題なし
-    if(landPos>=(G.y1-G.gz) && landPos<=(G.y1+G.gz)) return maxReach;
-    // ROUGH/BUNKER/WATERに入るか確認
+  // 絶対座標posがWATERかOBか判定（avoidance=0の綴はWATERも無視）
+  function isDeadly(pos){
+    if(avoidance===0) return pos>G.y1+G.gz;
+    if(pos>G.y1+G.gz) return true;
     for(let i=0;i<3;i++){
-      // WATER
-      if(G.Wa[i]&&G.Wz[i] && landPos>=G.Wa[i] && landPos<=G.Wz[i]){
-        if(avoidance===0) return maxReach; // 綴は無視
-        return Math.max(1, G.Wa[i]-G.cp-15); // 水手前15yd
-      }
-      // BUNKER
-      if(G.Ba[i]&&G.Bz[i] && landPos>=G.Ba[i] && landPos<=G.Bz[i]){
-        // バンカー手前かバンカー超えどちらが良いか
-        const overDist=G.Bz[i]-G.cp+30; // 超えた先30yd
-        const underDist=Math.max(1, G.Ba[i]-G.cp-20); // 手前20yd
-        if(overDist<=maxReach) return overDist; // 超えられるなら超える
-        return underDist; // 超えられなければ手前
-      }
-      // ROUGH
-      if(G.Ra[i]&&G.Rz[i] && landPos>=G.Ra[i] && landPos<=G.Rz[i]){
-        // ラフ超えが可能かチェック
-        const overDist=G.Rz[i]-G.cp+30;
-        const underDist=Math.max(1, G.Ra[i]-G.cp-5);
-        if(overDist<=maxReach) return overDist;
-        return underDist;
-      }
-      if (maxReach > G.y2) {
-        // グリーンまでの距離
-        return Math.max(1, G.y2);
-      }      
+      if(G.Wa[i]&&G.Wz[i]&&pos>=G.Wa[i]&&pos<=G.Wz[i]) return true;
     }
-    return maxReach; // フェアウェイなら最大距離でOK
+    return false;
   }
 
-  const rawTarget=cpuFindSafeTarget(best.effectiveMax);
-  let targetDist;
-  if(rawTarget>=best.effectiveMax){
-    // 最大飛距離で飛ばす → 風込み最大飛距離をターゲットに設定（cpuCalcGaugeがgMax%を狙う）
-    targetDist=best.effectiveMax;
-  } else {
-    targetDist=rawTarget;
-    // targetDistに合うクラブを再選択（gW範囲50%〜gMax%に収まるもの優先）
+  // 絶対座標posの地形ランク（低いほど優先）
+  // 0=グリーン 1=フェアウェイ 2=ラフ 3=バンカー 4=WATER/OB（致命的）
+  function terrainRank(pos){
+    if(pos>G.y1+G.gz) return 4; // OB
+    if(pos>=(G.y1-G.gz)) return 0; // グリーン
+    for(let i=0;i<3;i++){
+      if(G.Wa[i]&&G.Wz[i]&&pos>=G.Wa[i]&&pos<=G.Wz[i]) return 4; // WATER
+      if(G.Ba[i]&&G.Bz[i]&&pos>=G.Ba[i]&&pos<=G.Bz[i]) return 3; // BUNKER
+      if(G.Ra[i]&&G.Rz[i]&&pos>=G.Ra[i]&&pos<=G.Rz[i]) return 2; // ROUGH
+    }
+    return 1; // フェアウェイ
+  }
+
+  // 現在地からの相対距離distが「打てるか」判定（gW 50%〜gMax% の範囲内）
+  function canTarget(club, dist){
+    if(club.ng<=0) return false;
+    const gw=dist*100/(club.ng*windFactor);
+    return gw>=50 && gw<=gMax;
+  }
+
+  // 最大飛距離クラブ
+  let best=clubsWithReach.reduce((a,b)=>b.effectiveMax>a.effectiveMax?b:a);
+  const maxReach=best.effectiveMax;
+
+  // 池ポチャ後(forceUnder)は cpuSafeDist に委ねる
+  if(useForceUnder){
+    const safeDist=cpuSafeDist(G.y2, avoidance, maxReach, true);
+    let targetDist=safeDist;
     let safeClub=null;
     for(const c of clubsWithReach){
-      const neededGW=c.ng>0?targetDist*100/(c.ng*windFactor):999;
-      if(neededGW>=50 && neededGW<=gMax){
-        if(!safeClub||c.ng>safeClub.ng) safeClub=c;
-      }
+      if(canTarget(c, targetDist) && (!safeClub||c.ng>safeClub.ng)) safeClub=c;
     }
     if(safeClub) best=safeClub;
     else best=clubsWithReach.reduce((a,b)=>Math.abs(b.ng-targetDist)<Math.abs(a.ng-targetDist)?b:a);
+    G.ng=best.ng; G.mpt=best.mpt; G.cmd=best.cmd; G.sel=best.sel;
+    G._cpuTargetDist=targetDist;
+    return;
   }
 
+  // ★候補距離リストを生成し「最もグリーンに近い安全な着地点」を選ぶ
+  // 候補: 最大飛距離、各ゾーン境界の手前・直後、グリーン手前
+  const candidates=[];
+
+  // 最大飛距離をまず追加
+  candidates.push(maxReach);
+
+  // 各WATERゾーンの手前とその後ろ（後ろがデッドリーでなければ）
+  for(let i=0;i<3;i++){
+    if(!G.Wa[i]&&!G.Wz[i]) continue;
+    const waRel=G.Wa[i]-G.cp, wzRel=G.Wz[i]-G.cp;
+    if(wzRel<=0) continue; // 既に通過済み
+    if(waRel>maxReach) continue; // 射程外
+    if(waRel>5) candidates.push(waRel-5);    // 水の5yd手前
+    if(wzRel+1<=maxReach) candidates.push(wzRel+1); // 水ゾーン直後
+  }
+
+  // 各BANKERゾーンの手前とその後ろ
+  for(let i=0;i<3;i++){
+    if(!G.Ba[i]&&!G.Bz[i]) continue;
+    const baRel=G.Ba[i]-G.cp, bzRel=G.Bz[i]-G.cp;
+    if(bzRel<=0) continue;
+    if(baRel>maxReach) continue;
+    if(baRel>5) candidates.push(baRel-5);    // バンカー5yd手前
+    if(bzRel+1<=maxReach) candidates.push(bzRel+1); // バンカー直後
+  }
+
+  // 各ROUGHゾーンの手前とその後ろ
+  for(let i=0;i<3;i++){
+    if(!G.Ra[i]&&!G.Rz[i]) continue;
+    const raRel=G.Ra[i]-G.cp, rzRel=G.Rz[i]-G.cp;
+    if(rzRel<=0) continue;
+    if(raRel>maxReach) continue;
+    if(raRel>5) candidates.push(raRel-5);
+    if(rzRel+1<=maxReach) candidates.push(rzRel+1);
+  }
+
+  // グリーン手前
+  const greenEdgeRel=(G.y1-G.gz)-G.cp;
+  if(greenEdgeRel>5 && greenEdgeRel<=maxReach) candidates.push(greenEdgeRel-5);
+
+  // 各候補をフィルタ・評価して最善を選ぶ
+  // 評価基準: 1) 致命的(WATER/OB)を除外 2) 地形ランク小 3) グリーンに近い（絶対座標大）
+  let bestTarget=null;
+  let bestRank=99, bestPos=-1;
+
+  for(const dist of candidates){
+    if(dist<=0) continue;
+    if(dist>maxReach) continue;
+    const absPos=G.cp+dist;
+    const rank=terrainRank(absPos);
+    if(rank===4) continue; // WATER/OBは除外
+    // ランクが小さい（優先度高）ほど良い、同ランクならグリーンに近い（absPos大）方
+    if(rank<bestRank || (rank===bestRank && absPos>bestPos)){
+      bestRank=rank; bestPos=absPos; bestTarget=dist;
+    }
+  }
+
+  // 有効な候補がない場合はy2（グリーン距離）をフォールバック
+  if(bestTarget===null) bestTarget=Math.min(maxReach, G.y2);
+
+  // bestTargetに合うクラブを選択
+  let safeClub=null;
+  for(const c of clubsWithReach){
+    if(canTarget(c, bestTarget) && (!safeClub||c.ng>safeClub.ng)) safeClub=c;
+  }
+  if(safeClub) best=safeClub;
+  else best=clubsWithReach.reduce((a,b)=>Math.abs(b.ng-bestTarget)<Math.abs(a.ng-bestTarget)?b:a);
+
   G.ng=best.ng; G.mpt=best.mpt; G.cmd=best.cmd; G.sel=best.sel;
-  G._cpuTargetDist=targetDist;
+  G._cpuTargetDist=bestTarget;
 }
 
 function cpuCalcGauge(){
