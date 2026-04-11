@@ -207,7 +207,7 @@ function wCk(){
 function driveK(){
   let drv=Math.round(G.ng*(G.gW/100)); // Pascal: gauge.width/100
   if(G.spc!==2){
-    if(G.ji===2)drv=Math.round(drv*(G.mpt===G.d1||G.mpt===G.d2?.65:.58));
+    if(G.ji===2)drv=Math.round(drv*((G.mpt===G.d1||G.mpt===G.d2)?.65:.58));
     else if(G.ji===3)drv=Math.round(drv*.28);
   }
   const wt={'-9':56,'-8':63,'-7':69,'-6':74,'-5':78,'-4':84,'-3':89,'-2':93,'-1':96,
@@ -934,6 +934,17 @@ function cpuSelectClub(){
     '0':100,'1':104,'2':107,'3':111,'4':116,'5':122,'6':126,'7':131,'8':137,'9':144};
   const windFactor=(wt_d[String(G.wind)]||100)/100;
 
+  // ★地形補正係数（driveKと同じロジック）
+  // ラフ(ji=2): ウッドは58%, アイアンは65%。バンカー(ji=3): 28%（走馬spc=2は除く）
+  // ここではspc=0前提（特技AI発動前）で計算
+  function terrainFactor(club){
+    if(G.ji===2){
+      return (club.mpt===G.d1||club.mpt===G.d2)?0.65:0.58;
+    }
+    if(G.ji===3) return 0.28;
+    return 1.0;
+  }
+
   const clubs=[
     {ng:G.w1,mpt:G.c1,cmd:5,sel:1},
     {ng:G.w2,mpt:G.c2,cmd:5,sel:2},
@@ -942,12 +953,12 @@ function cpuSelectClub(){
   ];
   const valid=G.ji===3?clubs.slice(2):clubs;
 
-  // 各クラブの風込み最大飛距離を計算
-  // effectiveMax = ng * windFactor * (gMax/100)
+  // 各クラブの風込み・地形込み最大飛距離を計算
+  // effectiveMax = ng * windFactor * terrainFactor * (gMax/100)
   const gMax=cpuD2?cpuD2.mx:100;
   const clubsWithReach=valid.map(c=>({
     ...c,
-    effectiveMax:Math.round(c.ng*windFactor*gMax/100)
+    effectiveMax:Math.round(c.ng*windFactor*terrainFactor(c)*gMax/100)
   }));
 
   // ★STEP1: グリーンに1打で届くか判定（池ポチャ後は除外）
@@ -956,8 +967,9 @@ function cpuSelectClub(){
   if(!VS._cpuLastWater){
     for(const c of clubsWithReach){
       if(c.effectiveMax>=G.y2){
-        // このクラブでy2を狙うのに必要なゲージ率（風込み）
-        const neededGW=c.ng>0?G.y2*100/(c.ng*windFactor):G.y2;
+        // このクラブでy2を狙うのに必要なゲージ率（風込み・地形込み）
+        const tf=terrainFactor(c);
+        const neededGW=c.ng>0?G.y2*100/(c.ng*windFactor*tf):G.y2;
         if(neededGW>=50 && neededGW<=gMax){
           if(!greenClub||Math.abs(neededGW-100)<Math.abs(greenClub.neededGW-100)){
             greenClub={...c,neededGW};
@@ -1020,9 +1032,11 @@ function cpuSelectClub(){
   }
 
   // 現在地からの相対距離distが「打てるか」判定（gW 50%〜gMax% の範囲内）
+  // ラフ・バンカー補正済みの実飛距離でdistに届くかを確認
   function canTarget(club, dist){
     if(club.ng<=0) return false;
-    const gw=dist*100/(club.ng*windFactor);
+    const tf=terrainFactor(club);
+    const gw=dist*100/(club.ng*windFactor*tf);
     return gw>=50 && gw<=gMax;
   }
 
@@ -1136,7 +1150,14 @@ function cpuCalcGauge(){
   // ★★★ パット時は絶対に残り距離だけをターゲットにする ★★★
   let target = isPutt ? G.y2 : (G._cpuTargetDist || G.y2);
 
-  let targetGW = G.ng>0 ? target*100/(G.ng*(wt/100)) : 50;
+  // ★地形補正: ラフ・バンカー上では実飛距離が減るので逆算してゲージを大きくする
+  let terrainCorr=1.0;
+  if(!isPutt && G.spc!==2){
+    if(G.ji===2) terrainCorr=(G.mpt===G.d1||G.mpt===G.d2)?0.65:0.58;
+    else if(G.ji===3) terrainCorr=0.28;
+  }
+
+  let targetGW = G.ng>0 ? target*100/(G.ng*(wt/100)*terrainCorr) : 50;
 
   const tLv = CD[VS.cpuCh].t.split('★').length-1;
   const ch  = VS.cpuCh;
@@ -1489,10 +1510,9 @@ function cpuAutoFinish(){
       break;
     }
     G.ns++;
-    // クラブ選択・gMax設定
+    // クラブ選択・ゲージ計算
     cpuSelectClub();
     const cpuD=CD[VS.cpuCh];
-    const cpuCh=VS.cpuCh;
     if(G.ji===5){ G.gMax=cpuD.x7; } else { G.gMax=cpuD.mx; }
 
     // ===== 特技AI（cpuTakeTurnと同等）=====
@@ -1550,6 +1570,7 @@ function cpuAutoFinish(){
       }
       if(cpuCh===4&&G.nwz>0&&G.wind<0){G.wind=0;G.spc=4;G.nwz=Math.max(0,G.nwz-1);}
     }
+
     cpuCalcGauge();
     // ショット計算（アニメなし）
     if(G.ji===5){ puttK(); } else { driveK(); }
