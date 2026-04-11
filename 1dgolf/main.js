@@ -1026,7 +1026,7 @@ function cpuSelectClub(){
     for(let i=0;i<3;i++){
       if(G.Wa[i]&&G.Wz[i]&&pos>=G.Wa[i]&&pos<=G.Wz[i]) return 4; // WATER
       if(G.Ba[i]&&G.Bz[i]&&pos>=G.Ba[i]&&pos<=G.Bz[i]) return 3; // BUNKER
-      if(G.Ra[i]&&G.Rz[i]&&pos>=G.Ra[i]&&pos<=G.Rz[i]) return 2; // ROUGH
+      if(G.Ra[i]&&G.Rz[i]&&pos>=G.Ra[i]&&pos<=G.Rz[i]) return 1; // ROUGH
     }
     return 1; // フェアウェイ
   }
