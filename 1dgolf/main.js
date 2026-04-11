@@ -1540,23 +1540,21 @@ function cpuAutoFinish(){
           G.gMax=120; G.spc=1;
           if(cond1){const oz=zones.find(z=>z.wz>drv100&&drv120>z.wz);if(oz)G._cpuTargetDist=(drv120>=(G.y2-G.gz)?G.y2:oz.wz+1);}
           else if(cond2){G._cpuTargetDist=drv120;}
-          else if(cond3){G._cpuTargetDist=G.y2;}
-          G.nwz=Math.max(0,G.nwz-1);
+          else if(cond3){G._cpuTargetDist=G.y2;}          
         }
       }
       // 走馬(ch=2)
       else if(cpuCh===2&&(G.ji===2||G.ji===3)){
         const zones=cpuWaterZonesInRange(G.ng+30);
         if(zones.length>0&&zones.some(z=>z.wa<=G.ng*1.3&&z.wz>G.ng*0.7)&&G.nwz>0){
-          G.spc=2; G.nwz=Math.max(0,G.nwz-1);
-        }
+          G.spc=2;         }
       }
       // 響子(ch=4)
       else if(cpuCh===4){
         const negWind=(G.wind<0);
         const zones=cpuWaterZonesInRange(G.ng+30);
         if(negWind&&(G.nH===8||zones.length>0)&&G.nwz>0){
-          G.wind=0; G.spc=4; G.nwz=Math.max(0,G.nwz-1);
+          G.wind=0; G.spc=4; 
         }
       }
     } else {
@@ -1566,9 +1564,9 @@ function cpuAutoFinish(){
         const wtP=(wt_p[String(Math.max(-5,Math.min(5,G.wind)))]||100)/100;
         const putt100reach=Math.round(G.p1*(cpuD.x7/100)*wtP);
         const putt120reach=Math.round(G.p1*1.2*(cpuD.x7/100)*wtP);
-        if(G.y2>putt100reach&&G.y2<=putt120reach){G.gMax=120;G.spc=1;G.nwz=Math.max(0,G.nwz-1);}
+        if(G.y2>putt100reach&&G.y2<=putt120reach){G.gMax=120;G.spc=1;}
       }
-      if(cpuCh===4&&G.nwz>0&&G.wind<0){G.wind=0;G.spc=4;G.nwz=Math.max(0,G.nwz-1);}
+      if(cpuCh===4&&G.nwz>0&&G.wind<0){G.wind=0;G.spc=4;}
     }
 
     cpuCalcGauge();
