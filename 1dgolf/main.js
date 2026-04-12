@@ -1166,18 +1166,18 @@ function cpuSelectClub(){
     let rank=terrainRank(absPos);
     if(rank===4) continue; // WATER/OBは除外
     // safeMargin内にWATER/BANKERが隣接している場合はランクを引き上げ（危険）
-    if(rank<3){
-      for(let i=0;i<3;i++){
-        if(G.Wa[i]&&G.Wz[i]){
-          if(absPos>=G.Wa[i]-safeMargin && absPos<G.Wa[i]) rank=Math.max(rank,3);
-          if(absPos>G.Wz[i] && absPos<=G.Wz[i]+safeMargin) rank=Math.max(rank,3);
-        }
-        if(G.Ba[i]&&G.Bz[i]){
-          if(absPos>=G.Ba[i]-safeMargin && absPos<G.Ba[i]) rank=Math.max(rank,2);
-          if(absPos>G.Bz[i] && absPos<=G.Bz[i]+safeMargin) rank=Math.max(rank,2);
-        }
-      }
-    }
+    // if(rank<3){
+    //   for(let i=0;i<3;i++){
+    //     if(G.Wa[i]&&G.Wz[i]){
+    //       if(absPos>=G.Wa[i]-safeMargin && absPos<G.Wa[i]) rank=Math.max(rank,3);
+    //       if(absPos>G.Wz[i] && absPos<=G.Wz[i]+safeMargin) rank=Math.max(rank,3);
+    //     }
+    //     if(G.Ba[i]&&G.Bz[i]){
+    //       if(absPos>=G.Ba[i]-safeMargin && absPos<G.Ba[i]) rank=Math.max(rank,2);
+    //       if(absPos>G.Bz[i] && absPos<=G.Bz[i]+safeMargin) rank=Math.max(rank,2);
+    //     }
+    //   }
+    // }
     if(rank===4) continue;
     if(rank<bestRank || (rank===bestRank && absPos>bestPos)){
       bestRank=rank; bestPos=absPos; bestTarget=dist;
