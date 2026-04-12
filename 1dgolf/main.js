@@ -782,19 +782,40 @@ function cpuTakeTurn(){
     }
 
     // 響子(ch=4): 風消し
-    // H8は風<0なら常に発動（負の風が不利）、他は風<0かつ水ゾーンリスク
-    else if(cpuCh===4){
-      const isH8=(G.nH===8);
-      const negWind=(G.wind<0);
-      const zones=cpuWaterZonesInRange(G.ng+30);
-      const waterRisk=zones.length>0;
-      if(negWind && (isH8 || waterRisk) && G.nwz>0){
-        G.wind=0; G.spc=4;
+    // 向かい風(wind<0)のみ発動。追い風時はグリーン外では使用しない
+    else if(cpuCh===4 && G.wind<0 && G.nwz>0){
+      G.wind=0; G.spc=4;
+      seSpecial();
+      T('speBox',CD[cpuCh].s||'特技使用'); S('speBox','flex');
+      showWind();
+      cpuCalcGauge();
+    }
+  } // end if(G.ji!==5) グリーン外特技AI
+
+  // ===== グリーン上特技AI（パット時）=====
+  if(G.ji===5){
+    // 水無(ch=1): 100%では届かないが120%なら届く場合にパワーショット
+    if(cpuCh===1 && G.nwz>0){
+      const wt_p={'-5':40,'-4':52,'-3':64,'-2':76,'-1':88,'0':100,'1':112,'2':124,'3':136,'4':148,'5':160};
+      const wtP=(wt_p[String(Math.max(-5,Math.min(5,G.wind)))]||100)/100;
+      const putt100reach=Math.round(G.p1*(cpuD.x7/100)*wtP);
+      const putt120reach=Math.round(G.p1*1.2*(cpuD.x7/100)*wtP);
+      if(G.y2>putt100reach && G.y2<=putt120reach){
+        G.gMax=120; G.spc=1;
         seSpecial();
         T('speBox',CD[cpuCh].s||'特技使用'); S('speBox','flex');
-        showWind(); // 風表示を±0に更新
-        cpuCalcGauge(); // 風0で再計算
+        updGaugeWaku(); updGauge();
+        cpuCalcGauge();
       }
+    }
+    // 響子(ch=4)
+    // 向かい風(wind<0)のみ発動。追い風時はグリーン外では使用しない
+    if(cpuCh===4 && G.wind<0 && G.nwz>0){
+      G.wind=0; G.spc=4;
+      seSpecial();
+      T('speBox',CD[cpuCh].s||'特技使用'); S('speBox','flex');
+      showWind();
+      cpuCalcGauge();
     }
   }
 
@@ -979,20 +1000,44 @@ function cpuSelectClub(){
     }
   }
 
+  // if(greenClub){
+  //   // グリーンに届く → グリーンへの経路にWATERがないか確認
+  //   // グリーンへ届くクラブの実効最大射程で水チェック
+  //   const greenMaxReach=greenClub.effectiveMax;
+  //   // avoidance=2（強キャラ）は水を超えようとする、それ以外は手前停止
+  //   const greenAvoidance=isStrong?2:1;
+  //   const safeDist=cpuSafeDist(G.y2, greenAvoidance, greenMaxReach, false);
+  //   if(safeDist===G.y2){
+  //     // 経路に問題なし → グリーン狙い確定
+  //     G.ng=greenClub.ng; G.mpt=greenClub.mpt; G.cmd=greenClub.cmd; G.sel=greenClub.sel;
+  //     G._cpuTargetDist=G.y2;
+  //     return;
+  //   }
+  //   // WATERが邪魔で直接グリーンに届かない → 後続の通常処理へ（水回避）
+  // }
+
   if(greenClub){
-    // グリーンに届く → グリーンへの経路にWATERがないか確認
-    // グリーンへ届くクラブの実効最大射程で水チェック
+    // グリーンに届く → 経路にWATER/BANKERがないか確認
     const greenMaxReach=greenClub.effectiveMax;
-    // avoidance=2（強キャラ）は水を超えようとする、それ以外は手前停止
     const greenAvoidance=isStrong?2:1;
     const safeDist=cpuSafeDist(G.y2, greenAvoidance, greenMaxReach, false);
-    if(safeDist===G.y2){
+    // WATERチェック通過後、BUNKER経路チェック（グリーン着地点がBANKER内でないか）
+    const greenAbsPos=G.cp+G.y2;
+    let greenPathClear=(safeDist===G.y2);
+    if(greenPathClear){
+      for(let i=0;i<3;i++){
+        if(G.Ba[i]&&G.Bz[i]&&greenAbsPos>=G.Ba[i]&&greenAbsPos<=G.Bz[i]){
+          greenPathClear=false; break;
+        }
+      }
+    }
+    if(greenPathClear){
       // 経路に問題なし → グリーン狙い確定
       G.ng=greenClub.ng; G.mpt=greenClub.mpt; G.cmd=greenClub.cmd; G.sel=greenClub.sel;
       G._cpuTargetDist=G.y2;
       return;
     }
-    // WATERが邪魔で直接グリーンに届かない → 後続の通常処理へ（水回避）
+    // WATER/BANKERが邪魔 → 後続の通常処理へ
   }
 
   // ★STEP2: グリーンに届かない（またはWATER経由不可）
@@ -1061,49 +1106,53 @@ function cpuSelectClub(){
 
   // ★候補距離リストを生成し「最もグリーンに近い安全な着地点」を選ぶ
   // 候補: グリーン圏、最大飛距離、各ゾーン境界の手前・直後、グリーン手前
+  // ゲージブレを考慮した安全マージン（強キャラは精度高いが念のため設ける）
+  const safeMargin=13; // ゾーン境界からの安全距離(yd)
   const candidates=[];
 
   // グリーン圏（y1±gz）を最優先候補として追加
-  const greenCenterRel=G.y2; // グリーン中心（カップ）への相対距離
-  const greenNearEdgeRel=(G.y1-G.gz)-G.cp; // グリーン手前端への相対距離
+  const greenCenterRel=G.y2;
+  const greenNearEdgeRel=(G.y1-G.gz)-G.cp;
   if(greenCenterRel>0 && greenCenterRel<=maxReach) candidates.push(greenCenterRel);
   if(greenNearEdgeRel>0 && greenNearEdgeRel<=maxReach) candidates.push(greenNearEdgeRel);
 
   // 最大飛距離
   candidates.push(maxReach);
 
-  // 各WATERゾーンの手前(5yd)とその後ろ(10yd)
+  // 各WATERゾーンの手前(safeMargin)と後ろ(safeMargin)
   for(let i=0;i<3;i++){
     if(!G.Wa[i]&&!G.Wz[i]) continue;
     const waRel=G.Wa[i]-G.cp, wzRel=G.Wz[i]-G.cp;
     if(wzRel<=0) continue;
     if(waRel>maxReach) continue;
-    if(waRel>5) candidates.push(waRel-5);
-    if(wzRel+10<=maxReach) candidates.push(wzRel+10);
+    if(waRel>safeMargin) candidates.push(waRel-safeMargin);
+    if(wzRel+safeMargin<=maxReach) candidates.push(wzRel+safeMargin);
   }
 
-  // 各BANKERゾーンの手前(5yd)とその後ろ(10yd)
+  // 各BANKERゾーンの手前(safeMargin)と後ろ(safeMargin)
   for(let i=0;i<3;i++){
     if(!G.Ba[i]&&!G.Bz[i]) continue;
     const baRel=G.Ba[i]-G.cp, bzRel=G.Bz[i]-G.cp;
     if(bzRel<=0) continue;
     if(baRel>maxReach) continue;
-    if(baRel>5) candidates.push(baRel-5);
-    if(bzRel+10<=maxReach) candidates.push(bzRel+10);
+    if(baRel>safeMargin) candidates.push(baRel-safeMargin);
+    if(bzRel+safeMargin<=maxReach) candidates.push(bzRel+safeMargin);
   }
 
-  // 各ROUGHゾーンの手前(5yd)とその後ろ(10yd)
+  // 各ROUGHゾーンの手前(safeMargin/2)と後ろ(safeMargin)
+  // ROUGHは許容できるが、できれば避ける
   for(let i=0;i<3;i++){
     if(!G.Ra[i]&&!G.Rz[i]) continue;
     const raRel=G.Ra[i]-G.cp, rzRel=G.Rz[i]-G.cp;
     if(rzRel<=0) continue;
     if(raRel>maxReach) continue;
-    if(raRel>5) candidates.push(raRel-5);
-    if(rzRel+10<=maxReach) candidates.push(rzRel+10);
+    const roughMargin=Math.ceil(safeMargin/2);
+    if(raRel>roughMargin) candidates.push(raRel-roughMargin);
+    if(rzRel+safeMargin<=maxReach) candidates.push(rzRel+safeMargin);
   }
 
-  // グリーン手前フェアウェイ（グリーン前縁の5yd手前）
-  if(greenNearEdgeRel>10 && greenNearEdgeRel<=maxReach) candidates.push(greenNearEdgeRel-5);
+  // グリーン手前フェアウェイ（グリーン前縁のsafeMargin手前）
+  if(greenNearEdgeRel>safeMargin && greenNearEdgeRel<=maxReach) candidates.push(greenNearEdgeRel-safeMargin);
 
   // 各候補をフィルタ・評価して最善を選ぶ
   // 評価基準: 1) 致命的(WATER/OB)を除外 2) 地形ランク小 3) グリーンに近い（絶対座標大）
@@ -1114,9 +1163,22 @@ function cpuSelectClub(){
     if(dist<=0) continue;
     if(dist>maxReach) continue;
     const absPos=G.cp+dist;
-    const rank=terrainRank(absPos);
+    let rank=terrainRank(absPos);
     if(rank===4) continue; // WATER/OBは除外
-    // ランクが小さい（優先度高）ほど良い、同ランクならグリーンに近い（absPos大）方
+    // safeMargin内にWATER/BANKERが隣接している場合はランクを引き上げ（危険）
+    if(rank<3){
+      for(let i=0;i<3;i++){
+        if(G.Wa[i]&&G.Wz[i]){
+          if(absPos>=G.Wa[i]-safeMargin && absPos<G.Wa[i]) rank=Math.max(rank,3);
+          if(absPos>G.Wz[i] && absPos<=G.Wz[i]+safeMargin) rank=Math.max(rank,3);
+        }
+        if(G.Ba[i]&&G.Bz[i]){
+          if(absPos>=G.Ba[i]-safeMargin && absPos<G.Ba[i]) rank=Math.max(rank,2);
+          if(absPos>G.Bz[i] && absPos<=G.Bz[i]+safeMargin) rank=Math.max(rank,2);
+        }
+      }
+    }
+    if(rank===4) continue;
     if(rank<bestRank || (rank===bestRank && absPos>bestPos)){
       bestRank=rank; bestPos=absPos; bestTarget=dist;
     }
@@ -1549,12 +1611,14 @@ function cpuAutoFinish(){
         if(zones.length>0&&zones.some(z=>z.wa<=G.ng*1.3&&z.wz>G.ng*0.7)&&G.nwz>0){
           G.spc=2;         }
       }
-      // 響子(ch=4)
-      else if(cpuCh===4){
+      // 響子(ch=4): 向かい風は常に発動、追い風はグリーン付近または水ゾーンあり
+      else if(cpuCh===4 && G.nwz>0){
         const negWind=(G.wind<0);
-        const zones=cpuWaterZonesInRange(G.ng+30);
-        if(negWind&&(G.nH===8||zones.length>0)&&G.nwz>0){
-          G.wind=0; G.spc=4; 
+        const zones=cpuWaterZonesInRange(G.ng*2);
+        const waterRisk=zones.length>0;
+        const nearGreen=G.y2<=G.ng*1.5;
+        if(negWind || waterRisk || nearGreen){
+          G.wind=0; G.spc=4;
         }
       }
     } else {
@@ -1566,7 +1630,8 @@ function cpuAutoFinish(){
         const putt120reach=Math.round(G.p1*1.2*(cpuD.x7/100)*wtP);
         if(G.y2>putt100reach&&G.y2<=putt120reach){G.gMax=120;G.spc=1;}
       }
-      if(cpuCh===4&&G.nwz>0&&G.wind<0){G.wind=0;G.spc=4;}
+      // 響子(ch=4): 風が0でなければ風消し
+      if(cpuCh===4&&G.wind!==0&&G.nwz>0){G.wind=0;G.spc=4;}
     }
 
     cpuCalcGauge();
@@ -2126,7 +2191,7 @@ function holeStart(){
   T('bSpeN',G.nwz);
 
   // フィリップ: ホール開始(1打目)はdisable、着地後にenable
-  E('bSpe', G.nwz>0&&G.ch!==5); // 綴(ch3)/響子(ch4)は1打目から使用可能
+  E('bSpe', G.nwz>0&&G.ch!==2&&G.ch!==3&&G.ch!==5); // 1打目から使用可能
   E('bShot',false); T('bShot','打つ');
   S('lWind','block');S('vPlmi','block');S('vWind','block');
   S('lPar','block');S('vPar','block');S('lShot','block');S('vShot','block');
@@ -2446,6 +2511,8 @@ function updPos(){
   const el=$('mPos');
   if(!el) return;
   if(G.ji===6){ el.style.display='none'; return; } // OBは非表示
+  if(G.ji===5){ el.style.display='none'; return; } // グリーン上は非表示
+  if(G.y2===0){ el.style.display='none'; return; }  // カップインは非表示
   const px=Math.min(96,Math.round(G.cp*100/G.y1));
   el.style.left=px+'%'; el.style.display='';
 }
