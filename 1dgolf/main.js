@@ -1178,7 +1178,6 @@ function cpuSelectClub(){
     //     }
     //   }
     // }
-    if(rank===4) continue;
     if(rank<bestRank || (rank===bestRank && absPos>bestPos)){
       bestRank=rank; bestPos=absPos; bestTarget=dist;
     }
