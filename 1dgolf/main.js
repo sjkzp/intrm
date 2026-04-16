@@ -1478,7 +1478,7 @@ function cpuDropChk(){
     seChime(); // オングリーン（CPUも同じ効果音）
     G.y2=Math.abs(G.y1-G.cp);
     // ちょうどカップ位置に着地した場合は即カップイン
-    if(G.y2===0){G.bon=0;updHUD();updPos();cpuJudgeShot();return;}
+    if(G.y2===0){G.bon=0;updHUD();updPos();seHoleIn();setTimeout(()=>cpuJudgeShot(),800);return;}
     if(G.ns>=(G.par+4)){cpuFinishHole();return;}
     // グリーン傾斜設定
     G.wa=G.gwa;G.wz=G.gwz;G.kz=G.gkz;windK();
