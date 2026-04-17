@@ -16,7 +16,9 @@ html, body {
   overflow: hidden;
 }
 
-/* ★外枠（絶対中央固定） */
+/* ----------------------------------------------------
+   PC：中央に 420×812 の縦長ウィンドウを固定
+---------------------------------------------------- */
 #screenFix {
   position: fixed;
   top: 50%;
@@ -30,27 +32,35 @@ html, body {
   overflow: hidden;
 }
 
-/* ★ゲーム本体（中身は自由にレイアウト） */
+/* ----------------------------------------------------
+   スマホ：画面いっぱいに合わせる（上下は必ず収まる）
+---------------------------------------------------- */
+@media (max-width: 600px) {
+
+  #screenFix {
+    /* スマホでは縦を必ず画面100%にフィット */
+    height: 100vh;
+
+    /* アスペクト比 420 : 812 を維持して横幅を計算 */
+    width: calc(100vh * (420 / 812));
+
+    /* 横はみ出し防止（左右が少し余る場合は中央寄せ） */
+    max-width: 100vw;
+    max-height: 100vh;
+
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* APP の中身 */
 #app {
   width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
-}
-
-/* ===== 小さい画面用（スマホなど） ===== */
-@media (max-width: 420px) {
-  #screenFix {
-    width: 100vw;
-    height: calc(100vw * 812 / 420);
-  }
-}
-
-@media (max-height: 812px) {
-  #screenFix {
-    height: 100vh;
-    width: calc(100vh * 420 / 812);
-  }
 }
 
 /* 各画面 */
