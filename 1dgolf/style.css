@@ -2,12 +2,56 @@
 /* ── リセット & ベース ── */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none}
 html,body{width:100%;height:100%;overflow:hidden;background:#111;font-family:"Hiragino Kaku Gothic ProN","ヒラギノ角ゴ ProN","MS Gothic","ＭＳ ゴシック",monospace}
-body{display:flex;justify-content:center;align-items:flex-start;}
+body{display:flex;justify-content:center;align-items:center;}
 button{font-family:inherit;cursor:pointer;border:none;outline:none}
 button:active{opacity:.75}
 
-/* ── ゲーム本体：縦持ち全画面 ── */
-#app{position:fixed;top:0;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;display:flex;flex-direction:column;background:#0a0a0a;overflow:hidden}
+/* ===== 画面全体 ===== */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: #111;
+  overflow: hidden;
+}
+
+/* ★外枠（絶対中央固定） */
+#screenFix {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  width: 420px;
+  height: 812px;
+
+  background: #000;
+  overflow: hidden;
+}
+
+/* ★ゲーム本体（中身は自由にレイアウト） */
+#app {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== 小さい画面用（スマホなど） ===== */
+@media (max-width: 420px) {
+  #screenFix {
+    width: 100vw;
+    height: calc(100vw * 812 / 420);
+  }
+}
+
+@media (max-height: 812px) {
+  #screenFix {
+    height: 100vh;
+    width: calc(100vh * 420 / 812);
+  }
+}
 
 /* 各画面 */
 .sc{position:absolute;inset:0;display:none;flex-direction:column}
