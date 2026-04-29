@@ -34,32 +34,36 @@ function getBestScores() {
 // =============================================
 function showRec() {
   const body = document.getElementById('recBody');
-  
-  // sc関数が存在するか確認してから呼び出す
-  if (typeof sc === 'function') {
-    sc('scRec');
-  }
+  // sc関数を呼び出して画面を切り替え
+  if (typeof sc === 'function') sc('scRec');
 
   if (!body) return;
   body.innerHTML = '<div class="recEmpty">読み込み中・・・</div>';
 
-  getBestScores().then(bs => {
+  // getBestScores が未定義でも止まらないようにする
+  const getScores = (typeof getBestScores === 'function') 
+    ? getBestScores() 
+    : Promise.resolve({});
+
+  getScores.then(bs => {
     let html = '';
-    const courseNames = ["選手権コース", "ショートコース"];
+    const courseNames = ["選手権コース", "ショートコース"]; 
     
     courseNames.forEach((name, idx) => {
       const cr = idx + 1;
-      // ユーザー指定色 #F7DB67 を適用
+      // ユーザー指定色 #F7DB67 を使用
       html += `
         <div class="recSection">
           <h3 style="border-bottom:1px solid #F7DB67; color:#F7DB67; padding-bottom:4px; margin-bottom:8px;">${name}</h3>
           <div class="card" style="border:1px solid #F7DB67; background:#0d1a0d; margin-bottom:15px; color:#fff;">
-            <table class="recTable" style="width:100%; font-size:12px; text-align:center;">
+            <table class="recTable" style="width:100%; text-align:center; font-size:12px;">
               <thead>
-                <tr style="color:#F7DB67;"><th>H</th><th>Par</th><th>Best</th></tr>
+                <tr style="color:#F7DB67"><th>H</th><th>Par</th><th>Best</th></tr>
               </thead>
-              <tbody>`;
+              <tbody>
+      `;
       
+      // 簡易的な9ホール分の表示
       for(let h=1; h<=9; h++) {
         html += `<tr><td>${h}</td><td>-</td><td>-</td></tr>`;
       }
@@ -67,23 +71,20 @@ function showRec() {
       html += `</tbody></table></div></div>`;
     });
 
-    body.innerHTML = html;
+    body.innerHTML = html || '<div class="recEmpty">まだ記録がありません</div>';
   }).catch(err => {
     console.error(err);
-    body.innerHTML = '<div class="recEmpty" style="color:#f44">データの読み取りに失敗しました</div>';
+    body.innerHTML = '<div class="recEmpty" style="color:#f44">読み込みエラーが発生しました</div>';
   });
 }
 
-// 画面切り替え関数 (不足していたもの)
+// 画面切り替え関数（不足していたため追記）
 function sc(id) {
   const target = document.getElementById(id);
-  if (!target) {
-    console.error(`Element ID "${id}" が見つかりません。`);
-    return;
-  }
-  // 全ての画面(.sc)を非表示にする
+  if (!target) return;
+  // すべての画面(.sc)から 'on' クラスを外す
   document.querySelectorAll('.sc').forEach(el => el.classList.remove('on'));
-  // 対象の画面を表示する
+  // 指定したIDの画面に 'on' クラスを付けて表示する
   target.classList.add('on');
 }
 
