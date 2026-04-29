@@ -18,6 +18,67 @@ window.addEventListener('unhandledrejection', function(e) {
 // ============ ゲームロジック ============
 'use strict';
 
+// =============================================
+// 不足していたデータ取得関数 (getBestScores)
+// =============================================
+function getBestScores() {
+  return new Promise((resolve) => {
+    // ひとまず空の記録を返す（データ保存機能を実装する場合はここを拡張）
+    const dummyData = {};
+    resolve(dummyData);
+  });
+}
+
+// =============================================
+// レコード表示関数 (showRec)
+// =============================================
+function showRec() {
+  const body = document.getElementById('recBody');
+  if (typeof sc === 'function') sc('scRec'); // 画面切り替え
+
+  if (!body) return;
+  body.innerHTML = '<div class="recEmpty">読み込み中・・・</div>';
+
+  getBestScores().then(bs => {
+    let html = '';
+    const courseNames = ["選手権コース", "ショートコース"];
+    
+    courseNames.forEach((name, idx) => {
+      const cr = idx + 1;
+      // ユーザー指定色 #F7DB67 を適用
+      html += `
+        <div class="recSection">
+          <h3 style="border-bottom:1px solid #F7DB67; color:#F7DB67; padding-bottom:4px; margin-bottom:8px;">${name}</h3>
+          <div class="card" style="border:1px solid #F7DB67; background:#0d1a0d; margin-bottom:15px; color:#fff;">
+            <table class="recTable" style="width:100%; font-size:12px; text-align:center;">
+              <thead>
+                <tr style="color:#F7DB67;"><th>H</th><th>Par</th><th>Best</th></tr>
+              </thead>
+              <tbody>`;
+      
+      for(let h=1; h<=9; h++) {
+        html += `<tr><td>${h}</td><td>-</td><td>-</td></tr>`;
+      }
+      
+      html += `</tbody></table></div></div>`;
+    });
+
+    body.innerHTML = html;
+  }).catch(err => {
+    console.error(err);
+    body.innerHTML = '<div class="recEmpty" style="color:#f44">データの読み取りに失敗しました</div>';
+  });
+}
+
+// =============================================
+// 画面切り替え関数 (sc)
+// =============================================
+function sc(id) {
+  const target = document.getElementById(id);
+  if (!target) return;
+  document.querySelectorAll('.sc').forEach(el => el.classList.remove('on'));
+  target.classList.add('on');
+}
 
 // =============================================
 // SE (Web Audio API)
@@ -2280,18 +2341,6 @@ const S=(id,v)=>{const e=$(id);if(!e)return;
 const E=(id,v)=>{const e=$(id);if(e)e.disabled=!v;};
 const rnd=(a,b)=>a+Math.round(Math.random()*(b-a));
 
-// 画面切り替え関数
-function sc(id) {
-  const target = document.getElementById(id);
-  if (!target) {
-    console.error(`Error: Element ID "${id}" が見つかりません。`);
-    return;
-  }
-  // 全ての画面を非表示にする
-  document.querySelectorAll('.sc').forEach(el => el.classList.remove('on'));
-  // 対象の画面を表示する
-  target.classList.add('on');
-}
 // =============================================
 // キャラ選択 UI (タップ2段階方式)
 // =============================================
@@ -3134,65 +3183,6 @@ function goT(){
   G.ch=0;G.cr=0;G.cmd=0;
   VS.active=false; vsStep=0;
   sc('scT');
-}
-
-// 予備のデータ取得関数
-function getBestScores() {
-  return new Promise((resolve) => {
-    if (!db) {
-      // DBが使えない場合はlocalStorageから取得（予備）
-      const localData = localStorage.getItem('golf_best_scores');
-      resolve(localData ? JSON.parse(localData) : {});
-      return;
-    }
-    // ...既存のDB取得処理...
-    resolve({}); // ひとまず空で返す
-  });
-}
-
-function showRec() {
-  const body = document.getElementById('recBody');
-  sc('scRec');
-
-  if (!body) return;
-  body.innerHTML = '<div class="recEmpty">読み込み中・・・</div>';
-
-  // getBestScoresが失敗しても止まらないようにする
-  Promise.resolve()
-    .then(() => {
-      // getBestScoresが未定義なら空オブジェクトを返す
-      return typeof getBestScores === 'function' ? getBestScores() : {};
-    })
-    .then(bs => {
-      let html = '';
-      const courseNames = ["選手権コース", "ショートコース"];
-      
-      courseNames.forEach((name, idx) => {
-        const cr = idx + 1;
-        // ユーザー指定色 #F7DB67 を見出しに使用
-        html += `
-          <div class="recSection">
-            <h3 style="border-bottom:1px solid #F7DB67; color:#F7DB67; padding-bottom:4px; margin-bottom:8px;">${name}</h3>
-            <div class="card" style="border:1px solid #F7DB67; background:#0d1a0d; margin-bottom:15px;">
-              <table class="recTable">
-                <thead><tr><th>H</th><th>Par</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th></tr></thead>
-                <tbody>
-        `;
-        
-        // スコア表示ロジック（簡易版）
-        for(let h=1; h<=9; h++) {
-          html += `<tr><td>${h}</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>`;
-        }
-        
-        html += `</tbody></table></div></div>`;
-      });
-
-      body.innerHTML = html || '<div class="recEmpty">まだ記録がありません</div>';
-    })
-    .catch(err => {
-      console.error("Record Load Error:", err);
-      body.innerHTML = '<div class="recEmpty" style="color:#f44">データの読み込みに失敗しました</div>';
-    });
 }
 
 // =============================================
