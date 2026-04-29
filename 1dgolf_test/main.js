@@ -34,7 +34,11 @@ function getBestScores() {
 // =============================================
 function showRec() {
   const body = document.getElementById('recBody');
-  if (typeof sc === 'function') sc('scRec'); // 画面切り替え
+  
+  // sc関数が存在するか確認してから呼び出す
+  if (typeof sc === 'function') {
+    sc('scRec');
+  }
 
   if (!body) return;
   body.innerHTML = '<div class="recEmpty">読み込み中・・・</div>';
@@ -70,13 +74,16 @@ function showRec() {
   });
 }
 
-// =============================================
-// 画面切り替え関数 (sc)
-// =============================================
+// 画面切り替え関数 (不足していたもの)
 function sc(id) {
   const target = document.getElementById(id);
-  if (!target) return;
+  if (!target) {
+    console.error(`Element ID "${id}" が見つかりません。`);
+    return;
+  }
+  // 全ての画面(.sc)を非表示にする
   document.querySelectorAll('.sc').forEach(el => el.classList.remove('on'));
+  // 対象の画面を表示する
   target.classList.add('on');
 }
 
