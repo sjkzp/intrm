@@ -1,0 +1,208 @@
+
+/* ── リセット & ベース ── */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none}
+html,body{width:100%;height:100%;overflow:hidden;background:#111;font-family:"Hiragino Kaku Gothic ProN","ヒラギノ角ゴ ProN","MS Gothic","ＭＳ ゴシック",monospace}
+body{display:flex;justify-content:center;align-items:flex-start;}
+button{font-family:inherit;cursor:pointer;border:none;outline:none}
+button:active{opacity:.75}
+
+/* ── ゲーム本体：縦持ち全画面 ── */
+#app{position:fixed;top:0;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;display:flex;flex-direction:column;background:#0a0a0a;overflow:hidden}
+
+/* 各画面 */
+.sc{position:absolute;inset:0;display:none;flex-direction:column}
+.sc.on{display:flex}
+
+/* ===========================
+   共通部品
+   =========================== */
+.card{background:#0d1a0d;border:1px solid #1a3a1a;border-radius:8px;padding:12px}
+.card-dark{background:#080810;border:1px solid #1a1a2a;border-radius:8px;padding:12px}
+.btn-primary{background:linear-gradient(#1a3a1a,#0d2a0d);border:2px solid #4a8a4a;color:#8fdf8f;border-radius:8px;font-size:16px;padding:14px 20px;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;touch-action:manipulation}
+.btn-primary:active{background:linear-gradient(#0d2a0d,#1a3a1a)}
+.btn-secondary{background:#0d0d1a;border:1px solid #334;color:#88a;border-radius:6px;font-size:13px;padding:10px;display:flex;align-items:center;justify-content:center;touch-action:manipulation}
+.btn-action{background:#141428;border:2px solid #446;color:#aac;border-radius:8px;font-size:14px;padding:10px 16px;touch-action:manipulation;display:flex;align-items:center;justify-content:center}
+.btn-action:active{background:#1e1e3a}
+.btn-sm{border-radius:6px;font-size:12px;padding:8px 12px;touch-action:manipulation}
+
+/* ===========================
+   タイトル画面
+   =========================== */
+#scT{background:#000}
+#tTitle{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px}
+#tLogo{text-align:center}
+
+
+
+#tBtns{width:100%;max-width:320px;display:flex;flex-direction:column;gap:10px}
+#tCopy{color:#1a2a1a;font-size:10px;text-align:center;padding:8px}
+
+/* ===========================
+   キャラ選択画面
+   =========================== */
+#scC{background:#060810}
+#cHeader{padding:14px 16px 8px;border-bottom:1px solid #1a1a2a}
+#cHeader h2{color:#aaccee;font-size:15px;font-weight:normal}
+#cHeader p{color:#778;font-size:11px;margin-top:2px}
+/* 6キャラグリッド */
+#cGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px;flex:1;overflow-y:auto}
+.csCard{background:#0a0a14;border:2px solid #1a1a2a;border-radius:10px;padding:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;touch-action:manipulation;position:relative;transition:border-color .15s;min-height:100px;overflow:hidden}
+.csCard.sel{border-color:#ff0;box-shadow:0 0 12px #ff04}
+.csCard.locked{opacity:.5}
+.csIcon{font-size:36px;line-height:1}
+.csName{font-size:10px;text-align:center;line-height:1.3;color:#ccc}
+.csLockMark{font-size:24px;color:#333}
+/* キャラ詳細パネル（タップで展開） */
+#cDetail{background:#06100a;border-top:2px solid #1a3a2a;padding:12px 16px;display:flex;flex-direction:column;gap:8px}
+#cDetailName{color:#fff;font-size:16px;font-weight:bold}
+#cDetailStats{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.dStat{font-size:11px;color:#888}.dStat span{color:#ffdd44}
+#cDetailSpe{color:#88ddff;font-size:12px;border-top:1px solid #1a2a1a;padding-top:6px;margin-top:2px}
+#cDetailBtns{display:flex;gap:8px}
+#cBtnNormal{flex:1;background:#0a1a0a;border:2px solid #4a8;color:#8fa;border-radius:8px;font-size:13px;padding:11px;touch-action:manipulation}
+
+
+/* ===========================
+   コース選択画面
+   =========================== */
+#scCR{background:#060608}
+#crHeader{padding:14px 16px 8px;border-bottom:1px solid #1a1a2a}
+#crHeader h2{color:#aaccee;font-size:15px;font-weight:normal}
+#crCards{display:flex;flex-direction:column;gap:10px;padding:12px;flex:1;overflow-y:auto}
+.crCard{border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:14px;touch-action:manipulation}
+#crPrac{background:#08140a;border:2px solid #2a6a2a}
+#crChamp{background:#08080f;border:2px solid #2a2a6a}
+.crIcon{font-size:32px}
+.crInfo{flex:1}
+.crName{font-size:16px;font-weight:bold}
+.crMeta{font-size:11px;color:#aaa;margin-top:3px}
+.crMeta span{color:#ffdd44;margin-right:8px}
+.crArrow{color:#555;font-size:20px}
+/* 確認ダイアログ */
+#crConfirm{position:absolute;inset:0;background:#000a;display:none;align-items:center;justify-content:center;z-index:50}
+#crConfirmBox{background:#0a0a14;border:2px solid #446;border-radius:12px;padding:20px;width:80%;max-width:300px;display:flex;flex-direction:column;gap:12px}
+#crConfirmTitle{color:#aac;font-size:14px;text-align:center;font-weight:bold}
+#crConfirmInfo{color:#ffdd44;font-size:18px;font-weight:bold;text-align:center}
+#crConfirmBtns{display:flex;gap:10px}
+#bYes{flex:1;background:#0a1a0a;border:2px solid #4a8;color:#8fa;border-radius:8px;font-size:15px;padding:12px;touch-action:manipulation}
+#bNo{flex:1;background:#1a0a0a;border:2px solid #a44;color:#faa;border-radius:8px;font-size:15px;padding:12px;touch-action:manipulation}
+#crFmt{color:#88a;font-size:11px;text-align:center;text-decoration:underline;touch-action:manipulation}
+
+/* ===========================
+   ゲーム画面
+   =========================== */
+#scG{background:#070710;flex-direction:column}
+/* 上部ステータスバー */
+#gTop{background:#050510;border-bottom:1px solid #1a1a2a;padding:clamp(6px,1.5vw,10px) 12px;display:flex;align-items:center;gap:0;flex-shrink:0}
+.gTopSeg{display:flex;flex-direction:column;align-items:center;flex:1}
+.gTopLb{font-size:clamp(10px,2.5vw,13px);color:#aab}
+.gTopVl{font-size:clamp(16px,4vw,22px);font-weight:bold;color:#fff;line-height:1.1}
+.gTopVl.hl{color:#aaddff}
+.gTopVl.pts{color:#ffdd44}
+.gTopVl.par{color:#aaffaa}
+.gTopDivider{width:1px;background:#1a1a2a;height:28px;margin:0 4px}
+/* コースマップ */
+#gMap{height:clamp(22px,5.5vw,28px);background:#05100a;border-bottom:1px solid #1a2a1a;position:relative;flex-shrink:0}
+.mz{position:absolute;top:3px;bottom:3px}
+#mPos{position:absolute;top:0;bottom:0;width:5px;background:#fff;opacity:.9;border-radius:2px}
+
+#gMapInfo.show{opacity:1}
+/* メイン中段: 地形+ステータス */
+#gMid{display:flex;padding:8px;gap:8px;flex-shrink:0}
+/* 左カード: 地形 */
+#gTerCard{width:90px;flex-shrink:0;border-radius:8px;border:1px solid #333;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;padding:6px;min-height:72px}
+#gTerName{font-size:clamp(10px,2.6vw,12px);font-weight:bold}
+#gWindRow{font-size:11px;color:#88ccff;margin-top:2px}
+#gWindVal{font-size:15px;font-weight:bold;color:#fff}
+/* 右カード: 距離ステータス */
+#gStatCard{flex:1;background:#050510;border:1px solid #1a1a2a;border-radius:8px;padding:8px;display:grid;grid-template-columns:1fr 1fr;gap:3px}
+.gSt{display:flex;flex-direction:column}
+.gStLb{font-size:clamp(10px,2.5vw,12px);color:#aab}
+.gStVl{font-size:clamp(16px,4vw,20px);font-weight:bold;color:#fff;line-height:1.1}
+.gStVl.sm{font-size:12px}
+.gStUnit{font-size:9px;color:#667;display:inline}
+/* スペシャルフラッシュ */
+#gSpeBar{background:#06060f;border:1px solid #336;border-radius:6px;padding:4px 12px;text-align:center;color:#88ddff;font-size:12px;margin:0 8px;display:none;flex-shrink:0}
+/* ゲージエリア */
+#gGaugeArea{padding:8px 12px;flex-shrink:0}
+#gGaugeLb{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+#gGaugeClub{color:#ffdd44;font-size:clamp(12px,3vw,15px)}
+#gGaugeCost{color:#ff8888;font-size:clamp(11px,2.8vw,14px)}
+#gGaugeWrap{position:relative;height:clamp(28px,7vw,36px);background:#080808;border:2px solid #334;border-radius:6px;overflow:visible}
+#gGaugeBar{height:100%;background:linear-gradient(to right,#cc1100,#ff4400);border-radius:4px;width:0%;transition:none}
+/* ゲージ目盛り */
+#gGaugeTicks{position:absolute;inset:0;pointer-events:none}
+.gTk{position:absolute;top:0;bottom:0;width:1px;background:#ffffff30}
+.gTkL{position:absolute;top:-14px;font-size:8px;color:#99b;transform:translateX(-50%);font-weight:bold}
+/* 目安線（パット用） */
+#gGaugeMey{position:absolute;top:-3px;bottom:-3px;width:3px;background:#ff0;border-radius:2px;display:none;box-shadow:0 0 4px #ff0}
+/* クラブ選択 */
+#gClubArea{padding:0 8px 8px;flex-shrink:0}
+#gClubNormal{display:flex;flex-wrap:wrap;gap:6px}
+#gClubPutt{display:none;flex-wrap:wrap;gap:6px}
+#gClubShop{display:none;flex-wrap:wrap;gap:6px}
+.cBtn{background:#0a0a14;border:2px solid #2a2a3a;color:#9aa;border-radius:8px;font-size:clamp(12px,3vw,15px);padding:9px 12px;touch-action:manipulation;flex:1;min-width:70px;text-align:center}
+.cBtn.sel{background:#141400;border-color:#886;color:#ffdd44}
+.cBtn.dis{opacity:.3;pointer-events:none}
+/* ショットボタン + サブボタン */
+#gBtnRow{display:flex;gap:6px;padding:0 8px 8px;flex-shrink:0}
+#bShot{flex:2;background:linear-gradient(#141428,#0a0a1e);border:2px solid #446;color:#aac;border-radius:10px;font-size:clamp(18px,4.5vw,22px);font-weight:bold;padding:14px;touch-action:manipulation}
+#bShot.ready{border-color:#88aaff;color:#ccddff;background:linear-gradient(#1a1a38,#141428)}
+#bShot.charging{border-color:#ff6600;color:#ffaa44;background:linear-gradient(#1a0800,#280a00);animation:pulse .5s infinite alternate}
+#bWnd{flex:1;background:#0a1a0a;border:2px solid #2a4a2a;color:#6a9a6a;border-radius:10px;font-size:12px;padding:14px 8px;touch-action:manipulation;display:flex;flex-direction:column;align-items:center;gap:1px}
+#bWnd .wlb{font-size:clamp(9px,2.2vw,11px);color:#6a9a6a}
+#bSpe{flex:1;background:#1a0808;border:2px solid #4a2020;color:#9a6060;border-radius:10px;font-size:12px;padding:14px 8px;touch-action:manipulation;display:flex;flex-direction:column;align-items:center;gap:1px}
+#bSpe .slb{font-size:clamp(9px,2.2vw,11px);color:#9a6060}
+@keyframes pulse{from{box-shadow:0 0 0 #f60}to{box-shadow:0 0 12px #f604}}
+/* サブボタン行 */
+#gSubRow{display:flex;gap:6px;padding:0 8px 8px;flex-shrink:0}
+.gSub{flex:1;background:#060610;border:1px solid #1a1a2a;color:#778;border-radius:8px;font-size:12px;padding:10px 6px;touch-action:manipulation;text-align:center}
+.gSub.act{border-color:#446;color:#88aacc}
+#gGiveUp{padding:0 8px 4px;color:#f44;font-size:11px;text-align:center;display:none;flex-shrink:0}
+/* スコア結果フラッシュ */
+#gScoreFlash{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#050510ee;border:3px solid #888;border-radius:12px;padding:14px 24px;text-align:center;display:none;z-index:30;pointer-events:none;min-width:160px}
+#gScoreFlashTxt{font-size:20px;font-weight:bold}
+#gScoreFlashSub{font-size:12px;color:#888;margin-top:4px}
+/* 進行ボタン */
+#bPro{display:none;margin:0 8px 8px;background:#0a1a0a;border:2px solid #4a8a4a;color:#8fdf8f;border-radius:10px;font-size:15px;padding:13px;touch-action:manipulation;width:calc(100% - 16px)}
+
+/* Box2/3 (コース詳細/スコア) */
+#gSubPanel{display:none}
+#gSubPanel.on{display:flex}
+#gSubPanel p{color:#aab;line-height:1.6}
+#gSubPanel table{width:100%;border-collapse:collapse}
+#gSubPanel th{color:#556;font-size:11px;font-weight:normal;border-bottom:1px solid #1a1a2a;padding:4px 6px;text-align:left}
+#gSubPanel td{padding:5px 6px;color:#99a;font-size:12px}
+
+/* ===========================
+   エンディング画面
+   =========================== */
+#scEnd{background:#000;align-items:center;justify-content:flex-start;gap:12px;padding:20px;overflow-y:auto}
+#endFig{width:180px;height:180px;display:flex;align-items:center;justify-content:center;font-size:80px}
+#endTitle{color:#ffdd44;font-size:20px;font-weight:bold;margin-top:4px}
+#endCrs{color:#668;font-size:12px;margin-top:2px}
+#endStatBox{background:#060610;border:1px solid #1a1a2a;border-radius:10px;width:100%;max-width:320px;padding:14px}
+#endStatBox .row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #0f0f1a;font-size:13px;color:#889}
+#endStatBox .row span{color:#fff;font-weight:bold}
+#endScore{font-size:28px;font-weight:bold;text-align:center;padding:8px}
+#endPts{color:#ffdd44;font-size:16px;text-align:center;margin-top:-6px}
+#endAgn{background:#0a1a0a;border:2px solid #4a8;color:#8fa;border-radius:10px;font-size:15px;padding:14px 32px;touch-action:manipulation;margin-top:8px}
+
+/* ===========================
+   レコード画面
+   =========================== */
+#scRec{background:#000810;flex-direction:column}
+#recHeader{padding:14px 16px 10px;border-bottom:1px solid #1a1a2a;flex-shrink:0}
+#recHeader h2{color:#88ccee;font-size:15px;font-weight:normal}
+#recBody{flex:1;overflow-y:auto;padding:12px}
+.recSection{margin-bottom:16px}
+.recSection h3{color:#667;font-size:11px;font-weight:normal;letter-spacing:1px;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #1a1a2a}
+.recTable{width:100%;border-collapse:collapse;font-size:12px}
+.recTable th{color:#556;font-weight:normal;padding:4px 6px;text-align:left;border-bottom:1px solid #111820}
+.recTable td{padding:5px 6px;color:#99a;border-bottom:1px solid #0d0d18}
+.recTable td.best{color:#ffdd44;font-weight:bold}
+.recTable td.par{color:#aaffaa}
+.recTable td.under{color:#44aaff}
+.recStatRow{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #0d0d18;font-size:13px;color:#889}
+.recStatRow span{color:#fff;font-weight:bold}
+.recEmpty{color:#445;font-size:12px;text-align:center;padding:10px 0}
