@@ -18,75 +18,6 @@ window.addEventListener('unhandledrejection', function(e) {
 // ============ ゲームロジック ============
 'use strict';
 
-// =============================================
-// 不足していたデータ取得関数 (getBestScores)
-// =============================================
-function getBestScores() {
-  return new Promise((resolve) => {
-    // ひとまず空の記録を返す（データ保存機能を実装する場合はここを拡張）
-    const dummyData = {};
-    resolve(dummyData);
-  });
-}
-
-// =============================================
-// レコード表示関数 (showRec)
-// =============================================
-function showRec() {
-  const body = document.getElementById('recBody');
-  // sc関数を呼び出して画面を切り替え
-  if (typeof sc === 'function') sc('scRec');
-
-  if (!body) return;
-  body.innerHTML = '<div class="recEmpty">読み込み中・・・</div>';
-
-  // getBestScores が未定義でも止まらないようにする
-  const getScores = (typeof getBestScores === 'function') 
-    ? getBestScores() 
-    : Promise.resolve({});
-
-  getScores.then(bs => {
-    let html = '';
-    const courseNames = ["選手権コース", "ショートコース"]; 
-    
-    courseNames.forEach((name, idx) => {
-      const cr = idx + 1;
-      // ユーザー指定色 #F7DB67 を使用
-      html += `
-        <div class="recSection">
-          <h3 style="border-bottom:1px solid #F7DB67; color:#F7DB67; padding-bottom:4px; margin-bottom:8px;">${name}</h3>
-          <div class="card" style="border:1px solid #F7DB67; background:#0d1a0d; margin-bottom:15px; color:#fff;">
-            <table class="recTable" style="width:100%; text-align:center; font-size:12px;">
-              <thead>
-                <tr style="color:#F7DB67"><th>H</th><th>Par</th><th>Best</th></tr>
-              </thead>
-              <tbody>
-      `;
-      
-      // 簡易的な9ホール分の表示
-      for(let h=1; h<=9; h++) {
-        html += `<tr><td>${h}</td><td>-</td><td>-</td></tr>`;
-      }
-      
-      html += `</tbody></table></div></div>`;
-    });
-
-    body.innerHTML = html || '<div class="recEmpty">まだ記録がありません</div>';
-  }).catch(err => {
-    console.error(err);
-    body.innerHTML = '<div class="recEmpty" style="color:#f44">読み込みエラーが発生しました</div>';
-  });
-}
-
-// 画面切り替え関数（不足していたため追記）
-function sc(id) {
-  const target = document.getElementById(id);
-  if (!target) return;
-  // すべての画面(.sc)から 'on' クラスを外す
-  document.querySelectorAll('.sc').forEach(el => el.classList.remove('on'));
-  // 指定したIDの画面に 'on' クラスを付けて表示する
-  target.classList.add('on');
-}
 
 // =============================================
 // SE (Web Audio API)
@@ -211,15 +142,6 @@ const G={
  uf3:true,uf4:true,uf5:true,uf6:true, // chara3-6初期解放
 };
 
-// DB初期化部分の安全化
-let db;
-try {
-  const request = indexedDB.open("GolfScoreDB", 1);
-  request.onsuccess = (e) => { db = e.target.result; };
-  request.onerror = (e) => { console.warn("IndexedDB access denied. Scores won't be saved."); };
-} catch(e) {
-  console.warn("Storage restricted in this environment.");
-}
 
 function applyStats(){
   const d=CD[G.ch];
@@ -2348,6 +2270,16 @@ const S=(id,v)=>{const e=$(id);if(!e)return;
 };
 const E=(id,v)=>{const e=$(id);if(e)e.disabled=!v;};
 const rnd=(a,b)=>a+Math.round(Math.random()*(b-a));
+
+// シーン切替
+function sc(id){
+  ['scT','scC','scCR','scG','scEnd','scVSEnd'].forEach(s=>{
+    const e=document.getElementById(s);
+    if(e){e.style.display='none';e.className='sc';}
+  });
+  const target=document.getElementById(id);
+  if(target){target.style.display='flex';target.className='sc on';}
+}
 
 // =============================================
 // キャラ選択 UI (タップ2段階方式)
