@@ -3166,7 +3166,11 @@ function openRecords(){
       if(!hasData) return;
 
       html+=`<div class="recSection"><h3>⛳ ${COURSE_NAMES[cr]} ベストスコア</h3>`;
-      html+='<table class="recTable"><thead><tr><th>H</th><th>Par</th>';
+      html+='<table class="recTable">';
+      html+='<colgroup><col style="width:18px"><col style="width:22px">';
+      for(let ch=1;ch<=6;ch++) html+='<col>';
+      html+='</colgroup>';
+      html+='<thead><tr><th>H</th><th>Par</th>';
       for(let ch=1;ch<=6;ch++) html+=`<th style="color:${CD[ch].col}">${CD[ch].ic}</th>`;
       html+='</tr></thead><tbody>';
 
@@ -3186,12 +3190,11 @@ function openRecords(){
         }
         html+='</tr>';
       }
-      // 選手権コース（9H）のみ合計行を追加
-      if(cr===2){
-        const totalPar=pars.slice(1).reduce((a,b)=>a+b,0);
-        html+=`<tr style="border-top:2px solid #1a1a2a"><td><b>計</b></td><td class="par"><b>${totalPar}</b></td>`;
+      // 全コース：合計行を追加
+      {
+        const totalPar=pars.slice(1,hmax+1).reduce((a,b)=>a+b,0);
+        html+=`<tr style="border-top:2px solid #1a1a2a"><td style="color:#aabbcc"><b>計</b></td><td class="par"><b>${totalPar}</b></td>`;
         for(let ch=1;ch<=6;ch++){
-          // 全ホール記録済みの場合のみ合計を表示
           let total=0, allExist=true;
           for(let h=1;h<=hmax;h++){
             const sc=bs[`${cr}_${h}_${ch}`];
@@ -3200,11 +3203,11 @@ function openRecords(){
           }
           if(!allExist){html+='<td style="color:#334">—</td>';continue;}
           const diff=total-totalPar;
-          const sg=diff<0?'':diff>0?'+':'';
+          const sg=diff>0?'+':'';
           let cls='best';
           if(diff<0) cls='under';
           else if(diff===0) cls='par';
-          html+=`<td class="${cls}"><b>${total}</b><br><span style="font-size:10px">(${sg}${diff})</span></td>`;
+          html+=`<td class="${cls}"><b>${total}</b><br><span style="font-size:9px">(${sg}${diff})</span></td>`;
         }
         html+='</tr>';
       }
@@ -3212,9 +3215,9 @@ function openRecords(){
     });
 
     if(!html) html='<div class="recEmpty">まだ記録がありません</div>';
-    // 削除ボタンを末尾に追加
-    html+=`<div style="margin-top:24px;padding-top:12px;border-top:1px solid #111820;text-align:center">
-      <button onclick="confirmDeleteRecords()" style="background:transparent;border:1px solid #333;color:#445;border-radius:6px;font-size:11px;padding:7px 16px;cursor:pointer;touch-action:manipulation">🗑 記録をすべて削除</button>
+    // 削除ボタン：スクロール内の末尾に配置（戻るボタンとの誤タップ防止のため大きく余白）
+    html+=`<div style="margin-top:40px;padding:16px 0 24px;text-align:center">
+      <button onclick="confirmDeleteRecords()" style="background:transparent;border:1px solid #2a2a3a;color:#556;border-radius:6px;font-size:11px;padding:8px 18px;cursor:pointer;touch-action:manipulation;letter-spacing:0.5px">🗑 記録をすべて削除</button>
     </div>`;
     body.innerHTML=html;
   }).catch(()=>{
