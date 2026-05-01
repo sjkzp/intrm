@@ -31,7 +31,8 @@
       <div id="tBtns">
         <button class="btn-primary" id="sBtnStart" onclick="onStart()">▶ ス タ ー ト</button>
         <button class="btn-secondary" id="sBtnVS" onclick="onStartVS()" style="background:#1a0a2a;border:1px solid #6644aa;color:#ccaaff;margin-top:6px">⚔ V S モ ー ド</button>
-        <button onclick="document.getElementById('dlgHowto').style.display='flex'" style="background:transparent;border:1px solid #556;color:#99b;border-radius:8px;padding:8px 0;font-size:12px;width:100%;margin-top:8px;cursor:pointer;touch-action:manipulation;letter-spacing:1px">？ 遊び方</button>
+        <button onclick="openRecords()" style="background:#0a1a2a;border:1px solid #2a5a8a;color:#88ccee;border-radius:8px;padding:10px 0;font-size:13px;width:100%;margin-top:4px;cursor:pointer;touch-action:manipulation;letter-spacing:1px">🏆 レコードを見る</button>
+        <button onclick="document.getElementById('dlgHowto').style.display='flex'" style="background:transparent;border:1px solid #556;color:#99b;border-radius:8px;padding:8px 0;font-size:12px;width:100%;margin-top:4px;cursor:pointer;touch-action:manipulation;letter-spacing:1px">？ 遊び方</button>
       </div>
     </div>
     <div id="tCopy">© int</div>
@@ -272,6 +273,19 @@
     </div>
   </div>
 </div><!-- #app -->
+
+  <!-- ========== レコード画面 ========== -->
+  <div id="scRec" class="sc">
+    <div id="recHeader">
+      <h2>🏆 レコード</h2>
+    </div>
+    <div id="recBody">
+      <div id="recLoading" style="color:#99aabb;font-size:13px;text-align:center;padding:20px">読み込み中…</div>
+    </div>
+    <div style="padding:10px 12px 14px;flex-shrink:0;border-top:1px solid #111820">
+      <button onclick="sc('scT')" style="width:100%;background:#060610;border:1px solid #334;color:#99aabb;border-radius:8px;font-size:13px;padding:12px;cursor:pointer;touch-action:manipulation">← 戻る</button>
+    </div>
+  </div>
 
 <script src="main.js"></script>
 <script src="images.js"></script>
