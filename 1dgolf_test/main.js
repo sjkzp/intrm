@@ -86,13 +86,13 @@ const CD={
  1:{n:'一之瀬 水無',  p:'★',      t:'★★★★★',g:'★★★★★',s:' パワーショット',  col:'#6fdf6f',ic:'水',
     spd:30,sc:1,mx:100,s7:40,sc7:1,x7:100,wz:3,wt:7,pw:800,
     w1:200,c1:90,w2:180,c2:70,i1:130,d1:60,i2:100,d2:40,p1:30,e1:10,p2:15,e2:0,gW:102},
- 2:{n:'右村 走馬',    p:'★★★',   t:'★★★',   g:'★★★',   s:'地形無視ショット',col:'#6fa8df',ic:'馬',
+ 2:{n:'右村 走馬',    p:'★★★',   t:'★★★',   g:'★★★',   s:'地形無視ショット',col:'#6fa8df',ic:'右',
     spd:50,sc:4,mx:112,s7:50,sc7:4,x7:112,wz:2,wt:4,pw:950,
     w1:230,c1:120,w2:200,c2:100,i1:160,d1:80,i2:130,d2:60,p1:30,e1:30,p2:15,e2:10,gW:114},
- 3:{n:'柴田 綴',      p:'★★★★★★',t:'★',      g:'★★',    s:'　　打ち直し',   col:'#df9f4f',ic:'綴',
+ 3:{n:'柴田 綴',      p:'★★★★★★',t:'★',      g:'★★',    s:'　　打ち直し',   col:'#df9f4f',ic:'柴',
     spd:28,sc:7,mx:133,s7:28,sc7:7,x7:133,wz:2,wt:2,pw:1050,
     w1:290,c1:190,w2:270,c2:150,i1:230,d1:110,i2:190,d2:80,p1:30,e1:40,p2:15,e2:20,gW:135},
- 4:{n:'神 響子',      p:'★★',     t:'★★★★',  g:'★★★★',  s:'　風・傾斜消し',col:'#df6fdf',ic:'響',
+ 4:{n:'神 響子',      p:'★★',     t:'★★★★',  g:'★★★★',  s:'　風・傾斜消し',col:'#df6fdf',ic:'神',
     spd:50,sc:3,mx:108,s7:50,sc7:3,x7:108,wz:4,wt:5,pw:650,
     w1:220,c1:110,w2:190,c2:90,i1:160,d1:70,i2:120,d2:40,p1:30,e1:20,p2:15,e2:10,gW:110},
  5:{n:'フィリップ 北崎',p:'★★★★',t:'★★★',   g:'★★★★',  s:'スタートオーバー',col:'#ffdf6f',ic:'P',
@@ -443,13 +443,8 @@ function confirmVSOppo(){
 
 // VS yesClick: startGameVS
 function startGameVS(){
-  // プレイヤー側の初期化
   VS.cpuSc=0; VS.cpuPts=1300; VS.cpuScores=[]; VS.cpuPars=[];
   VS.playerTurn=true; VS.playerSc=0; VS.playerScores=[];
-  // プレイ回数記録（プレイヤー・CPU両方）
-  dbRecordPlay(G.ch);
-  dbRecordPlay(VS.cpuCh);
-  // 通常スタートと同じ
   startGame();
 }
 
@@ -1522,8 +1517,6 @@ function cpuFinishHole(){
   if(G.mv){clearInterval(G.mv);G.mv=null;}
   VS._cpuNs=G.ns;
   VS.cpuScores.push(G.ns); VS.cpuPars.push(G.par);
-  // VSのCPUホール別ベストスコアを記録
-  dbUpdateBest(G.cr, G.nH, VS.cpuCh, G.ns);
   // cpuSc: カップイン時はcpuJudgeShotで更新済み、ギブアップ時はここで計算
   if(G.y2>0){ VS.cpuSc+=(G.ns-G.par); showGiveUpFlash(); } // y2>0=ホール未完了(ギブアップ)
   // スキップボタン非表示
@@ -2142,8 +2135,6 @@ function startGame(){
   G.sc=0;G.nH=1;G.nHIO=0;G.nALB=0;G.nEAG=0;G.nBIR=0;G.nCHP=0;G.n4=0;G.maxy=0;
   G.holeScores=[];G.holePars=[];
   G.sm=0;G.ss=0;G.st=0;G.sk=0;G.sp=0;G.sh=0;
-  // プレイ回数記録（VSはstartGameVSで両キャラ記録するためスキップ）
-  if(!VS.active) dbRecordPlay(G.ch);
   // face (新UIではcFaceなし、endFigに反映)
   const d=CD[G.ch];
   const cf=$('cFace'); if(cf) cf.innerHTML=`<div style="font-size:52px;color:${d.col}">${d.ic}</div>`;
@@ -2759,9 +2750,6 @@ function judgeShot(){
   else if(df>=4)  G.mpt=20+Math.trunc(G.bon/4);
   G.sc+=(G.ns-G.par);
   if(G.cmd===5){G.nCHP++; dbRecordChipIn();}
-  // ホール別ベストスコア記録（1P・VSプレイヤー共通）
-  const recCh=VS.active?(VS._savedCh||G.ch):G.ch;
-  dbUpdateBest(G.cr, G.nH, recCh, G.ns);
   const SL=[{d:-99,n:'ホールインワン！',c:'#ff0',sub:'HOLE IN ONE!'},{d:-4,n:'コンドル',c:'#f80',sub:'CONDOR'},{d:-3,n:'アルバトロス',c:'#f80',sub:'ALBATROSS'},
     {d:-2,n:'イーグル',c:'#4f4',sub:'EAGLE'},{d:-1,n:'バーディー',c:'#4df',sub:'BIRDIE'},{d:0,n:'パー',c:'#fff',sub:'PAR'},
     {d:1,n:'ボギー',c:'#fa4',sub:'BOGEY'},{d:2,n:'ダブルボギー',c:'#f84',sub:'DOUBLE BOGEY'},{d:3,n:'トリプルボギー',c:'#f44',sub:'TRIPLE BOGEY'},{d:99,n:'クアドラボギー',c:'#f22',sub:'QUAD BOGEY'}];
@@ -3016,6 +3004,14 @@ function endGame(){
     G.holeScores.push(G.ns);
     G.holePars.push(G.par);
   }
+  // ★全ホール完走した場合のみDBに保存（途中中断は記録しない）
+  if(G.holeScores.length >= _lastH){
+    const ch=VS.active?(VS._savedCh||G.ch):G.ch;
+    G.holeScores.forEach((score,i)=>{
+      dbUpdateBest(G.cr, i+1, ch, score);
+    });
+    dbRecordPlay(ch);
+  }
   rankime();
   if(!G.uf3&&G.sc<=3)G.uf3=true;
   if(!G.uf4&&(G.maxy>=450||G.nHIO>=1))G.uf4=true;
@@ -3177,6 +3173,28 @@ function openRecords(){
           else if(diff===0) cls='par';
           const label=sc+(diff<0?` (${diff})`:'');
           html+=`<td class="${cls}">${label}</td>`;
+        }
+        html+='</tr>';
+      }
+      // 選手権コース（9H）のみ合計行を追加
+      if(cr===2){
+        const totalPar=pars.slice(1).reduce((a,b)=>a+b,0);
+        html+=`<tr style="border-top:2px solid #1a1a2a"><td><b>計</b></td><td class="par"><b>${totalPar}</b></td>`;
+        for(let ch=1;ch<=6;ch++){
+          // 全ホール記録済みの場合のみ合計を表示
+          let total=0, allExist=true;
+          for(let h=1;h<=hmax;h++){
+            const sc=bs[`${cr}_${h}_${ch}`];
+            if(sc===undefined){allExist=false;break;}
+            total+=sc;
+          }
+          if(!allExist){html+='<td style="color:#334">—</td>';continue;}
+          const diff=total-totalPar;
+          const sg=diff<0?'':diff>0?'+':'';
+          let cls='best';
+          if(diff<0) cls='under';
+          else if(diff===0) cls='par';
+          html+=`<td class="${cls}"><b>${total}</b><br><span style="font-size:10px">(${sg}${diff})</span></td>`;
         }
         html+='</tr>';
       }
