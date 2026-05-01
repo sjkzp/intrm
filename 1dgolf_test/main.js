@@ -446,6 +446,9 @@ function startGameVS(){
   // プレイヤー側の初期化
   VS.cpuSc=0; VS.cpuPts=1300; VS.cpuScores=[]; VS.cpuPars=[];
   VS.playerTurn=true; VS.playerSc=0; VS.playerScores=[];
+  // プレイ回数記録（プレイヤー・CPU両方）
+  dbRecordPlay(G.ch);
+  dbRecordPlay(VS.cpuCh);
   // 通常スタートと同じ
   startGame();
 }
@@ -1519,6 +1522,8 @@ function cpuFinishHole(){
   if(G.mv){clearInterval(G.mv);G.mv=null;}
   VS._cpuNs=G.ns;
   VS.cpuScores.push(G.ns); VS.cpuPars.push(G.par);
+  // VSのCPUホール別ベストスコアを記録
+  dbUpdateBest(G.cr, G.nH, VS.cpuCh, G.ns);
   // cpuSc: カップイン時はcpuJudgeShotで更新済み、ギブアップ時はここで計算
   if(G.y2>0){ VS.cpuSc+=(G.ns-G.par); showGiveUpFlash(); } // y2>0=ホール未完了(ギブアップ)
   // スキップボタン非表示
@@ -2137,6 +2142,8 @@ function startGame(){
   G.sc=0;G.nH=1;G.nHIO=0;G.nALB=0;G.nEAG=0;G.nBIR=0;G.nCHP=0;G.n4=0;G.maxy=0;
   G.holeScores=[];G.holePars=[];
   G.sm=0;G.ss=0;G.st=0;G.sk=0;G.sp=0;G.sh=0;
+  // プレイ回数記録（VSはstartGameVSで両キャラ記録するためスキップ）
+  if(!VS.active) dbRecordPlay(G.ch);
   // face (新UIではcFaceなし、endFigに反映)
   const d=CD[G.ch];
   const cf=$('cFace'); if(cf) cf.innerHTML=`<div style="font-size:52px;color:${d.col}">${d.ic}</div>`;
@@ -2739,7 +2746,7 @@ function showGiveUpFlash(){
 // =============================================
 function judgeShot(){
   const df=G.ns-G.par;
-  if(G.ns===1){G.nHIO++;G.mpt=2400+G.bon+200;}
+  if(G.ns===1){G.nHIO++;G.mpt=2400+G.bon+200; dbRecordHIO();}
   else if(df<=-5){G.n4++;G.mpt=2100+G.bon+200;}
   else if(df===-4){G.n4++;G.mpt=1900+G.bon+200;}
   else if(df===-3){G.nALB++;G.mpt=1700+G.bon;}
@@ -2751,7 +2758,10 @@ function judgeShot(){
   else if(df===3) G.mpt=100+Math.trunc(G.bon/4);
   else if(df>=4)  G.mpt=20+Math.trunc(G.bon/4);
   G.sc+=(G.ns-G.par);
-  if(G.cmd===5)G.nCHP++; // チップイン: ドライブ（グリーン外）からの直接カップイン（HIOも含む）
+  if(G.cmd===5){G.nCHP++; dbRecordChipIn();}
+  // ホール別ベストスコア記録（1P・VSプレイヤー共通）
+  const recCh=VS.active?(VS._savedCh||G.ch):G.ch;
+  dbUpdateBest(G.cr, G.nH, recCh, G.ns);
   const SL=[{d:-99,n:'ホールインワン！',c:'#ff0',sub:'HOLE IN ONE!'},{d:-4,n:'コンドル',c:'#f80',sub:'CONDOR'},{d:-3,n:'アルバトロス',c:'#f80',sub:'ALBATROSS'},
     {d:-2,n:'イーグル',c:'#4f4',sub:'EAGLE'},{d:-1,n:'バーディー',c:'#4df',sub:'BIRDIE'},{d:0,n:'パー',c:'#fff',sub:'PAR'},
     {d:1,n:'ボギー',c:'#fa4',sub:'BOGEY'},{d:2,n:'ダブルボギー',c:'#f84',sub:'DOUBLE BOGEY'},{d:3,n:'トリプルボギー',c:'#f44',sub:'TRIPLE BOGEY'},{d:99,n:'クアドラボギー',c:'#f22',sub:'QUAD BOGEY'}];
