@@ -2273,7 +2273,7 @@ const rnd=(a,b)=>a+Math.round(Math.random()*(b-a));
 
 // シーン切替
 function sc(id){
-  ['scT','scC','scCR','scG','scEnd','scVSEnd'].forEach(s=>{
+  ['scT','scC','scCR','scG','scEnd','scVSEnd','scRec'].forEach(s=>{
     const e=document.getElementById(s);
     if(e){e.style.display='none';e.className='sc';}
   });
@@ -3131,7 +3131,7 @@ function openRecords(){
     // ── キャラ別プレイ回数 ──
     html+='<div class="recSection"><h3>🏌️ キャラ別プレイ回数</h3>';
     plays.forEach(p=>{
-      html+=`<div class="recStatRow"><span style="color:${CD[p.id].col}">${CD[p.id].ic} ${p.n}</span><span>${p.c}回</span></div>`;
+      html+=`<div class="recStatRow"><span style="color:${CD[p.id].col}">${p.n}</span><span>${p.c}回</span></div>`;
     });
     html+='</div>';
 
