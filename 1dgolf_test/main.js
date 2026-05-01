@@ -1693,9 +1693,7 @@ function showVSResult(){
   const _lastH=G.cr===2?9:6;
   if(G.holeScores.length >= _lastH){
     const ch=VS._savedCh||G.ch;
-    G.holeScores.forEach((score,i)=>{
-      dbUpdateBest(G.cr, i+1, ch, score);
-    });
+    dbSaveRunBest(G.cr, ch, G.holeScores, G.holePars);
     dbRecordPlay(ch);
   }
   const pc=VS._savedCh||G.ch;
@@ -3017,9 +3015,7 @@ function endGame(){
   // ★全ホール完走した場合のみDBに保存（途中中断は記録しない）
   if(G.holeScores.length >= _lastH){
     const ch=VS.active?(VS._savedCh||G.ch):G.ch;
-    G.holeScores.forEach((score,i)=>{
-      dbUpdateBest(G.cr, i+1, ch, score);
-    });
+    dbSaveRunBest(G.cr, ch, G.holeScores, G.holePars);
     dbRecordPlay(ch);
   }
   rankime();
@@ -3088,11 +3084,18 @@ function dbPut(store,key,val){
 function dbIncr(key){
   return dbGet('lifetimeStats',key).then(cur=>dbPut('lifetimeStats',key,(cur||0)+1));
 }
-function dbUpdateBest(course,hole,charId,score){
+// コース完走記録を保存。合計スコアが過去最小のときのみ全ホール上書き
+// キー: "run_${course}_${charId}" 値: {total, holes:[{score,par},...]}
+function dbSaveRunBest(course, charId, holeScores, holePars){
   if(course!==1&&course!==2) return Promise.resolve(false);
-  const key=`${course}_${hole}_${charId}`;
+  const key=`run_${course}_${charId}`;
+  const total=holeScores.reduce((a,b)=>a+b,0);
   return dbGet('bestScores',key).then(cur=>{
-    if(cur===undefined||score<cur) return dbPut('bestScores',key,score).then(()=>true);
+    const curTotal=(cur&&cur.total!==undefined)?cur.total:Infinity;
+    if(total<curTotal){
+      const holes=holeScores.map((score,i)=>({score,par:holePars[i]||4}));
+      return dbPut('bestScores',key,{total,holes}).then(()=>true);
+    }
     return false;
   });
 }
@@ -3126,10 +3129,6 @@ function openRecords(){
 
   const COURSE_NAMES={1:'練習コース',2:'選手権コース'};
   const HOLE_COUNTS={1:6,2:9};
-  const PAR_DATA={ // コース別パー（main.jsのC1/C2と対応）
-    1:[null,4,3,4,4,3,4],       // H1〜H6
-    2:[null,4,3,4,3,4,4,3,5,4]  // H1〜H9
-  };
 
   dbGetAllRecords().then(rec=>{
     const bs=rec.bestScores||{};
@@ -3154,14 +3153,10 @@ function openRecords(){
     // ── コース別ホールベスト ──
     [1,2].forEach(cr=>{
       const hmax=HOLE_COUNTS[cr];
-      const pars=PAR_DATA[cr];
-      // このコースにデータがあるか確認
+      // このコースにデータがあるか確認（run_キー形式）
       let hasData=false;
-      for(let h=1;h<=hmax;h++){
-        for(let ch=1;ch<=6;ch++){
-          if(bs[`${cr}_${h}_${ch}`]!==undefined){hasData=true;break;}
-        }
-        if(hasData)break;
+      for(let ch=1;ch<=6;ch++){
+        if(bs[`run_${cr}_${ch}`]!==undefined){hasData=true;break;}
       }
       if(!hasData) return;
 
@@ -3174,40 +3169,50 @@ function openRecords(){
       for(let ch=1;ch<=6;ch++) html+=`<th style="color:${CD[ch].col}">${CD[ch].ic}</th>`;
       html+='</tr></thead><tbody>';
 
+      // 各キャラのrunデータを取得
+      const runs={};
+      for(let ch=1;ch<=6;ch++){
+        runs[ch]=bs[`run_${cr}_${ch}`]||null;
+      }
+
       for(let h=1;h<=hmax;h++){
-        const par=pars[h]||4;
-        html+=`<tr><td>${h}</td><td class="par">${par}</td>`;
+        // parはいずれかのrunデータから取得
+        let par=0;
         for(let ch=1;ch<=6;ch++){
-          const key=`${cr}_${h}_${ch}`;
-          const sc=bs[key];
-          if(sc===undefined){html+='<td style="color:#334">—</td>';continue;}
-          const diff=sc-par;
+          const r=runs[ch];
+          if(r&&r.holes&&r.holes[h-1]){par=r.holes[h-1].par;break;}
+        }
+        html+=`<tr><td>${h}</td><td class="par">${par||'—'}</td>`;
+        for(let ch=1;ch<=6;ch++){
+          const r=runs[ch];
+          if(!r||!r.holes||!r.holes[h-1]){html+='<td style="color:#334">—</td>';continue;}
+          const score=r.holes[h-1].score;
+          const diff=par?score-par:null;
           let cls='best';
-          if(diff<0) cls='under';
+          if(diff!==null&&diff<0) cls='under';
           else if(diff===0) cls='par';
-          const label=sc+(diff<0?` (${diff})`:'');
+          const label=diff!==null&&diff<0?`${score}(${diff})`:`${score}`;
           html+=`<td class="${cls}">${label}</td>`;
         }
         html+='</tr>';
       }
-      // 全コース：合計行を追加
+      // 合計行
       {
-        const totalPar=pars.slice(1,hmax+1).reduce((a,b)=>a+b,0);
-        html+=`<tr style="border-top:2px solid #1a1a2a"><td style="color:#aabbcc"><b>計</b></td><td class="par"><b>${totalPar}</b></td>`;
+        let totalPar=0;
         for(let ch=1;ch<=6;ch++){
-          let total=0, allExist=true;
-          for(let h=1;h<=hmax;h++){
-            const sc=bs[`${cr}_${h}_${ch}`];
-            if(sc===undefined){allExist=false;break;}
-            total+=sc;
-          }
-          if(!allExist){html+='<td style="color:#334">—</td>';continue;}
-          const diff=total-totalPar;
-          const sg=diff>0?'+':'';
+          const r=runs[ch];
+          if(r&&r.holes){totalPar=r.holes.reduce((a,h)=>a+(h.par||4),0);break;}
+        }
+        html+=`<tr style="border-top:2px solid #1a1a2a"><td style="color:#aabbcc"><b>計</b></td><td class="par"><b>${totalPar||'—'}</b></td>`;
+        for(let ch=1;ch<=6;ch++){
+          const r=runs[ch];
+          if(!r||!r.total){html+='<td style="color:#334">—</td>';continue;}
+          const diff=totalPar?r.total-totalPar:null;
+          const sg=diff!==null&&diff>0?'+':'';
           let cls='best';
-          if(diff<0) cls='under';
+          if(diff!==null&&diff<0) cls='under';
           else if(diff===0) cls='par';
-          html+=`<td class="${cls}"><b>${total}</b><br><span style="font-size:9px">(${sg}${diff})</span></td>`;
+          html+=`<td class="${cls}"><b>${r.total}</b><br><span style="font-size:9px">${diff!==null?`(${sg}${diff})`:''}</span></td>`;
         }
         html+='</tr>';
       }
