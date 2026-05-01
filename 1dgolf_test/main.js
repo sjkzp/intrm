@@ -1137,16 +1137,17 @@ function cpuSelectClub(){
     if(bzRel+safeMargin<=maxReach) candidates.push(bzRel+safeMargin);
   }
 
-  // 各ROUGHゾーンの手前(safeMargin/2)と後ろ(safeMargin)
-  // ROUGHは許容できるが、できれば避ける
+  // 各ROUGHゾーンの手前(roughMargin)と後ろ(safeMargin*2)
+  // ラフ脱出は余裕を持たせる（ゲージブレでラフに戻らないよう広めに）
   for(let i=0;i<3;i++){
     if(!G.Ra[i]&&!G.Rz[i]) continue;
     const raRel=G.Ra[i]-G.cp, rzRel=G.Rz[i]-G.cp;
     if(rzRel<=0) continue;
     if(raRel>maxReach) continue;
     const roughMargin=Math.ceil(safeMargin/2);
+    const roughExitMargin=safeMargin*2; // ラフ後ろは2倍のマージン
     if(raRel>roughMargin) candidates.push(raRel-roughMargin);
-    if(rzRel+safeMargin<=maxReach) candidates.push(rzRel+safeMargin);
+    if(rzRel+roughExitMargin<=maxReach) candidates.push(rzRel+roughExitMargin);
   }
 
   // グリーン手前フェアウェイ（グリーン前縁のsafeMargin手前）
@@ -1688,6 +1689,15 @@ function cpuAutoFinish(){
 
 // VSリザルト表示
 function showVSResult(){
+  // ★全ホール完走時にDBへ保存（VSモードはendGameを通らないためここで実行）
+  const _lastH=G.cr===2?9:6;
+  if(G.holeScores.length >= _lastH){
+    const ch=VS._savedCh||G.ch;
+    G.holeScores.forEach((score,i)=>{
+      dbUpdateBest(G.cr, i+1, ch, score);
+    });
+    dbRecordPlay(ch);
+  }
   const pc=VS._savedCh||G.ch;
   const cc=VS.cpuCh;
   const pd=CD[pc],cpud=CD[cc];
@@ -3202,10 +3212,47 @@ function openRecords(){
     });
 
     if(!html) html='<div class="recEmpty">まだ記録がありません</div>';
+    // 削除ボタンを末尾に追加
+    html+=`<div style="margin-top:24px;padding-top:12px;border-top:1px solid #111820;text-align:center">
+      <button onclick="confirmDeleteRecords()" style="background:transparent;border:1px solid #333;color:#445;border-radius:6px;font-size:11px;padding:7px 16px;cursor:pointer;touch-action:manipulation">🗑 記録をすべて削除</button>
+    </div>`;
     body.innerHTML=html;
   }).catch(()=>{
     body.innerHTML='<div class="recEmpty" style="color:#f44">記録の読み込みに失敗しました</div>';
   });
+}
+
+function confirmDeleteRecords(){
+  // 既存のダイアログがあれば削除
+  const old=document.getElementById('recDelDlg');
+  if(old) old.remove();
+  const dlg=document.createElement('div');
+  dlg.id='recDelDlg';
+  dlg.style.cssText='position:fixed;inset:0;background:#000c;display:flex;align-items:center;justify-content:center;z-index:200';
+  dlg.innerHTML=`
+    <div style="background:#0a0a14;border:2px solid #446;border-radius:12px;padding:20px;width:80%;max-width:280px;display:flex;flex-direction:column;gap:14px">
+      <div style="color:#aac;font-size:13px;text-align:center;font-weight:bold">記録を削除</div>
+      <div style="color:#889;font-size:12px;text-align:center;line-height:1.6">ホールベスト・プレイ回数・<br>実績データがすべて消えます。<br>本当に削除しますか？</div>
+      <div style="display:flex;gap:10px">
+        <button onclick="document.getElementById('recDelDlg').remove()" style="flex:1;background:#1a0a0a;border:2px solid #a44;color:#faa;border-radius:8px;font-size:14px;padding:11px;cursor:pointer;touch-action:manipulation">キャンセル</button>
+        <button onclick="execDeleteRecords()" style="flex:1;background:#0a0a0a;border:2px solid #555;color:#888;border-radius:8px;font-size:14px;padding:11px;cursor:pointer;touch-action:manipulation">削除する</button>
+      </div>
+    </div>`;
+  document.body.appendChild(dlg);
+}
+
+function execDeleteRecords(){
+  const dlg=document.getElementById('recDelDlg');
+  if(dlg) dlg.remove();
+  dbOpen().then(db=>{
+    const tx=db.transaction(['bestScores','lifetimeStats'],'readwrite');
+    tx.objectStore('bestScores').clear();
+    tx.objectStore('lifetimeStats').clear();
+    tx.oncomplete=()=>{
+      _db=null; // キャッシュリセット
+      openRecords(); // 画面を再描画
+    };
+  }).catch(e=>console.warn('DB delete error:',e));
 }
 
 function goT(){
