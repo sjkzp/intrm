@@ -3036,6 +3036,71 @@ function endGame(){
   sc('scEnd');
 }
 // =============================================
+// IndexedDB 記録モジュール (1DGOLF_DB)
+// =============================================
+const DB_NAME='1dgolf_records', DB_VER=1;
+let _db=null;
+function dbOpen(){
+  return new Promise((res,rej)=>{
+    if(_db){res(_db);return;}
+    const req=indexedDB.open(DB_NAME,DB_VER);
+    req.onupgradeneeded=e=>{
+      const db=e.target.result;
+      if(!db.objectStoreNames.contains('bestScores'))
+        db.createObjectStore('bestScores');
+      if(!db.objectStoreNames.contains('lifetimeStats'))
+        db.createObjectStore('lifetimeStats');
+    };
+    req.onsuccess=e=>{_db=e.target.result;res(_db);};
+    req.onerror=e=>rej(e.target.error);
+  });
+}
+function dbGet(store,key){
+  return dbOpen().then(db=>new Promise((res,rej)=>{
+    const req=db.transaction(store,'readonly').objectStore(store).get(key);
+    req.onsuccess=()=>res(req.result);
+    req.onerror=e=>rej(e.target.error);
+  }));
+}
+function dbPut(store,key,val){
+  return dbOpen().then(db=>new Promise((res,rej)=>{
+    const req=db.transaction(store,'readwrite').objectStore(store).put(val,key);
+    req.onsuccess=()=>res();
+    req.onerror=e=>rej(e.target.error);
+  })).catch(e=>console.warn('DB write error:',e));
+}
+function dbIncr(key){
+  return dbGet('lifetimeStats',key).then(cur=>dbPut('lifetimeStats',key,(cur||0)+1));
+}
+function dbUpdateBest(course,hole,charId,score){
+  if(course!==1&&course!==2) return Promise.resolve(false);
+  const key=`${course}_${hole}_${charId}`;
+  return dbGet('bestScores',key).then(cur=>{
+    if(cur===undefined||score<cur) return dbPut('bestScores',key,score).then(()=>true);
+    return false;
+  });
+}
+function dbRecordPlay(charId){return dbIncr(`play_${charId}`);}
+function dbRecordHIO(){return dbIncr('hio');}
+function dbRecordChipIn(){return dbIncr('chipIn');}
+function dbGetAllRecords(){
+  return dbOpen().then(db=>new Promise((res,rej)=>{
+    const result={bestScores:{},lifetimeStats:{}};
+    const tx=db.transaction(['bestScores','lifetimeStats'],'readonly');
+    tx.objectStore('bestScores').openCursor().onsuccess=e=>{
+      const cur=e.target.result;
+      if(cur){result.bestScores[cur.key]=cur.value;cur.continue();}
+    };
+    tx.objectStore('lifetimeStats').openCursor().onsuccess=e=>{
+      const cur=e.target.result;
+      if(cur){result.lifetimeStats[cur.key]=cur.value;cur.continue();}
+    };
+    tx.oncomplete=()=>res(result);
+    tx.onerror=e=>rej(e.target.error);
+  }));
+}
+
+// =============================================
 // レコード画面
 // =============================================
 function openRecords(){
