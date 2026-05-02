@@ -3191,7 +3191,7 @@ function openRecords(){
           let cls='best';
           if(diff!==null&&diff<0) cls='under';
           else if(diff===0) cls='par';
-          const label=diff!==null?(diff===0?'E':diff>0?`+${diff}`:`${diff}`):`${score}`;
+          const label=diff!==null?(diff===0?'±0':diff>0?`+${diff}`:`${diff}`):`${score}`;
           html+=`<td class="${cls}">${label}</td>`;
         }
         html+='</tr>';
