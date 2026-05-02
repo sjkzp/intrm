@@ -3191,7 +3191,7 @@ function openRecords(){
           let cls='best';
           if(diff!==null&&diff<0) cls='under';
           else if(diff===0) cls='par';
-          const label=diff!==null&&diff<0?`${score}(${diff})`:`${score}`;
+          const label=diff!==null?(diff===0?'E':diff>0?`+${diff}`:`${diff}`):`${score}`;
           html+=`<td class="${cls}">${label}</td>`;
         }
         html+='</tr>';
@@ -3258,14 +3258,14 @@ function execDeleteRecords(){
     tx.objectStore('lifetimeStats').clear();
     tx.oncomplete=()=>{
       _db=null;
-      // 削除完了ダイアログ
       const done=document.createElement('div');
+      done.id='recDoneDlg';
       done.style.cssText='position:fixed;inset:0;background:#000c;display:flex;align-items:center;justify-content:center;z-index:200';
       done.innerHTML=`
         <div style="background:#0a0a14;border:2px solid #446;border-radius:12px;padding:24px 20px;width:80%;max-width:280px;display:flex;flex-direction:column;gap:14px;text-align:center">
           <div style="font-size:28px">🗑</div>
           <div style="color:#aac;font-size:14px">記録を削除しました</div>
-          <button onclick="this.closest('div[style]').remove();openRecords()" style="background:#0a1a0a;border:2px solid #4a8;color:#8fa;border-radius:8px;font-size:14px;padding:11px;cursor:pointer;touch-action:manipulation">OK</button>
+          <button onclick="document.getElementById('recDoneDlg').remove();openRecords()" style="background:#0a1a0a;border:2px solid #4a8;color:#8fa;border-radius:8px;font-size:14px;padding:11px;cursor:pointer;touch-action:manipulation">OK</button>
         </div>`;
       document.body.appendChild(done);
     };
