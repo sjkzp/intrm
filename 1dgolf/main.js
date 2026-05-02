@@ -457,6 +457,7 @@ function afterJVS(){
     G.holeScores.push(G.ns); G.holePars.push(G.par);
     VS.playerScores.push(G.ns);
   }
+  VS.playerSc=G.sc; // プレイヤーターン終了時点でスコアを確定保存
   rankime();
   VS.playerTurn=false;
   // 最終ホール(H9)はショップをスキップしてスコア確認→CPU番へ
@@ -1699,7 +1700,7 @@ function showVSResult(){
   const pc=VS._savedCh||G.ch;
   const cc=VS.cpuCh;
   const pd=CD[pc],cpud=CD[cc];
-  const pSc=G.sc, cSc=VS.cpuSc;
+  const pSc=VS.playerSc, cSc=VS.cpuSc;
   const pScores=G.holeScores, cScores=VS.cpuScores;
   const pars=G.holePars;
   const judgeEl=document.getElementById('vsEndJudge');
