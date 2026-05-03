@@ -15,6 +15,33 @@ window.addEventListener('unhandledrejection', function(e) {
   document.body.appendChild(div);
 });
 
+
+
+// =============================================
+// #app スケーリング（縦長420×812を画面に収める）
+// =============================================
+(function(){
+  const APP_W=420, APP_H=812;
+  function fitApp(){
+    const app=document.getElementById('app');
+    if(!app) return;
+    const sw=window.innerWidth, sh=window.innerHeight;
+    const scale=Math.min(sw/APP_W, sh/APP_H);
+    const tx=(sw-APP_W*scale)/2;
+    const ty=(sh-APP_H*scale)/2;
+    app.style.transform=`translate(${tx}px,${ty}px) scale(${scale})`;
+    // bodyの高さをscale後のサイズに合わせてスクロールを防ぐ
+    document.body.style.height=sh+'px';
+  }
+  window.addEventListener('resize', fitApp);
+  // DOMContentLoaded後に実行
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', fitApp);
+  } else {
+    fitApp();
+  }
+})();
+
 // ============ ゲームロジック ============
 'use strict';
 
