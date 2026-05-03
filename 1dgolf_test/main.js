@@ -1,5 +1,20 @@
 
 
+// =============================================
+// #app スケーリング（縦長420×812を画面に収める）
+// =============================================
+function fitApp(){
+  var app=document.getElementById('app');
+  if(!app)return;
+  var sw=window.innerWidth,sh=window.innerHeight;
+  var scale=Math.min(sw/420,sh/812);
+  var tx=Math.round((sw-420*scale)/2);
+  var ty=Math.round((sh-812*scale)/2);
+  app.style.transform='translate('+tx+'px,'+ty+'px) scale('+scale+')';
+}
+window.addEventListener('resize',fitApp);
+document.addEventListener('DOMContentLoaded',fitApp);
+
 // ===== デバッグトラップ =====
 window.onerror = function(msg, src, line, col, err) {
   const div = document.createElement('div');
@@ -17,27 +32,6 @@ window.addEventListener('unhandledrejection', function(e) {
 
 // ============ ゲームロジック ============
 'use strict';
-
-// =============================================
-// #app スケーリング（縦長420×812を画面に収める）
-// =============================================
-function fitApp(){
-  const app=document.getElementById('app');
-  if(!app) return;
-  const sw=window.innerWidth, sh=window.innerHeight;
-  const scale=Math.min(sw/420, sh/812);
-  const tx=Math.round((sw-420*scale)/2);
-  const ty=Math.round((sh-812*scale)/2);
-  app.style.position='fixed';
-  app.style.top='0';
-  app.style.left='0';
-  app.style.width='420px';
-  app.style.height='812px';
-  app.style.transformOrigin='0 0';
-  app.style.transform=`translate(${tx}px,${ty}px) scale(${scale})`;
-}
-window.addEventListener('resize', fitApp);
-fitApp();
 
 
 // =============================================
@@ -107,13 +101,13 @@ const CD={
  1:{n:'一之瀬 水無',  p:'★',      t:'★★★★★',g:'★★★★★',s:' パワーショット',  col:'#6fdf6f',ic:'水',
     spd:30,sc:1,mx:100,s7:40,sc7:1,x7:100,wz:3,wt:7,pw:800,
     w1:200,c1:90,w2:180,c2:70,i1:130,d1:60,i2:100,d2:40,p1:30,e1:10,p2:15,e2:0,gW:102},
- 2:{n:'右村 走馬',    p:'★★★',   t:'★★★',   g:'★★★',   s:'地形無視ショット',col:'#6fa8df',ic:'馬',
+ 2:{n:'右村 走馬',    p:'★★★',   t:'★★★',   g:'★★★',   s:'地形無視ショット',col:'#6fa8df',ic:'右',
     spd:50,sc:4,mx:112,s7:50,sc7:4,x7:112,wz:2,wt:4,pw:950,
     w1:230,c1:120,w2:200,c2:100,i1:160,d1:80,i2:130,d2:60,p1:30,e1:30,p2:15,e2:10,gW:114},
- 3:{n:'柴田 綴',      p:'★★★★★★',t:'★',      g:'★★',    s:'　　打ち直し',   col:'#df9f4f',ic:'綴',
+ 3:{n:'柴田 綴',      p:'★★★★★★',t:'★',      g:'★★',    s:'　　打ち直し',   col:'#df9f4f',ic:'柴',
     spd:28,sc:7,mx:133,s7:28,sc7:7,x7:133,wz:2,wt:2,pw:1050,
     w1:290,c1:190,w2:270,c2:150,i1:230,d1:110,i2:190,d2:80,p1:30,e1:40,p2:15,e2:20,gW:135},
- 4:{n:'神 響子',      p:'★★',     t:'★★★★',  g:'★★★★',  s:'　風・傾斜消し',col:'#df6fdf',ic:'響',
+ 4:{n:'神 響子',      p:'★★',     t:'★★★★',  g:'★★★★',  s:'　風・傾斜消し',col:'#df6fdf',ic:'神',
     spd:50,sc:3,mx:108,s7:50,sc7:3,x7:108,wz:4,wt:5,pw:650,
     w1:220,c1:110,w2:190,c2:90,i1:160,d1:70,i2:120,d2:40,p1:30,e1:20,p2:15,e2:10,gW:110},
  5:{n:'フィリップ 北崎',p:'★★★★',t:'★★★',   g:'★★★★',  s:'スタートオーバー',col:'#ffdf6f',ic:'P',
@@ -464,10 +458,8 @@ function confirmVSOppo(){
 
 // VS yesClick: startGameVS
 function startGameVS(){
-  // プレイヤー側の初期化
   VS.cpuSc=0; VS.cpuPts=1300; VS.cpuScores=[]; VS.cpuPars=[];
   VS.playerTurn=true; VS.playerSc=0; VS.playerScores=[];
-  // 通常スタートと同じ
   startGame();
 }
 
@@ -480,6 +472,7 @@ function afterJVS(){
     G.holeScores.push(G.ns); G.holePars.push(G.par);
     VS.playerScores.push(G.ns);
   }
+  VS.playerSc=G.sc; // プレイヤーターン終了時点でスコアを確定保存
   rankime();
   VS.playerTurn=false;
   // 最終ホール(H9)はショップをスキップしてスコア確認→CPU番へ
@@ -1160,16 +1153,17 @@ function cpuSelectClub(){
     if(bzRel+safeMargin<=maxReach) candidates.push(bzRel+safeMargin);
   }
 
-  // 各ROUGHゾーンの手前(safeMargin/2)と後ろ(safeMargin)
-  // ROUGHは許容できるが、できれば避ける
+  // 各ROUGHゾーンの手前(roughMargin)と後ろ(safeMargin*2)
+  // ラフ脱出は余裕を持たせる（ゲージブレでラフに戻らないよう広めに）
   for(let i=0;i<3;i++){
     if(!G.Ra[i]&&!G.Rz[i]) continue;
     const raRel=G.Ra[i]-G.cp, rzRel=G.Rz[i]-G.cp;
     if(rzRel<=0) continue;
     if(raRel>maxReach) continue;
     const roughMargin=Math.ceil(safeMargin/2);
+    const roughExitMargin=safeMargin*2; // ラフ後ろは2倍のマージン
     if(raRel>roughMargin) candidates.push(raRel-roughMargin);
-    if(rzRel+safeMargin<=maxReach) candidates.push(rzRel+safeMargin);
+    if(rzRel+roughExitMargin<=maxReach) candidates.push(rzRel+roughExitMargin);
   }
 
   // グリーン手前フェアウェイ（グリーン前縁のsafeMargin手前）
@@ -1711,10 +1705,17 @@ function cpuAutoFinish(){
 
 // VSリザルト表示
 function showVSResult(){
+  // ★全ホール完走時にDBへ保存（VSモードはendGameを通らないためここで実行）
+  const _lastH=G.cr===2?9:6;
+  if(G.holeScores.length >= _lastH){
+    const ch=VS._savedCh||G.ch;
+    dbSaveRunBest(G.cr, ch, G.holeScores, G.holePars);
+    dbRecordPlay(ch);
+  }
   const pc=VS._savedCh||G.ch;
   const cc=VS.cpuCh;
   const pd=CD[pc],cpud=CD[cc];
-  const pSc=G.sc, cSc=VS.cpuSc;
+  const pSc=VS.playerSc, cSc=VS.cpuSc;
   const pScores=G.holeScores, cScores=VS.cpuScores;
   const pars=G.holePars;
   const judgeEl=document.getElementById('vsEndJudge');
@@ -2294,7 +2295,7 @@ const rnd=(a,b)=>a+Math.round(Math.random()*(b-a));
 
 // シーン切替
 function sc(id){
-  ['scT','scC','scCR','scG','scEnd','scVSEnd'].forEach(s=>{
+  ['scT','scC','scCR','scG','scEnd','scVSEnd','scRec'].forEach(s=>{
     const e=document.getElementById(s);
     if(e){e.style.display='none';e.className='sc';}
   });
@@ -2760,7 +2761,7 @@ function showGiveUpFlash(){
 // =============================================
 function judgeShot(){
   const df=G.ns-G.par;
-  if(G.ns===1){G.nHIO++;G.mpt=2400+G.bon+200;}
+  if(G.ns===1){G.nHIO++;G.mpt=2400+G.bon+200; dbRecordHIO();}
   else if(df<=-5){G.n4++;G.mpt=2100+G.bon+200;}
   else if(df===-4){G.n4++;G.mpt=1900+G.bon+200;}
   else if(df===-3){G.nALB++;G.mpt=1700+G.bon;}
@@ -2772,7 +2773,7 @@ function judgeShot(){
   else if(df===3) G.mpt=100+Math.trunc(G.bon/4);
   else if(df>=4)  G.mpt=20+Math.trunc(G.bon/4);
   G.sc+=(G.ns-G.par);
-  if(G.cmd===5)G.nCHP++; // チップイン: ドライブ（グリーン外）からの直接カップイン（HIOも含む）
+  if(G.cmd===5){G.nCHP++; dbRecordChipIn();}
   const SL=[{d:-99,n:'ホールインワン！',c:'#ff0',sub:'HOLE IN ONE!'},{d:-4,n:'コンドル',c:'#f80',sub:'CONDOR'},{d:-3,n:'アルバトロス',c:'#f80',sub:'ALBATROSS'},
     {d:-2,n:'イーグル',c:'#4f4',sub:'EAGLE'},{d:-1,n:'バーディー',c:'#4df',sub:'BIRDIE'},{d:0,n:'パー',c:'#fff',sub:'PAR'},
     {d:1,n:'ボギー',c:'#fa4',sub:'BOGEY'},{d:2,n:'ダブルボギー',c:'#f84',sub:'DOUBLE BOGEY'},{d:3,n:'トリプルボギー',c:'#f44',sub:'TRIPLE BOGEY'},{d:99,n:'クアドラボギー',c:'#f22',sub:'QUAD BOGEY'}];
@@ -3027,6 +3028,12 @@ function endGame(){
     G.holeScores.push(G.ns);
     G.holePars.push(G.par);
   }
+  // ★全ホール完走した場合のみDBに保存（途中中断は記録しない）
+  if(G.holeScores.length >= _lastH){
+    const ch=VS.active?(VS._savedCh||G.ch):G.ch;
+    dbSaveRunBest(G.cr, ch, G.holeScores, G.holePars);
+    dbRecordPlay(ch);
+  }
   rankime();
   if(!G.uf3&&G.sc<=3)G.uf3=true;
   if(!G.uf4&&(G.maxy>=450||G.nHIO>=1))G.uf4=true;
@@ -3056,6 +3063,231 @@ function endGame(){
   document.getElementById('endStatBox').innerHTML=rows;
   sc('scEnd');
 }
+// =============================================
+// IndexedDB 記録モジュール (1DGOLF_DB)
+// =============================================
+const DB_NAME='1dgolf_records', DB_VER=1;
+let _db=null;
+function dbOpen(){
+  return new Promise((res,rej)=>{
+    if(_db){res(_db);return;}
+    const req=indexedDB.open(DB_NAME,DB_VER);
+    req.onupgradeneeded=e=>{
+      const db=e.target.result;
+      if(!db.objectStoreNames.contains('bestScores'))
+        db.createObjectStore('bestScores');
+      if(!db.objectStoreNames.contains('lifetimeStats'))
+        db.createObjectStore('lifetimeStats');
+    };
+    req.onsuccess=e=>{_db=e.target.result;res(_db);};
+    req.onerror=e=>rej(e.target.error);
+  });
+}
+function dbGet(store,key){
+  return dbOpen().then(db=>new Promise((res,rej)=>{
+    const req=db.transaction(store,'readonly').objectStore(store).get(key);
+    req.onsuccess=()=>res(req.result);
+    req.onerror=e=>rej(e.target.error);
+  }));
+}
+function dbPut(store,key,val){
+  return dbOpen().then(db=>new Promise((res,rej)=>{
+    const req=db.transaction(store,'readwrite').objectStore(store).put(val,key);
+    req.onsuccess=()=>res();
+    req.onerror=e=>rej(e.target.error);
+  })).catch(e=>console.warn('DB write error:',e));
+}
+function dbIncr(key){
+  return dbGet('lifetimeStats',key).then(cur=>dbPut('lifetimeStats',key,(cur||0)+1));
+}
+// コース完走記録を保存。合計スコアが過去最小のときのみ全ホール上書き
+// キー: "run_${course}_${charId}" 値: {total, holes:[{score,par},...]}
+function dbSaveRunBest(course, charId, holeScores, holePars){
+  if(course!==1&&course!==2) return Promise.resolve(false);
+  const key=`run_${course}_${charId}`;
+  const total=holeScores.reduce((a,b)=>a+b,0);
+  return dbGet('bestScores',key).then(cur=>{
+    const curTotal=(cur&&cur.total!==undefined)?cur.total:Infinity;
+    if(total<curTotal){
+      const holes=holeScores.map((score,i)=>({score,par:holePars[i]||4}));
+      return dbPut('bestScores',key,{total,holes}).then(()=>true);
+    }
+    return false;
+  });
+}
+function dbRecordPlay(charId){return dbIncr(`play_${charId}`);}
+function dbRecordHIO(){return dbIncr('hio');}
+function dbRecordChipIn(){return dbIncr('chipIn');}
+function dbGetAllRecords(){
+  return dbOpen().then(db=>new Promise((res,rej)=>{
+    const result={bestScores:{},lifetimeStats:{}};
+    const tx=db.transaction(['bestScores','lifetimeStats'],'readonly');
+    tx.objectStore('bestScores').openCursor().onsuccess=e=>{
+      const cur=e.target.result;
+      if(cur){result.bestScores[cur.key]=cur.value;cur.continue();}
+    };
+    tx.objectStore('lifetimeStats').openCursor().onsuccess=e=>{
+      const cur=e.target.result;
+      if(cur){result.lifetimeStats[cur.key]=cur.value;cur.continue();}
+    };
+    tx.oncomplete=()=>res(result);
+    tx.onerror=e=>rej(e.target.error);
+  }));
+}
+
+// =============================================
+// レコード画面
+// =============================================
+function openRecords(){
+  sc('scRec');
+  const body=document.getElementById('recBody');
+  body.innerHTML='<div style="color:#667;font-size:13px;text-align:center;padding:20px">読み込み中…</div>';
+
+  const COURSE_NAMES={1:'練習コース',2:'選手権コース'};
+  const HOLE_COUNTS={1:6,2:9};
+
+  dbGetAllRecords().then(rec=>{
+    const bs=rec.bestScores||{};
+    const ls=rec.lifetimeStats||{};
+    let html='';
+
+    // ── 累計実績 ──
+    html+='<div class="recSection"><h3>📊 累計実績</h3>';
+    const hio=ls['hio']||0, chip=ls['chipIn']||0;
+    const plays=Object.keys(CD).map(k=>({id:+k,n:CD[k].n,c:ls[`play_${k}`]||0}));
+    html+=`<div class="recStatRow">ホールインワン<span>${hio}回</span></div>`;
+    html+=`<div class="recStatRow">チップイン<span>${chip}回</span></div>`;
+    html+='</div>';
+
+    // ── キャラ別プレイ回数 ──
+    html+='<div class="recSection"><h3>🏌️ キャラ別プレイ回数</h3>';
+    plays.forEach(p=>{
+      html+=`<div class="recStatRow"><span style="color:${CD[p.id].col}">${p.n}</span><span>${p.c}回</span></div>`;
+    });
+    html+='</div>';
+
+    // ── コース別ホールベスト ──
+    [1,2].forEach(cr=>{
+      const hmax=HOLE_COUNTS[cr];
+      // このコースにデータがあるか確認（run_キー形式）
+      let hasData=false;
+      for(let ch=1;ch<=6;ch++){
+        if(bs[`run_${cr}_${ch}`]!==undefined){hasData=true;break;}
+      }
+      if(!hasData) return;
+
+      html+=`<div class="recSection"><h3>⛳ ${COURSE_NAMES[cr]} ベストスコア</h3>`;
+      html+='<table class="recTable">';
+      html+='<colgroup><col style="width:18px"><col style="width:22px">';
+      for(let ch=1;ch<=6;ch++) html+='<col>';
+      html+='</colgroup>';
+      html+='<thead><tr><th>H</th><th>Par</th>';
+      for(let ch=1;ch<=6;ch++) html+=`<th style="color:${CD[ch].col}">${CD[ch].ic}</th>`;
+      html+='</tr></thead><tbody>';
+
+      // 各キャラのrunデータを取得
+      const runs={};
+      for(let ch=1;ch<=6;ch++){
+        runs[ch]=bs[`run_${cr}_${ch}`]||null;
+      }
+
+      for(let h=1;h<=hmax;h++){
+        // parはいずれかのrunデータから取得
+        let par=0;
+        for(let ch=1;ch<=6;ch++){
+          const r=runs[ch];
+          if(r&&r.holes&&r.holes[h-1]){par=r.holes[h-1].par;break;}
+        }
+        html+=`<tr><td>${h}</td><td class="par">${par||'—'}</td>`;
+        for(let ch=1;ch<=6;ch++){
+          const r=runs[ch];
+          if(!r||!r.holes||!r.holes[h-1]){html+='<td style="color:#334">—</td>';continue;}
+          const score=r.holes[h-1].score;
+          const diff=par?score-par:null;
+          let cls='best';
+          if(diff!==null&&diff<0) cls='under';
+          else if(diff===0) cls='par';
+          const label=diff!==null?(diff===0?'±0':diff>0?`+${diff}`:`${diff}`):`${score}`;
+          html+=`<td class="${cls}">${label}</td>`;
+        }
+        html+='</tr>';
+      }
+      // 合計行
+      {
+        let totalPar=0;
+        for(let ch=1;ch<=6;ch++){
+          const r=runs[ch];
+          if(r&&r.holes){totalPar=r.holes.reduce((a,h)=>a+(h.par||4),0);break;}
+        }
+        html+=`<tr style="border-top:2px solid #1a1a2a"><td style="color:#aabbcc"><b>計</b></td><td class="par"><b>${totalPar||'—'}</b></td>`;
+        for(let ch=1;ch<=6;ch++){
+          const r=runs[ch];
+          if(!r||!r.total){html+='<td style="color:#334">—</td>';continue;}
+          const diff=totalPar?r.total-totalPar:null;
+          const sg=diff!==null&&diff>0?'+':'';
+          let cls='best';
+          if(diff!==null&&diff<0) cls='under';
+          else if(diff===0) cls='par';
+          html+=`<td class="${cls}"><b>${r.total}</b><br><span style="font-size:9px">${diff!==null?`(${sg}${diff})`:''}</span></td>`;
+        }
+        html+='</tr>';
+      }
+      html+='</tbody></table></div>';
+    });
+
+    if(!html) html='<div class="recEmpty">まだ記録がありません</div>';
+    // 削除ボタン：スクロール内の末尾に配置（戻るボタンとの誤タップ防止のため大きく余白）
+    html+=`<div style="margin-top:40px;padding:16px 0 24px;text-align:center">
+      <button onclick="confirmDeleteRecords()" style="background:transparent;border:1px solid #2a2a3a;color:#556;border-radius:6px;font-size:11px;padding:8px 18px;cursor:pointer;touch-action:manipulation;letter-spacing:0.5px">🗑 記録をすべて削除</button>
+    </div>`;
+    body.innerHTML=html;
+  }).catch(()=>{
+    body.innerHTML='<div class="recEmpty" style="color:#f44">記録の読み込みに失敗しました</div>';
+  });
+}
+
+function confirmDeleteRecords(){
+  // 既存のダイアログがあれば削除
+  const old=document.getElementById('recDelDlg');
+  if(old) old.remove();
+  const dlg=document.createElement('div');
+  dlg.id='recDelDlg';
+  dlg.style.cssText='position:fixed;inset:0;background:#000c;display:flex;align-items:center;justify-content:center;z-index:200';
+  dlg.innerHTML=`
+    <div style="background:#0a0a14;border:2px solid #446;border-radius:12px;padding:20px;width:80%;max-width:280px;display:flex;flex-direction:column;gap:14px">
+      <div style="color:#aac;font-size:13px;text-align:center;font-weight:bold">記録を削除</div>
+      <div style="color:#889;font-size:12px;text-align:center;line-height:1.6">ホールベスト・プレイ回数・<br>実績データがすべて消えます。<br>本当に削除しますか？</div>
+      <div style="display:flex;gap:10px">
+        <button onclick="document.getElementById('recDelDlg').remove()" style="flex:1;background:#1a0a0a;border:2px solid #a44;color:#faa;border-radius:8px;font-size:14px;padding:11px;cursor:pointer;touch-action:manipulation">キャンセル</button>
+        <button onclick="execDeleteRecords()" style="flex:1;background:#0a0a0a;border:2px solid #555;color:#888;border-radius:8px;font-size:14px;padding:11px;cursor:pointer;touch-action:manipulation">削除する</button>
+      </div>
+    </div>`;
+  document.body.appendChild(dlg);
+}
+
+function execDeleteRecords(){
+  const dlg=document.getElementById('recDelDlg');
+  if(dlg) dlg.remove();
+  dbOpen().then(db=>{
+    const tx=db.transaction(['bestScores','lifetimeStats'],'readwrite');
+    tx.objectStore('bestScores').clear();
+    tx.objectStore('lifetimeStats').clear();
+    tx.oncomplete=()=>{
+      _db=null;
+      const done=document.createElement('div');
+      done.id='recDoneDlg';
+      done.style.cssText='position:fixed;inset:0;background:#000c;display:flex;align-items:center;justify-content:center;z-index:200';
+      done.innerHTML=`
+        <div style="background:#0a0a14;border:2px solid #446;border-radius:12px;padding:24px 20px;width:80%;max-width:280px;display:flex;flex-direction:column;gap:14px;text-align:center">
+          <div style="font-size:28px">🗑</div>
+          <div style="color:#aac;font-size:14px">記録を削除しました</div>
+          <button onclick="document.getElementById('recDoneDlg').remove();openRecords()" style="background:#0a1a0a;border:2px solid #4a8;color:#8fa;border-radius:8px;font-size:14px;padding:11px;cursor:pointer;touch-action:manipulation">OK</button>
+        </div>`;
+      document.body.appendChild(done);
+    };
+  }).catch(e=>console.warn('DB delete error:',e));
+}
+
 function goT(){
   // アニメーション・ゲージインターバルを完全クリア
   if(G.mv){clearInterval(G.mv);G.mv=null;}
