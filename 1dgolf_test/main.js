@@ -27,14 +27,17 @@ window.addEventListener('unhandledrejection', function(e) {
     if(!app) return;
     const sw=window.innerWidth, sh=window.innerHeight;
     const scale=Math.min(sw/APP_W, sh/APP_H);
-    const tx=(sw-APP_W*scale)/2;
-    const ty=(sh-APP_H*scale)/2;
+    const tx=Math.round((sw-APP_W*scale)/2);
+    const ty=Math.round((sh-APP_H*scale)/2);
+    app.style.position='fixed';
+    app.style.top='0';
+    app.style.left='0';
+    app.style.width=APP_W+'px';
+    app.style.height=APP_H+'px';
+    app.style.transformOrigin='0 0';
     app.style.transform=`translate(${tx}px,${ty}px) scale(${scale})`;
-    // bodyの高さをscale後のサイズに合わせてスクロールを防ぐ
-    document.body.style.height=sh+'px';
   }
   window.addEventListener('resize', fitApp);
-  // DOMContentLoaded後に実行
   if(document.readyState==='loading'){
     document.addEventListener('DOMContentLoaded', fitApp);
   } else {
