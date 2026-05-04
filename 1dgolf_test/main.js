@@ -751,6 +751,7 @@ function cpuTakeTurn(){
     // 水無(ch=1): パワーショット
     // 条件1: 水ゾーンが目前にあり100%では越えられないが120%なら越えられる
     // 条件2: 1打目で100%ゲージ(ng)でROUGH/WATER/BUNKER着地リスク、120%なら回避できる
+    // 条件3: 100%ではグリーンに届かないが120%なら届く
     if(cpuCh===1){
       const ng100=G.ng; // 100%飛距離
       const ng120=Math.round(ng100*1.2); // 120%飛距離（風補正前）
@@ -775,8 +776,16 @@ function cpuTakeTurn(){
         };
         cond2=isRisky(land100) && !isRisky(land120);
       }
-      if((cond1||cond2) && G.nwz>0){
+      // 条件3: 100%ではグリーンに届かないが120%なら届く
+      const greenNear=G.y1-G.gz, greenFar=G.y1+G.gz;
+      const land100g=G.cp+drv100, land120g=G.cp+drv120;
+      const cond3=!(land100g>=greenNear&&land100g<=greenFar)&&(land120g>=greenNear&&land120g<=greenFar);
+      if((cond1||cond2||cond3) && G.nwz>0){
         G.gMax=120; G.spc=1;
+        // ターゲット距離を設定（cpuCalcGaugeが正確なゲージ値を算出できるよう）
+        if(cond1){const oz=zones.find(z=>z.wz>drv100&&drv120>z.wz);if(oz)G._cpuTargetDist=(drv120>=(G.y2-G.gz)?G.y2:oz.wz+1);}
+        else if(cond2){G._cpuTargetDist=drv120;}
+        else if(cond3){G._cpuTargetDist=G.y2;}
         seSpecial();
         T('speBox',CD[cpuCh].s||'特技使用'); S('speBox','flex');
         updGaugeWaku(); updGauge();
