@@ -1,20 +1,3 @@
-
-
-// =============================================
-// #app スケーリング（縦長420×812を画面に収める）
-// =============================================
-function fitApp(){
-  var app=document.getElementById('app');
-  if(!app)return;
-  var sw=window.innerWidth,sh=window.innerHeight;
-  var scale=Math.min(sw/420,sh/812);
-  var tx=Math.round((sw-420*scale)/2);
-  var ty=Math.round((sh-812*scale)/2);
-  app.style.transform='translate('+tx+'px,'+ty+'px) scale('+scale+')';
-}
-window.addEventListener('resize',fitApp);
-document.addEventListener('DOMContentLoaded',fitApp);
-
 // ===== デバッグトラップ =====
 window.onerror = function(msg, src, line, col, err) {
   const div = document.createElement('div');
