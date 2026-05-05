@@ -62,9 +62,12 @@ function applyLang(){
   const t = L[_lang];
   const lb = document.getElementById('langBtn');
   if(lb) lb.textContent = t.langBtn;
-  ['sBtnStart','sBtnVS','sBtnRec','sBtnHow'].forEach(id=>{
+  const btnMap = {
+    sBtnStart:'btnStart', sBtnVS:'btnVS', sBtnRec:'btnRec', sBtnHow:'btnHow'
+  };
+  Object.entries(btnMap).forEach(([id,key])=>{
     const el = document.getElementById(id);
-    if(el) el.textContent = el.getAttribute('data-'+_lang) || el.textContent;
+    if(el) el.textContent = t[key];
   });
   const dhc = document.getElementById('dlgHowtoClose');
   if(dhc) dhc.textContent = t.howtoClose;
@@ -86,7 +89,9 @@ function applyLang(){
   if(cdn && cdn.dataset.empty==='1') cdn.textContent = t.charaPrompt;
   // 決定ボタン
   const cbn = document.getElementById('cBtnNormal');
-  if(cbn) cbn.textContent = cbn.getAttribute('data-'+_lang) || cbn.textContent;
+  if(cbn) cbn.textContent = t.btnDecide;
+  const cbnvs = document.getElementById('cBtnVSoppo');
+  if(cbnvs) cbnvs.textContent = t.btnVSDecide;
   // コース選択
   const crH2 = document.querySelector('#crHeader h2');
   if(crH2) crH2.textContent = t.courseTitle;
