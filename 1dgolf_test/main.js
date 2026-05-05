@@ -55,6 +55,7 @@ const L = {
 function toggleLang(){
   _lang = _lang==='ja' ? 'en' : 'ja';
   applyLang();
+  dbPut('settings','lang',_lang).catch(()=>{});
 }
 
 function applyLang(){
@@ -99,7 +100,32 @@ function applyLang(){
   if(ccMeta) ccMeta.innerHTML   = t.courseChampMeta;
   const cct = document.getElementById('crConfirmTitle');
   if(cct) cct.textContent = t.courseConfirmTitle || 'ARE YOU READY?';
+
+  // キャラ詳細パネルが表示されている場合は名前・特技を再描画
+  const cdn2 = document.getElementById('cDetailName');
+  if(cdn2 && cdn2.dataset.empty !== '1'){
+    const selCard = document.querySelector('.csCard.sel');
+    if(selCard){
+      const selId = parseInt(selCard.id.replace('cs',''));
+      const d = (typeof CD !== 'undefined') && CD[selId];
+      if(d){
+        cdn2.textContent = cdN(d);
+        const dSpe = document.getElementById('dSpe');
+        if(dSpe) dSpe.textContent = cdS(d);
+      }
+    }
+  }
+  // speBox（特技フラッシュ）が表示中なら更新
+  const speBox = document.getElementById('speBox');
+  if(speBox && speBox.style.display !== 'none' && typeof G !== 'undefined'){
+    const curD = (typeof CD !== 'undefined') && CD[G.ch];
+    if(curD) speBox.textContent = cdS(curD) || 'SKILL';
+  }
 }
+
+// キャラ名・特技名を言語別に返す
+function cdN(d){ return _lang==='ja' ? (d.jn||d.n) : d.n; }
+function cdS(d){ return _lang==='ja' ? (d.js||d.s) : d.s; }
 
 function _setCharaHeader(h2text, ptext, h2key, pkey){
   const cHdr = document.querySelector('#scC #cHeader');
@@ -176,22 +202,22 @@ function seChime(){
 }
 
 const CD={
- 1:{n:'Mizunashi Ichinose', p:'★',      t:'★★★★★',g:'★★★★★',s:'Power Shot',    col:'#6fdf6f',ic:'水',
+ 1:{n:'Mina Ichinose',    jn:'一之瀬 水無', p:'★',      t:'★★★★★',g:'★★★★★',s:'Power Shot',     js:'パワーショット',  col:'#6fdf6f',ic:'水',
     spd:30,sc:1,mx:100,s7:40,sc7:1,x7:100,wz:3,wt:7,pw:800,
     w1:200,c1:90,w2:180,c2:70,i1:130,d1:60,i2:100,d2:40,p1:30,e1:10,p2:15,e2:0,gW:102},
- 2:{n:'Soma Migimura', p:'★★★',   t:'★★★',   g:'★★★',   s:'Terrain Ignore',  col:'#6fa8df',ic:'右',
+ 2:{n:'Soma Migimura',    jn:'右村 走馬',   p:'★★★',   t:'★★★',   g:'★★★',   s:'Terrain Ignore',  js:'地形無視ショット',col:'#6fa8df',ic:'右',
     spd:50,sc:4,mx:112,s7:50,sc7:4,x7:112,wz:2,wt:4,pw:950,
     w1:230,c1:120,w2:200,c2:100,i1:160,d1:80,i2:130,d2:60,p1:30,e1:30,p2:15,e2:10,gW:114},
- 3:{n:'Tsuduru Shibata', p:'★★★★★★',t:'★',      g:'★★',    s:'Retry Shot',     col:'#df9f4f',ic:'柴',
+ 3:{n:'Tsuduru Shibata',  jn:'柴田 綴',     p:'★★★★★★',t:'★',      g:'★★',    s:'Retry Shot',      js:'打ち直し',        col:'#df9f4f',ic:'柴',
     spd:28,sc:7,mx:133,s7:28,sc7:7,x7:133,wz:2,wt:2,pw:1050,
     w1:290,c1:190,w2:270,c2:150,i1:230,d1:110,i2:190,d2:80,p1:30,e1:40,p2:15,e2:20,gW:135},
- 4:{n:'Hibiki Jin',    p:'★★',     t:'★★★★',  g:'★★★★',  s:'Wind/Slope Cancel', col:'#df6fdf',ic:'神',
+ 4:{n:'Kyoko Jin',        jn:'神 響子',     p:'★★',     t:'★★★★',  g:'★★★★',  s:'Wind/Slope Cancel',js:'風・傾斜消し',    col:'#df6fdf',ic:'神',
     spd:50,sc:3,mx:108,s7:50,sc7:3,x7:108,wz:4,wt:5,pw:650,
     w1:220,c1:110,w2:190,c2:90,i1:160,d1:70,i2:120,d2:40,p1:30,e1:20,p2:15,e2:10,gW:110},
- 5:{n:'Philip Kitazaki', p:'★★★★',t:'★★★',   g:'★★★★',  s:'Start Over',     col:'#ffdf6f',ic:'P',
+ 5:{n:'Philip Kitazaki',  jn:'フィリップ 北崎',p:'★★★★',t:'★★★',   g:'★★★★',  s:'Start Over',      js:'スタートオーバー',col:'#ffdf6f',ic:'P',
     spd:43,sc:5,mx:120,s7:40,sc7:5,x7:120,wz:1,wt:3,pw:1200,
     w1:240,c1:150,w2:220,c2:130,i1:180,d1:100,i2:150,d2:80,p1:30,e1:40,p2:15,e2:20,gW:122},
- 6:{n:'Hideo Ichinose', p:'★★★★★',t:'★★★★★',g:'★★★★★',s:'None',           col:'#ff6f6f',ic:'旗',
+ 6:{n:'Hatao Ichinose',   jn:'一之瀬 旗雄', p:'★★★★★',t:'★★★★★',g:'★★★★★',s:'None',             js:'無し',            col:'#ff6f6f',ic:'旗',
     spd:27,sc:1,mx:125,s7:27,sc7:1,x7:125,wz:0,wt:6,pw:0,
     w1:270,c1:100,w2:250,c2:80,i1:200,d1:70,i2:170,d2:50,p1:30,e1:30,p2:15,e2:10,gW:127},
 };
@@ -435,8 +461,8 @@ function showScoreCard(){
     const pd=CD[G.ch]||{n:'YOU',col:'#aaccee'};
     const cpud=CD[VS.cpuCh]||{n:'CPU',col:'#aaaaaa'};
     tbl.innerHTML=`<div style="display:flex;gap:6px;width:100%">`+
-      makeCol('YOU '+pd.n.split(' ').pop(), pd.col, G.holeScores)+
-      makeCol(cpud.n.split(' ').pop(), cpud.col, VS.cpuScores)+
+      makeCol('YOU '+cdN(pd).split(' ')[0], pd.col, G.holeScores)+
+      makeCol(cdN(cpud).split(' ')[0], cpud.col, VS.cpuScores)+
       `</div>`;
   } else {
     ttl.textContent = (cr[G.cr]||'') + ' SCORECARD';
@@ -502,7 +528,7 @@ function drawSlotsVS(step){
       card.innerHTML=(imgSrc
         ?`<img src="${imgSrc}" style="max-width:80%;max-height:72px;width:72px;height:72px;object-fit:contain">`
         :`<div class="csIcon" style="color:${d.col}">${d.ic}</div>`)+
-        `<div class="csName" style="color:${d.col}aa">${d.n}</div>`;
+        `<div class="csName" style="color:${d.col}aa">${cdN(d)}</div>`;
     } else {
       card.innerHTML=`<div class="csLockMark">🔒</div><div class="csName" style="color:#333">???</div>`;
     }
@@ -683,7 +709,7 @@ function showVSInterScore(afterCPU){
       `<span style="color:#aaccee;font-size:12px">H${afterCPU?G.nH-1:G.nH} Done</span>`+
       `<span style="margin-left:8px;color:${pCol};font-size:13px;font-weight:bold">YOU ${psg}${Math.abs(psc)}</span>`+
       `<span style="color:#666;margin:0 6px">vs</span>`+
-      `<span style="color:${cCol};font-size:13px;font-weight:bold">${cpud.n.split(' ')[1]||cpud.n} ${csg}${Math.abs(csc)}</span>`+
+      `<span style="color:${cCol};font-size:13px;font-weight:bold">${cdN(cpud).split(' ')[0]} ${csg}${Math.abs(csc)}</span>`+
       `<button onclick="showScoreCard()" style="margin-left:auto;background:#061228;border:1px solid #2a5a8a;color:#88ccee;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;touch-action:manipulation">📋</button>`;
     ti.style.display='flex';
     ti.style.alignItems='center';
@@ -863,7 +889,7 @@ function cpuTakeTurn(){
         else if(cond2){G._cpuTargetDist=drv120;}
         else if(cond3){G._cpuTargetDist=G.y2;}
         seSpecial();
-        T('speBox',CD[cpuCh].s||'SKILL'); S('speBox','flex');
+        T('speBox',cdS(CD[cpuCh])||'SKILL'); S('speBox','flex');
         updGaugeWaku(); updGauge();
         cpuCalcGauge(); // gMax=120で再計算
       }
@@ -876,7 +902,7 @@ function cpuTakeTurn(){
       if(needIgnore && G.nwz>0){
         G.spc=2;
         seSpecial();
-        T('speBox',CD[cpuCh].s||'SKILL'); S('speBox','flex');
+        T('speBox',cdS(CD[cpuCh])||'SKILL'); S('speBox','flex');
       }
     }
 
@@ -885,7 +911,7 @@ function cpuTakeTurn(){
     else if(cpuCh===4 && G.wind<0 && G.nwz>0){
       G.wind=0; G.spc=4;
       seSpecial();
-      T('speBox',CD[cpuCh].s||'SKILL'); S('speBox','flex');
+      T('speBox',cdS(CD[cpuCh])||'SKILL'); S('speBox','flex');
       showWind();
       cpuCalcGauge();
     }
@@ -902,7 +928,7 @@ function cpuTakeTurn(){
       if(G.y2>putt100reach && G.y2<=putt120reach){
         G.gMax=120; G.spc=1;
         seSpecial();
-        T('speBox',CD[cpuCh].s||'SKILL'); S('speBox','flex');
+        T('speBox',cdS(CD[cpuCh])||'SKILL'); S('speBox','flex');
         updGaugeWaku(); updGauge();
         cpuCalcGauge();
       }
@@ -912,7 +938,7 @@ function cpuTakeTurn(){
     if(cpuCh===4 && G.wind<0 && G.nwz>0){
       G.wind=0; G.spc=4;
       seSpecial();
-      T('speBox',CD[cpuCh].s||'SKILL'); S('speBox','flex');
+      T('speBox',cdS(CD[cpuCh])||'SKILL'); S('speBox','flex');
       showWind();
       cpuCalcGauge();
     }
@@ -1832,8 +1858,8 @@ function showVSResult(){
     return html;
   }
   document.getElementById('vsEndCards').innerHTML=
-    makeCard(pd.n,pd.col,pScores,true,pc)+
-    makeCard(cpud.n,cpud.col,cScores,false,cc);
+    makeCard(cdN(pd),pd.col,pScores,true,pc)+
+    makeCard(cdN(cpud),cpud.col,cScores,false,cc);
   sc('scVSEnd');
 }
 
@@ -2140,7 +2166,7 @@ function spCk(){
   }
 
   const d=CD[ch];
-  T('speBox',d.s||'SKILL');S('speBox','flex');
+  T('speBox',cdS(d)||'SKILL');S('speBox','flex');
   if(ch===1){
     G.gMax=120;G.spc=1;
     updGaugeWaku(); // 目盛りを120%基準に即座に再描画
@@ -2412,7 +2438,7 @@ function drawSlots(){
       card.innerHTML = (imgSrc
         ? `<img src="${imgSrc}" style="max-width:80%;max-height:72px;width:72px;height:72px;object-fit:contain">`
         : `<div class="csIcon" style="color:${d.col}">${d.ic}</div>`) +
-        `<div class="csName" style="color:${d.col}aa">${d.n}</div>`;
+        `<div class="csName" style="color:${d.col}aa">${cdN(d)}</div>`;
     } else {
       card.innerHTML = `<div class="csLockMark">🔒</div>`+
         `<div class="csName" style="color:#333">???</div>`;
@@ -2446,11 +2472,11 @@ function tapChara(n){
   document.getElementById('cs'+n).classList.add('sel');
   const d=CD[n];
   const cdnEl=document.getElementById('cDetailName');
-  if(cdnEl){cdnEl.textContent=d.n; cdnEl.style.color=d.col; cdnEl.dataset.empty='0';}
+  if(cdnEl){cdnEl.textContent=cdN(d); cdnEl.style.color=d.col; cdnEl.dataset.empty='0';}
   document.getElementById('dPow').textContent=d.p;
   document.getElementById('dTch').textContent=d.t;
   document.getElementById('dGeo').textContent=d.g;
-  document.getElementById('dSpe').textContent=d.s;
+  document.getElementById('dSpe').textContent=cdS(d);
 }
 
 function confirmChara(){
@@ -2485,7 +2511,7 @@ function confirmChara(){
         card.innerHTML=(imgSrc
           ?`<img src="${imgSrc}" style="max-width:80%;max-height:72px;width:72px;height:72px;object-fit:contain">`
           :`<div class="csIcon" style="color:${d.col}">${d.ic}</div>`)+
-          `<div class="csName" style="color:${d.col}aa">${d.n}</div>`;
+          `<div class="csName" style="color:${d.col}aa">${cdN(d)}</div>`;
       } else {
         card.innerHTML=`<div class="csLockMark">🔒</div><div class="csName" style="color:#333">???</div>`;
       }
@@ -2973,7 +2999,7 @@ function enterShop(){
       const csg=csc<0?'-':csc>0?'+':'±';
       const pCol=psc<csc?'#4f4':psc>csc?'#f44':'#ff4';
       const cCol=csc<psc?'#4f4':csc>psc?'#f44':'#ff4';
-      const cpuShort=cpud.n.split(' ').pop();
+      const cpuShort=cdN(cpud).split(' ')[0];
       ti.innerHTML=
         `<span style="color:#88ccee;font-size:11px;margin-right:6px">VS</span>`+
         `<span style="color:${pCol};font-size:13px;font-weight:bold">YOU ${psg}${Math.abs(psc)}</span>`+
@@ -3087,7 +3113,7 @@ function showTerrainInfo(){
 function vwS(){
   const sp=document.getElementById('gSubPanel');
   sp.className='on';
-  const ns=['Mizuna','Soma','Tsudu','Hibiki','Philip','Hideo'];
+  const ns=['Mina','Soma','Tsuduru','Kyoko','Philip','Hatao'];
   const ss=[G.sm,G.ss,G.st,G.sk,G.sp,G.sh];
   let h='<table><thead><tr><th>Name</th><th style="text-align:right">Score</th></tr></thead><tbody>';
   for(let i=0;i<6;i++){
@@ -3152,7 +3178,7 @@ function endGame(){
 // =============================================
 // IndexedDB 記録モジュール (1DGOLF_DB)
 // =============================================
-const DB_NAME='1dgolf_records', DB_VER=1;
+const DB_NAME='1dgolf_records', DB_VER=2;
 let _db=null;
 function dbOpen(){
   return new Promise((res,rej)=>{
@@ -3164,6 +3190,8 @@ function dbOpen(){
         db.createObjectStore('bestScores');
       if(!db.objectStoreNames.contains('lifetimeStats'))
         db.createObjectStore('lifetimeStats');
+      if(!db.objectStoreNames.contains('settings'))
+        db.createObjectStore('settings');
     };
     req.onsuccess=e=>{_db=e.target.result;res(_db);};
     req.onerror=e=>rej(e.target.error);
@@ -3240,7 +3268,7 @@ function openRecords(){
     // ── 累計実績 ──
     html+='<div class="recSection"><h3>📊 All-Time Stats</h3>';
     const hio=ls['hio']||0, chip=ls['chipIn']||0;
-    const plays=Object.keys(CD).map(k=>({id:+k,n:CD[k].n,c:ls[`play_${k}`]||0}));
+    const plays=Object.keys(CD).map(k=>({id:+k,n:cdN(CD[k]),c:ls[`play_${k}`]||0}));
     html+=`<div class="recStatRow">Hole in One<span>${hio}x</span></div>`;
     html+=`<div class="recStatRow">Chip In<span>${chip}x</span></div>`;
     html+='</div>';
@@ -3397,6 +3425,14 @@ function _noop(){}
 // =============================================
 // 起動
 // =============================================
-sc('scT');
-buildGaugeTicks();
+dbGet('settings','lang').then(saved=>{
+  if(saved==='en'||saved==='ja') _lang=saved;
+  applyLang();
+  sc('scT');
+  buildGaugeTicks();
+}).catch(()=>{
+  applyLang();
+  sc('scT');
+  buildGaugeTicks();
+});
 
