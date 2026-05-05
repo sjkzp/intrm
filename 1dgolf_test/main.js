@@ -16,6 +16,101 @@ window.addEventListener('unhandledrejection', function(e) {
 // ============ ゲームロジック ============
 'use strict';
 
+// =============================================
+// 言語切替システム
+// =============================================
+let _lang = 'ja'; // 'ja' | 'en'
+
+const L = {
+  ja: {
+    btnStart: '▶ ス タ ー ト', btnVS: '⚔ V S モ ー ド',
+    btnRec: '🏆 レコードを見る', btnHow: '？ 遊び方', langBtn: 'EN',
+    charaTitle: 'キャラクター選択', charaSub: 'タップで詳細を表示・選択できます',
+    charaPrompt: 'キャラを選択してください',
+    vsTitle: '対戦相手選択', vsSub: 'CPUのキャラクターを選んでください', vsSub1: '操作するキャラを選んでください',
+    btnDecide: '▶ 決定', btnVSDecide: '⚔ 決定',
+    statPow: '腕力：', statTch: '器用さ：', statGeo: '土地勘：', statSpe: '特技：',
+    courseTitle: 'コース選択', coursePrac: '練 習 コ ー ス', courseChamp: '選 手 権 コ ー ス',
+    coursePracMeta: '<span>1600pts</span><span>6ホール</span>',
+    courseChampMeta: '<span>1300pts</span><span>9ホール</span>',
+    courseInfoPrac: '練習コース｜6H｜1600pts', courseInfoChamp: '選手権コース｜9H｜1300pts',
+    howtoClose: '閉じる', recBack: '← 戻る',
+  },
+  en: {
+    btnStart: '▶  S T A R T', btnVS: '⚔  V S  M O D E',
+    btnRec: '🏆 Records', btnHow: '？ How to Play', langBtn: 'JP',
+    charaTitle: 'SELECT CHARACTER', charaSub: 'Tap to view details and select',
+    charaPrompt: 'Select a character',
+    vsTitle: 'SELECT OPPONENT', vsSub: 'Choose a CPU character', vsSub1: 'Choose your character',
+    btnDecide: '▶ Select', btnVSDecide: '⚔ Select',
+    statPow: 'Power：', statTch: 'Touch：', statGeo: 'Geo知：', statSpe: 'Special：',
+    courseTitle: 'SELECT COURSE', coursePrac: 'P R A C T I C E', courseChamp: 'C H A M P I O N S H I P',
+    coursePracMeta: '<span>1600pts</span><span>6 Holes</span>',
+    courseChampMeta: '<span>1300pts</span><span>9 Holes</span>',
+    courseInfoPrac: 'Practice | 6H | 1600pts', courseInfoChamp: 'Championship | 9H | 1300pts',
+    howtoClose: 'Close', recBack: '← Back',
+  }
+};
+
+function toggleLang(){
+  _lang = _lang==='ja' ? 'en' : 'ja';
+  applyLang();
+}
+
+function applyLang(){
+  const t = L[_lang];
+  const lb = document.getElementById('langBtn');
+  if(lb) lb.textContent = t.langBtn;
+  ['sBtnStart','sBtnVS','sBtnRec','sBtnHow'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.textContent = el.getAttribute('data-'+_lang) || el.textContent;
+  });
+  const dhc = document.getElementById('dlgHowtoClose');
+  if(dhc) dhc.textContent = t.howtoClose;
+  // キャラ選択ヘッダー
+  const cHdr = document.querySelector('#scC #cHeader');
+  if(cHdr){
+    const h2 = cHdr.querySelector('h2');
+    const p  = cHdr.querySelector('p');
+    if(h2 && h2._langKey) h2.textContent = t[h2._langKey] || h2.textContent;
+    if(p  && p._langKey)  p.textContent  = t[p._langKey]  || p.textContent;
+  }
+  // キャラ詳細ラベル（テキストノードを直接更新）
+  const dStatMap = {dStatPow:'statPow', dStatTch:'statTch', dStatGeo:'statGeo', dStatSpe:'statSpe'};
+  Object.entries(dStatMap).forEach(([elId,key])=>{
+    const el = document.getElementById(elId);
+    if(el && el.childNodes[0]) el.childNodes[0].textContent = t[key];
+  });
+  const cdn = document.getElementById('cDetailName');
+  if(cdn && cdn.dataset.empty==='1') cdn.textContent = t.charaPrompt;
+  // 決定ボタン
+  const cbn = document.getElementById('cBtnNormal');
+  if(cbn) cbn.textContent = cbn.getAttribute('data-'+_lang) || cbn.textContent;
+  // コース選択
+  const crH2 = document.querySelector('#crHeader h2');
+  if(crH2) crH2.textContent = t.courseTitle;
+  const cpName = document.querySelector('#crPrac .crName');
+  const ccName = document.querySelector('#crChamp .crName');
+  const cpMeta = document.querySelector('#crPrac .crMeta');
+  const ccMeta = document.querySelector('#crChamp .crMeta');
+  if(cpName) cpName.textContent = t.coursePrac;
+  if(ccName) ccName.textContent = t.courseChamp;
+  if(cpMeta) cpMeta.innerHTML   = t.coursePracMeta;
+  if(ccMeta) ccMeta.innerHTML   = t.courseChampMeta;
+  const cct = document.getElementById('crConfirmTitle');
+  if(cct) cct.textContent = t.courseConfirmTitle || 'ARE YOU READY?';
+}
+
+function _setCharaHeader(h2text, ptext, h2key, pkey){
+  const cHdr = document.querySelector('#scC #cHeader');
+  if(!cHdr) return;
+  const h2 = cHdr.querySelector('h2'); const p = cHdr.querySelector('p');
+  if(h2){ h2.textContent=h2text; h2._langKey=h2key; }
+  if(p) { p.textContent=ptext;   p._langKey=pkey;   }
+}
+
+
+
 
 // =============================================
 // SE (Web Audio API)
@@ -386,13 +481,11 @@ function drawSlotsVS(step){
   const hdr=document.getElementById('cHeader');
   grid.innerHTML='';
   if(step===1){
-    hdr.querySelector('h2').textContent='キャラクター選択';
-    hdr.querySelector('p').textContent='操作するキャラを選んでください';
+    _setCharaHeader(L[_lang].charaTitle, L[_lang].vsSub1, 'charaTitle', 'vsSub1');
     document.getElementById('cBtnNormal').style.display='';
     document.getElementById('cBtnVSoppo').style.display='none';
   } else {
-    hdr.querySelector('h2').textContent='対戦相手選択';
-    hdr.querySelector('p').textContent='CPUのキャラクターを選んでください';
+    _setCharaHeader(L[_lang].vsTitle, L[_lang].vsSub, 'vsTitle', 'vsSub');
     document.getElementById('cBtnNormal').style.display='none';
     document.getElementById('cBtnVSoppo').style.display='';
   }
@@ -420,8 +513,8 @@ function drawSlotsVS(step){
   pendingChara=0;
   const cdet=document.getElementById('cDetail');
   if(cdet) cdet.style.display='flex';
-  document.getElementById('cDetailName').textContent='キャラを選択してください';
-  document.getElementById('cDetailName').style.color='#888';
+  const cdn0=document.getElementById('cDetailName');
+  if(cdn0){cdn0.textContent=L[_lang].charaPrompt; cdn0.style.color='#888'; cdn0.dataset.empty='1';}
   ['dPow','dTch','dGeo','dSpe'].forEach(id=>{document.getElementById(id).textContent='';});
 }
 
@@ -433,7 +526,7 @@ function confirmVSOppo(){
   document.getElementById('cDetail').style.display='none';
   // コース選択へ（選手権のみ）
   G.cr=2; G.pts=1300;
-  T('crConfirmInfo','選手権コース｜9H｜1300pts');
+  T('crConfirmInfo', L[_lang].courseInfoChamp);
   document.getElementById('crConfirm').style.display='flex';
   sc('scCR'); updCRbtns(); G.cmd=2;
   updGaugeWaku();
@@ -2332,8 +2425,10 @@ function drawSlots(){
   // cDetail をリセット（2回目以降の表示に対応）
   const cdet=document.getElementById('cDetail');
   if(cdet) cdet.style.display='flex';
-  document.getElementById('cDetailName').textContent='キャラを選択してください';
-  document.getElementById('cDetailName').style.color='#888';
+  const cdn1=document.getElementById('cDetailName');
+  if(cdn1){cdn1.textContent=L[_lang].charaPrompt; cdn1.style.color='#888'; cdn1.dataset.empty='1';}
+  // cHeaderのlangKey設定（通常モード）
+  _setCharaHeader(L[_lang].charaTitle, L[_lang].charaSub, 'charaTitle', 'charaSub');
   document.getElementById('dPow').textContent='';
   document.getElementById('dTch').textContent='';
   document.getElementById('dGeo').textContent='';
@@ -2350,8 +2445,8 @@ function tapChara(n){
   document.querySelectorAll('.csCard').forEach(c=>c.classList.remove('sel'));
   document.getElementById('cs'+n).classList.add('sel');
   const d=CD[n];
-  document.getElementById('cDetailName').textContent=d.n;
-  document.getElementById('cDetailName').style.color=d.col;
+  const cdnEl=document.getElementById('cDetailName');
+  if(cdnEl){cdnEl.textContent=d.n; cdnEl.style.color=d.col; cdnEl.dataset.empty='0';}
   document.getElementById('dPow').textContent=d.p;
   document.getElementById('dTch').textContent=d.t;
   document.getElementById('dGeo').textContent=d.g;
@@ -2372,8 +2467,7 @@ function confirmChara(){
     vsStep=2;
     // 相手選択UIに切り替え（grid再描画はしない）
     const hdr=document.getElementById('cHeader');
-    hdr.querySelector('h2').textContent='対戦相手選択';
-    hdr.querySelector('p').textContent='CPUのキャラクターを選んでください';
+    _setCharaHeader(L[_lang].vsTitle, L[_lang].vsSub, 'vsTitle', 'vsSub');
     document.getElementById('cBtnNormal').style.display='none';
     document.getElementById('cBtnVSoppo').style.display='';
     // 自分のカード以外を相手候補として再描画（自分のカードは空ボックスのまま）
@@ -2427,7 +2521,7 @@ function goToCR(){
 function selCR(n){
   if(n===3) return; // EDITコース廃止
   G.cr=n; G.pts=n===1?1600:1300;
-  const info = {1:'練習コース｜6H｜1600pts', 2:'選手権コース｜9H｜1300pts'};
+  const info = {1:L[_lang].courseInfoPrac, 2:L[_lang].courseInfoChamp};
   T('crConfirmInfo', info[n]||'');
   document.getElementById('crConfirm').style.display='flex';
 }
