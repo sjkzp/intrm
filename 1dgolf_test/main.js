@@ -42,6 +42,7 @@ const L = {
     lbTerrain:'地形', lbScore:'スコア', lbBack:'戻る', lbGiveUp:'ギブアップ',
     lbCpuTurn:'CPU番', lbShop:'SHOP', lbShopScore:'スコア',
     scCardTitle:'スコア カード', scCardClose:'閉じる',
+    vsScoreCard:'VS スコア カード',
     recHeader:'🏆 レコード',
     recLoading:'読み込み中…',
     recAllTime:'📊 累計実績',
@@ -91,6 +92,7 @@ const L = {
     lbTerrain:'TERRAIN', lbScore:'SCORE', lbBack:'BACK', lbGiveUp:'give up',
     lbCpuTurn:'CPU TURN', lbShop:'SHOP', lbShopScore:'SCORE',
     scCardTitle:'SCORE CARD', scCardClose:'Close',
+    vsScoreCard:'VS SCORE CARD',
     recHeader:'🏆 RECORDS',
     recLoading:'Loading…',
     recAllTime:'📊 All-Time Stats',
@@ -237,6 +239,13 @@ function applyLang(){
   if(sccl) sccl.textContent = t.scCardClose;
   const bSpeEl = document.getElementById('bSpeLbl');
   if(bSpeEl) bSpeEl.textContent = t.lbSkill;
+
+  // CPU番バナーの名称更新
+  const cpuNameEl = document.getElementById('gCpuName');
+  if(cpuNameEl && typeof VS !== 'undefined' && VS.cpuCh){
+    const cpuDa = CD[VS.cpuCh];
+    if(cpuDa) cpuNameEl.textContent = cdN(cpuDa);
+  }
 
   // bPro ラベル更新
   const bProEl = document.getElementById('bPro');
@@ -596,7 +605,7 @@ function showScoreCard(){
   if(!el||!tbl) return;
   const cr={1:'Practice',2:'Championship'};
   if(VS.active){
-    ttl.textContent='VS SCORE CARD';
+    ttl.textContent=L[_lang].vsScoreCard;
     // 1PとCPUの両スコアカードを横並び
     const scoreCol=d=>d<=-2?'#f80':d===-1?'#4df':d===0?'#fff':d===1?'#fa4':'#f66';
     const pars=G.holePars;
@@ -627,7 +636,8 @@ function showScoreCard(){
       makeCol(cdN(cpud).split(' ')[0], cpud.col, VS.cpuScores)+
       `</div>`;
   } else {
-    ttl.textContent = (cr[G.cr]||'') + ' SCORE CARD';
+    const crNames=L[_lang].recCrsNames||{1:'Practice',2:'Championship'};
+    ttl.textContent = (crNames[G.cr]||'') + ' ' + L[_lang].scCardTitle;
     tbl.innerHTML = buildScoreCardHTML();
   }
   el.style.display='flex';
@@ -956,7 +966,7 @@ function startCPUHole(){
   const cpuBanner=document.getElementById('gCpuBanner');
   if(cpuBanner){
     cpuBanner.style.display='flex';
-    cpuBanner.querySelector('#gCpuName').textContent=cpuD.n;
+    cpuBanner.querySelector('#gCpuName').textContent=cdN(cpuD);
     cpuBanner.style.borderColor=cpuD.col+'88';
   }
   // ホール初期化（CPU用）
@@ -2964,7 +2974,7 @@ function resetClubs(drv){
   document.getElementById('gClubPutt').style.display=drv?'none':'flex';
   document.getElementById('gClubShop').style.display='none';
   shotPhase=0;
-  $('bShot').textContent='SHOT'; $('bShot').className='';
+  $('bShot').textContent=L[_lang].lbShotBtn; $('bShot').className='';
   E('bShot',false);
   rebuildClubs();
 }
@@ -2987,7 +2997,7 @@ function selC(n){
   rebuildClubs();
   T('gGaugeClub',G.ng+(n<=4?'yd':'m'));
   T('gGaugeCost',`-${G.mpt}pts`);
-  E('bShot',true); $('bShot').className='ready'; $('bShot').textContent='SHOT';
+  E('bShot',true); $('bShot').className='ready'; $('bShot').textContent=L[_lang].lbShotBtn;
   if(n>=5){
     // 傾斜0でカップインするゲージ値(0..gMax): y2*100/ng
     // ゲージバー上の位置% = gWneed/gMax*100
