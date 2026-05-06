@@ -35,6 +35,7 @@ const L = {
     courseChampMeta: '<span>1300pts</span><span>9ホール</span>',
     courseInfoPrac: '練習コース｜6H｜1600pts', courseInfoChamp: '選手権コース｜9H｜1300pts',
     howtoClose: '閉じる', recBack: '← 戻る',
+    htCredits: '制作：int ／ キャラグラフィック：YUU（海無軒）',
     // ゲーム画面ラベル
     lbHole:'H', lbPar:'Par', lbShot:'打', lbPoints:'Pts',
     lbDist:'全長', lbLeft:'残り', lbFly:'飛距離', lbPos:'現在',
@@ -85,6 +86,7 @@ const L = {
     courseChampMeta: '<span>1300pts</span><span>9 Holes</span>',
     courseInfoPrac: 'Practice | 6H | 1600pts', courseInfoChamp: 'Championship | 9H | 1300pts',
     howtoClose: 'Close', recBack: '← Back',
+    htCredits: 'Developer: int ／ Character Art: YUU',
     // ゲーム画面ラベル
     lbHole:'HOLE', lbPar:'PAR', lbShot:'SHOT', lbPoints:'POINTS',
     lbDist:'DIST', lbLeft:'LEFT', lbFly:'SHOT', lbPos:'POS',
@@ -271,6 +273,9 @@ function applyLang(){
   }
 
   // 遊び方ダイアログ
+  const htCreditsEl = document.getElementById('htCredits');
+  if(htCreditsEl) htCreditsEl.textContent = t.htCredits;
+
   const htMap = {
     htTitle:'htTitle', htBasicsH:'htBasicsH', htBasicsP:'htBasicsP',
     htMobileH:'htMobileH', htPcH:'htPcH', htPcP:'htPcP',
@@ -3525,7 +3530,7 @@ function openRecords(){
     if(!html) html='<div class="recEmpty">'+tRec.recEmpty+'</div>';
     // 削除ボタン：スクロール内の末尾に配置（戻るボタンとの誤タップ防止のため大きく余白）
     html+=`<div style="margin-top:40px;padding:16px 0 24px;text-align:center">
-      <button onclick="confirmDeleteRecords()" style="background:transparent;border:1px solid #2a2a3a;color:#556;border-radius:6px;font-size:11px;padding:8px 18px;cursor:pointer;touch-action:manipulation;letter-spacing:0.5px">'+tRec.recDelete+'</button>
+      <button onclick="confirmDeleteRecords()" style="background:transparent;border:1px solid #2a2a3a;color:#556;border-radius:6px;font-size:11px;padding:8px 18px;cursor:pointer;touch-action:manipulation;letter-spacing:0.5px">${tRec.recDelete}</button>
     </div>`;
     body.innerHTML=html;
   }).catch(()=>{
