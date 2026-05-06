@@ -43,7 +43,7 @@ const L = {
     charaPrompt: 'Select a character',
     vsTitle: 'SELECT OPPONENT', vsSub: 'Choose a CPU character', vsSub1: 'Choose your character',
     btnDecide: '▶ Select', btnVSDecide: '⚔ Select',
-    statPow: 'Power：', statTch: 'Touch：', statGeo: 'Geo：', statSpe: 'Skill：',
+    statPow: 'Power：', statTch: 'Dexterity：', statGeo: 'Range：', statSpe: 'Skill：',
     courseTitle: 'SELECT COURSE', coursePrac: 'P R A C T I C E', courseChamp: 'C H A M P I O N S H I P',
     coursePracMeta: '<span>1600pts</span><span>6 Holes</span>',
     courseChampMeta: '<span>1300pts</span><span>9 Holes</span>',
@@ -126,6 +126,23 @@ function applyLang(){
     const curD = (typeof CD !== 'undefined') && CD[G.ch];
     if(curD) speBox.textContent = cdS(curD) || 'SKILL';
   }
+
+  // キャラ選択画面が表示中ならグリッドを再描画（カード名を即時反映）
+  const scC = document.getElementById('scC');
+  if(scC && scC.classList.contains('on') && typeof drawSlots === 'function'){
+    drawSlots();
+    // 再描画後にselectionを復元
+    if(typeof pendingChara !== 'undefined' && pendingChara){
+      const prevSel = document.getElementById('cs'+pendingChara);
+      if(prevSel) prevSel.classList.add('sel');
+    }
+  }
+
+  // レコード画面ヘッダーと戻るボタン
+  const recH2 = document.querySelector('#recHeader h2');
+  if(recH2) recH2.textContent = _lang==='ja' ? '🏆 レコード' : '🏆 RECORDS';
+  const recBackBtn = document.getElementById('recBackBtn');
+  if(recBackBtn) recBackBtn.textContent = t.recBack;
 }
 
 // キャラ名・特技名を言語別に返す
