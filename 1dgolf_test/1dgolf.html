@@ -105,23 +105,23 @@
   <div id="scG" class="sc">
     <!-- 上部ステータス -->
     <div id="gShopBanner" style="display:none;background:#0a1a3a;padding:6px 16px;align-items:center;justify-content:space-between;border-bottom:2px solid #1a4a8a;flex-shrink:0">
-      <span style="font-size:20px;font-weight:bold;letter-spacing:6px;color:#55aaff;font-family:monospace">SHOP</span>
-      <button id="gShopScoreBtn" onclick="showScoreCard()" style="background:#061228;border:1px solid #2a5a8a;color:#88ccee;border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer;touch-action:manipulation">📋 SCORE (<span id="gShopScore">±0</span>)</button>
+      <span id="lbShop" style="font-size:20px;font-weight:bold;letter-spacing:6px;color:#55aaff;font-family:monospace">SHOP</span>
+      <button id="gShopScoreBtn" onclick="showScoreCard()" style="background:#061228;border:1px solid #2a5a8a;color:#88ccee;border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer;touch-action:manipulation">📋 <span id="lbShopScore">SCORE</span> (<span id="gShopScore">±0</span>)</button>
     </div>
     <!-- CPU番バナー -->
     <div id="gCpuBanner" style="display:none;padding:5px 12px;align-items:center;gap:8px;border-bottom:2px solid #884488;flex-shrink:0;background:#1a0a1a">
-      <span style="font-size:11px;color:#cc88ff;letter-spacing:2px">CPU TURN</span>
+      <span id="lbCpuTurn" style="font-size:11px;color:#cc88ff;letter-spacing:2px">CPU TURN</span>
       <span id="gCpuName" style="color:#ffbbff;font-size:13px;font-weight:bold"></span>
       <button id="gCpuSkipBtn" onclick="skipCPU()" style="display:none;margin-left:auto;background:#2a0a2a;border:1px solid #884488;color:#cc88ff;border-radius:5px;padding:4px 12px;font-size:11px;touch-action:manipulation">⏭ SKIP</button>
     </div>
     <div id="gTop" onclick="skipAnim()">
-      <div class="gTopSeg"><div class="gTopLb">HOLE</div><div class="gTopVl hl" id="gHlV">1</div></div>
+      <div class="gTopSeg"><div class="gTopLb" id="lbHole">HOLE</div><div class="gTopVl hl" id="gHlV">1</div></div>
       <div class="gTopDivider"></div>
-      <div class="gTopSeg"><div class="gTopLb">PAR</div><div class="gTopVl par" id="gParV">4</div></div>
+      <div class="gTopSeg"><div class="gTopLb" id="lbPar">PAR</div><div class="gTopVl par" id="gParV">4</div></div>
       <div class="gTopDivider"></div>
-      <div class="gTopSeg"><div class="gTopLb">SHOT</div><div class="gTopVl" id="gShotV">1</div></div>
+      <div class="gTopSeg"><div class="gTopLb" id="lbShot">SHOT</div><div class="gTopVl" id="gShotV">1</div></div>
       <div class="gTopDivider"></div>
-      <div class="gTopSeg" style="flex:2"><div class="gTopLb">POINTS</div><div class="gTopVl pts" id="gPtsV">0</div></div>
+      <div class="gTopSeg" style="flex:2"><div class="gTopLb" id="lbPoints">POINTS</div><div class="gTopVl pts" id="gPtsV">0</div></div>
     </div>
     <!-- コースマップ -->
     <div id="gMap" onclick="mapTap()">
@@ -148,10 +148,10 @@
         <img id="gCharaImg" src="" style="width:clamp(60px,15vw,72px);height:clamp(60px,15vw,72px);object-fit:contain;margin-top:4px;display:none">
       </div>
       <div id="gStatCard">
-        <div class="gSt"><div class="gStLb">DIST</div><div class="gStVl"><span id="vYd1">0</span><span class="gStUnit" id="uYd1">yd</span></div></div>
-        <div class="gSt" id="gStRest"><div class="gStLb">LEFT</div><div class="gStVl"><span id="vYd2">0</span><span class="gStUnit" id="uYd2">yd</span></div></div>
+        <div class="gSt"><div class="gStLb" id="lbDist">DIST</div><div class="gStVl"><span id="vYd1">0</span><span class="gStUnit" id="uYd1">yd</span></div></div>
+        <div class="gSt" id="gStRest"><div class="gStLb" id="lbLeft">LEFT</div><div class="gStVl"><span id="vYd2">0</span><span class="gStUnit" id="uYd2">yd</span></div></div>
         <div class="gSt" id="gStFly"><div class="gStLb">SHOT</div><div class="gStVl"><span id="vYd3">0</span><span class="gStUnit" id="uYd3">yd</span></div></div>
-        <div class="gSt" id="gStCp"><div class="gStLb">POS</div><div class="gStVl"><span id="vCp">0</span><span class="gStUnit">yd</span></div></div>
+        <div class="gSt" id="gStCp"><div class="gStLb" id="lbPos">POS</div><div class="gStVl"><span id="vCp">0</span><span class="gStUnit">yd</span></div></div>
         <div class="gSt" id="gStYd4" style="display:none"><div class="gStLb">Par</div><div class="gStVl par sm" id="vYd4">-</div></div>
       </div>
     </div>
@@ -177,15 +177,15 @@
     </div>
     <!-- ショット + 風変・特技 -->
     <div id="gBtnRow">
-      <button id="bShot" ontouchstart="bShotTouch(event)" onmousedown="bShotMouse(event)" onclick="sCk()">SHOOT</button>
-      <button id="bWnd" onclick="wCk()"><span class="wlb">WAIT</span><span id="bWndN">7</span></button>
+      <button id="bShot" ontouchstart="bShotTouch(event)" onmousedown="bShotMouse(event)" onclick="sCk()">SHOT</button>
+      <button id="bWnd" onclick="wCk()"><span class="wlb" id="lbWait">WAIT</span><span id="bWndN">7</span></button>
       <button id="bSpe" onclick="spCk()"><span class="slb" id="bSpeLbl">SKILL</span><span id="bSpeN">0</span></button>
     </div>
     <!-- コース/スコア/戻る -->
     <div id="gSubRow" style="display:none">
-      <button class="gSub act" id="bVwC" onclick="vwC()" style="display:none">📍 TERRAIN</button>
-      <button class="gSub act" id="bVwS" onclick="vwS()" style="display:none">📊 SCORE</button>
-      <button class="gSub"     id="bTj2" onclick="tj2()" style="display:none">← BACK</button>
+      <button class="gSub act" id="bVwC" onclick="vwC()" style="display:none"📍 TERRAIN</button>
+      <button class="gSub act" id="bVwS" onclick="vwS()" style="display:none">📊 <span id="lbScore">SCORE</span></button>
+      <button class="gSub"     id="bTj2" onclick="tj2()" style="display:none">← <span id="lbBack">BACK</span></button>
     </div>
     <!-- 地形情報表示エリア -->
     <div id="gShotFormula" style="display:none;padding:4px 12px;background:#050510;border-top:1px solid #1a1a2a;flex-shrink:0;font-size:10px;color:#7a9;font-family:monospace;flex-wrap:wrap;gap:2px;align-items:center;line-height:1.6"></div>
@@ -195,10 +195,10 @@
       <div style="background:#050510;border:1px solid #2a2a4a;border-radius:12px;padding:12px 8px;max-width:380px;width:96%;max-height:90vh;overflow-y:auto">
         <div style="color:#aaccee;font-size:13px;font-weight:bold;text-align:center;margin-bottom:8px" id="scCardTitle">SCORECARD</div>
         <div id="scCardTable" style="font-size:11px;width:100%"></div>
-        <button onclick="closeScoreCard()" style="margin-top:10px;width:100%;background:#0a1a0a;border:1px solid #2a4a2a;color:#8fa;border-radius:6px;padding:8px;font-size:13px">Close</button>
+        <button id="scCardClose" onclick="closeScoreCard()" style="margin-top:10px;width:100%;background:#0a1a0a;border:1px solid #2a4a2a;color:#8fa;border-radius:6px;padding:8px;font-size:13px">Close</button>
       </div>
     </div>
-    <div id="gGiveUp">⚠ give up</div>
+    <div id="gGiveUp">⚠ <span id="lbGiveUp">give up</span></div>
     <!-- 進行ボタン -->
     <button id="bPro" onclick="proCk()"></button>
     <!-- コース/スコアパネル -->
@@ -230,30 +230,30 @@
   <!-- ========== 遊び方ダイアログ ========== -->
   <div id="dlgHowto" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.88);z-index:300;align-items:flex-start;justify-content:center;overflow-y:auto;padding:16px 0">
     <div style="background:#060c18;border:1px solid #1a3a5a;border-radius:12px;padding:18px 16px;max-width:440px;width:100%;margin:auto;color:#cce;font-size:13px;line-height:1.7">
-      <div style="color:#6af;font-size:16px;font-weight:bold;letter-spacing:2px;margin-bottom:14px;text-align:center">HOW TO PLAY</div>
+      <div id="htTitle" style="color:#6af;font-size:16px;font-weight:bold;letter-spacing:2px;margin-bottom:14px;text-align:center">HOW TO PLAY</div>
 
-      <div style="color:#4df;font-weight:bold;margin:10px 0 4px">⛳ BASICS</div>
-      <p>Select a club and press the SHOOT button to start the gauge. Release/stop to fire the ball. Higher gauge = more distance.</p>
+      <div id="htBasicsH" style="color:#4df;font-weight:bold;margin:10px 0 4px">⛳ BASICS</div>
+      <p id="htBasicsP">Select a club and press the SHOT button to start the gauge. Release/stop to fire the ball. Higher gauge = more distance.</p>
       <div style="background:#08101e;border:1px solid #1a3050;border-radius:8px;padding:8px 12px;margin:4px 0 8px;font-size:12px">
-        <div style="color:#8bc;font-weight:bold;margin-bottom:4px">📱 Mobile</div>
-        <div><b>Tap</b> SHOOT → tap <b>■STOP</b> to fire</div>
-        <div style="color:#6af;font-weight:bold;margin:6px 0 2px">🖥️ PC</div>
-        <div><b>Hold</b> SHOOT → release to fire</div>
+        <div id="htMobileH" style="color:#8bc;font-weight:bold;margin-bottom:4px">📱 Mobile</div>
+        <div id="htMobileP"><b>Tap</b> SHOT → tap <b>■STOP</b> to fire</div>
+        <div id="htPcH" style="color:#6af;font-weight:bold;margin:6px 0 2px">🖥️ PC</div>
+        <div id="htPcP"><b>Hold</b> SHOT → release to fire</div>
       </div>
 
-      <div style="color:#4df;font-weight:bold;margin:10px 0 4px">💨 WAIT FOR WIND</div>
-      <p>Press WAIT n to change the wind value. + extends distance, − shortens it. Usable n times.</p>
+      <div id="htWindH" style="color:#4df;font-weight:bold;margin:10px 0 4px">💨 WAIT FOR WIND</div>
+      <p id="htWindP">Press WAIT n to change the wind value. + extends distance, − shortens it. Usable n times.</p>
 
-      <div style="color:#4df;font-weight:bold;margin:10px 0 4px">🏌️ TERRAIN</div>
-      <ul style="margin:0;padding-left:1.2em">
+      <div id="htTerrainH" style="color:#4df;font-weight:bold;margin:10px 0 4px">🏌️ TERRAIN</div>
+      <ul id="htTerrainList" style="margin:0;padding-left:1.2em">
         <li><b style="color:#7fd87f">ROUGH</b>: Distance reduced</li>
         <li><b style="color:#ddcc44">BUNKER</b>: Distance heavily reduced. Irons (5I/8I) only</li>
         <li><b style="color:#6699ff">WATER / OB</b>: +1 stroke penalty, replay from previous position</li>
         <li><b style="color:#00ff88">GREEN</b>: Use putter (PT). Slope ±0 guide is shown</li>
       </ul>
 
-      <div style="color:#4df;font-weight:bold;margin:10px 0 4px">✨ SKILLS</div>
-      <ul style="margin:0;padding-left:1.2em">
+      <div id="htSkillH" style="color:#4df;font-weight:bold;margin:10px 0 4px">✨ SKILLS</div>
+      <ul id="htSkillList" style="margin:0;padding-left:1.2em">
         <li><b>Power Shot</b>: Gauge cap raised to 120%</li>
         <li><b>Terrain Ignore</b>: Fairway distance even on ROUGH/BUNKER</li>
         <li><b>Retry Shot</b>: Reshoot from previous position without adding a stroke</li>
@@ -261,11 +261,11 @@
         <li><b>Start Over</b>: Restart the hole from the beginning</li>
       </ul>
 
-      <div style="color:#4df;font-weight:bold;margin:10px 0 4px">🏆 SCORE & POINTS</div>
-      <p>Points (pts) decrease per shot and are awarded on hole clear. Give up at par+4 strokes or more. After each hole, visit the SHOP to upgrade clubs or increase skill uses.</p>
+      <div id="htScoreH" style="color:#4df;font-weight:bold;margin:10px 0 4px">🏆 SCORE & POINTS</div>
+      <p id="htScoreP">Points (pts) decrease per shot and are awarded on hole clear. Give up at par+4 strokes or more. After each hole, visit the SHOP to upgrade clubs or increase skill uses.</p>
 
-      <div style="color:#4df;font-weight:bold;margin:10px 0 4px">⚔ VS MODE</div>
-      <p>Championship course (9H) only. After Player 1 plays a hole, the CPU plays the same hole. Only Player 1 can upgrade in the SHOP.</p>
+      <div id="htVsH" style="color:#4df;font-weight:bold;margin:10px 0 4px">⚔ VS MODE</div>
+      <p id="htVsP">Championship course (9H) only. After Player 1 plays a hole, the CPU plays the same hole. Only Player 1 can upgrade in the SHOP.</p>
 
       <div style="margin-top:14px;border-top:1px solid #1a2a3a;padding-top:10px;color:#778;font-size:11px;text-align:center;line-height:1.8">
         Design: int ／ Character Art: YUU

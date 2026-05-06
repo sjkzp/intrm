@@ -35,6 +35,26 @@ const L = {
     courseChampMeta: '<span>1300pts</span><span>9ホール</span>',
     courseInfoPrac: '練習コース｜6H｜1600pts', courseInfoChamp: '選手権コース｜9H｜1300pts',
     howtoClose: '閉じる', recBack: '← 戻る',
+    // ゲーム画面ラベル
+    lbHole:'HOLE', lbPar:'PAR', lbShot:'SHOT', lbPoints:'POINTS',
+    lbDist:'全長', lbLeft:'残り', lbFly:'飛距離', lbPos:'現在',
+    lbWait:'風待ち', lbSkill:'特技',
+    lbTerrain:'地形', lbScore:'スコア', lbBack:'戻る', lbGiveUp:'ギブアップ',
+    lbCpuTurn:'CPU番', lbShop:'SHOP', lbShopScore:'スコア',
+    scCardTitle:'スコアカード', scCardClose:'閉じる',
+    recHeader:'🏆 レコード',
+    // 遊び方
+    htTitle:'HOW TO PLAY',
+    htBasicsH:'⛳ 基本操作', htBasicsP:'クラブを選んで「SHOT」ボタンを押すとゲージが動きます。ショットするとボールが飛びます。ゲージが高いほど飛距離が伸びます。',
+    htMobileH:'📱 スマホ操作', htMobileP:'<b>タップ</b> SHOT → <b>■STOP</b> でショット',
+    htPcH:'🖥️ PC操作', htPcP:'<b>クリック長押し</b> SHOT → 離してショット',
+    htWindH:'💨 風待ち', htWindP:'WAITボタンで風の値が変わります。＋なら飛距離が伸び、－なら縮みます。',
+    htTerrainH:'🏌️ 地形',
+    htTerrainList:'<li><b style="color:#7fd87f">ROUGH</b>：飛距離が落ちます</li><li><b style="color:#ddcc44">BUNKER</b>：飛距離大幅減。アイアン(5I/8I)のみ使用可</li><li><b style="color:#6699ff">WATER / OB</b>：ペナルティ＋1打、前の位置から打ち直し</li><li><b style="color:#00ff88">GREEN</b>：パター(PT)を使用。傾斜±0のガイドが表示されます</li>',
+    htSkillH:'✨ 特技',
+    htSkillList:'<li><b>パワーショット</b>：ゲージ上限が120%に</li><li><b>地形無視ショット</b>：ROUGH/BUNKER上でもフェアウェイ飛距離</li><li><b>打ち直し</b>：打数を増やさず前の場所から再ショット</li><li><b>風・傾斜消し</b>：風・傾斜を±0にする</li><li><b>スタートオーバー</b>：ホール最初からやり直し</li>',
+    htScoreH:'🏆 スコアとポイント', htScoreP:'ショットごとにポイント(pts)が減り、ホールクリアで獲得。par+4以上の打数でギブアップとなります。1ホール終了後はクラブ強化や特技回数増加のショップがあります。',
+    htVsH:'⚔ VSモード', htVsP:'選手権コース（9H）のみ。1Pがホールをプレイした後、CPUが同じホールをプレイします。ショップで強化できるのは1Pのみ。',
   },
   en: {
     btnStart: '▶ S T A R T', btnVS: '⚔ V S  M O D E',
@@ -43,12 +63,32 @@ const L = {
     charaPrompt: 'Select a character',
     vsTitle: 'SELECT OPPONENT', vsSub: 'Choose a CPU character', vsSub1: 'Choose your character',
     btnDecide: '▶ Select', btnVSDecide: '⚔ Select',
-    statPow: 'Power：', statTch: 'Dexterity：', statGeo: 'Range：', statSpe: 'Skill：',
+    statPow: 'Power：', statTch: 'Dexterity：', statGeo: 'Range Finding：', statSpe: 'Skill：',
     courseTitle: 'SELECT COURSE', coursePrac: 'P R A C T I C E', courseChamp: 'C H A M P I O N S H I P',
     coursePracMeta: '<span>1600pts</span><span>6 Holes</span>',
     courseChampMeta: '<span>1300pts</span><span>9 Holes</span>',
     courseInfoPrac: 'Practice | 6H | 1600pts', courseInfoChamp: 'Championship | 9H | 1300pts',
     howtoClose: 'Close', recBack: '← Back',
+    // ゲーム画面ラベル
+    lbHole:'HOLE', lbPar:'PAR', lbShot:'SHOT', lbPoints:'POINTS',
+    lbDist:'DIST', lbLeft:'LEFT', lbFly:'SHOT', lbPos:'POS',
+    lbWait:'WAIT', lbSkill:'SKILL',
+    lbTerrain:'TERRAIN', lbScore:'SCORE', lbBack:'BACK', lbGiveUp:'give up',
+    lbCpuTurn:'CPU TURN', lbShop:'SHOP', lbShopScore:'SCORE',
+    scCardTitle:'SCORECARD', scCardClose:'Close',
+    recHeader:'🏆 RECORDS',
+    // 遊び方
+    htTitle:'HOW TO PLAY',
+    htBasicsH:'⛳ BASICS', htBasicsP:'Select a club and press the SHOT button to start the gauge. Release/stop to fire the ball. Higher gauge = more distance.',
+    htMobileH:'📱 Mobile', htMobileP:'<b>Tap</b> SHOT → tap <b>■STOP</b> to fire',
+    htPcH:'🖥️ PC', htPcP:'<b>Hold</b> SHOT → release to fire',
+    htWindH:'💨 WAIT FOR WIND', htWindP:'Press WAIT n to change the wind value. + extends distance, − shortens it. Usable n times.',
+    htTerrainH:'🏌️ TERRAIN',
+    htTerrainList:'<li><b style="color:#7fd87f">ROUGH</b>: Distance reduced</li><li><b style="color:#ddcc44">BUNKER</b>: Distance heavily reduced. Irons (5I/8I) only</li><li><b style="color:#6699ff">WATER / OB</b>: +1 stroke penalty, replay from previous position</li><li><b style="color:#00ff88">GREEN</b>: Use putter (PT). Slope ±0 guide is shown</li>',
+    htSkillH:'✨ SKILLS',
+    htSkillList:'<li><b>Power Shot</b>: Gauge cap raised to 120%</li><li><b>Terrain Ignore</b>: Fairway distance even on ROUGH/BUNKER</li><li><b>Retry Shot</b>: Reshoot from previous position without adding a stroke</li><li><b>Wind/Slope Cancel</b>: Sets wind and slope to ±0</li><li><b>Start Over</b>: Restart the hole from the beginning</li>',
+    htScoreH:'🏆 SCORE & POINTS', htScoreP:'Points (pts) decrease per shot and are awarded on hole clear. Give up at par+4 strokes or more. After each hole, visit the SHOP to upgrade clubs or increase skill uses.',
+    htVsH:'⚔ VS MODE', htVsP:'Championship course (9H) only. After Player 1 plays a hole, the CPU plays the same hole. Only Player 1 can upgrade in the SHOP.',
   }
 };
 
@@ -138,11 +178,53 @@ function applyLang(){
     }
   }
 
-  // レコード画面ヘッダーと戻るボタン
+  // レコード画面
   const recH2 = document.querySelector('#recHeader h2');
-  if(recH2) recH2.textContent = _lang==='ja' ? '🏆 レコード' : '🏆 RECORDS';
+  if(recH2) recH2.textContent = t.recHeader;
   const recBackBtn = document.getElementById('recBackBtn');
   if(recBackBtn) recBackBtn.textContent = t.recBack;
+
+  // ゲーム画面ラベル
+  const gLbMap = {
+    lbHole:'lbHole', lbPar:'lbPar', lbShot:'lbShot', lbPoints:'lbPoints',
+    lbDist:'lbDist', lbLeft:'lbLeft', lbFly:'lbFly', lbPos:'lbPos',
+    lbWait:'lbWait', lbTerrain:'lbTerrain', lbScore:'lbScore',
+    lbBack:'lbBack', lbGiveUp:'lbGiveUp', lbCpuTurn:'lbCpuTurn',
+    lbShop:'lbShop', lbShopScore:'lbShopScore',
+  };
+  Object.entries(gLbMap).forEach(([id,key])=>{
+    const el = document.getElementById(id);
+    if(el) el.textContent = t[key];
+  });
+  const scct = document.getElementById('scCardTitle');
+  if(scct) scct.textContent = t.scCardTitle;
+  const sccl = document.getElementById('scCardClose');
+  if(sccl) sccl.textContent = t.scCardClose;
+  const bSpeEl = document.getElementById('bSpeLbl');
+  if(bSpeEl) bSpeEl.textContent = t.lbSkill;
+
+  // 遊び方ダイアログ
+  const htMap = {
+    htTitle:'htTitle', htBasicsH:'htBasicsH', htBasicsP:'htBasicsP',
+    htMobileH:'htMobileH', htPcH:'htPcH', htPcP:'htPcP',
+    htWindH:'htWindH', htWindP:'htWindP',
+    htTerrainH:'htTerrainH', htSkillH:'htSkillH',
+    htScoreH:'htScoreH', htScoreP:'htScoreP',
+    htVsH:'htVsH', htVsP:'htVsP',
+  };
+  Object.entries(htMap).forEach(([key,id])=>{
+    const el = document.getElementById(id);
+    if(el) el.textContent = t[key];
+  });
+  // innerHTML が必要な要素
+  const htMobileP = document.getElementById('htMobileP');
+  if(htMobileP) htMobileP.innerHTML = t.htMobileP;
+  const htPcPEl = document.getElementById('htPcP');
+  if(htPcPEl) htPcPEl.innerHTML = t.htPcP;
+  const htTerrainList = document.getElementById('htTerrainList');
+  if(htTerrainList) htTerrainList.innerHTML = t.htTerrainList;
+  const htSkillList = document.getElementById('htSkillList');
+  if(htSkillList) htSkillList.innerHTML = t.htSkillList;
 }
 
 // キャラ名・特技名を言語別に返す
@@ -661,7 +743,7 @@ function vsStartPlayer(){
   if(ti){ti.innerHTML='';ti.style.display='none';}
   document.getElementById('gGaugeArea').style.display='';
   const tc=document.getElementById('gTerCard'); if(tc) tc.style.display='';
-  $('bShot').textContent='SHOOT'; $('bShot').className='';
+  $('bShot').textContent='SHOT'; $('bShot').className='';
   $('bShot').style.visibility='';
   E('bShot',false);
   document.getElementById('bWnd').style.display=''; // 再表示
@@ -829,7 +911,7 @@ function startCPUHole(){
   updHUD();updGauge();setTer(1);updMap();windK();
   showTerrainInfo();
   S('scBox','none');S('gUp','none');S('bPro','none');S('speBox','none');
-  E('bShot',false); T('bShot','SHOOT');
+  E('bShot',false); T('bShot','SHOT');
   document.getElementById('bWnd').style.display='';
   T('bWndN',G.nw); E('bWnd',false);
   document.getElementById('bWnd').style.display='none'; // CPU番は非表示
@@ -2119,7 +2201,7 @@ function nextShot(){
   const sfNs=document.getElementById('gShotFormula');
   if(sfNs){sfNs.textContent='';sfNs.style.display='none';}G._formula='';
   S('gUp','none');G.gW=0;updGauge();G.y3=0;G.cmd=4;
-  T('bShot','SHOOT');E('bShot',false);S('speBox','none');
+  T('bShot','SHOT');E('bShot',false);S('speBox','none');
   T('vShot',G.ns);T('vYd3','0');
   S('bx2','none');S('bx3','none');S('bx1','block');
   S('bVwC','block');S('bVwS','none');S('bTj2','none');
@@ -2245,7 +2327,7 @@ function doUndo(){
     // ji<5(グリーン外)に戻る場合はコースの風パラメータを復元
     if(G.ji<5){ loadHD(); } // wa/wz/kzをコース値に戻す
     resetClubs(G.ji<5);windK();
-    T('bShot','SHOOT');E('bShot',false);S('speBox','none');E('bSpe',G.nwz>0);
+    T('bShot','SHOT');E('bShot',false);S('speBox','none');E('bSpe',G.nwz>0);
     // bWnd: グリーン以外なら表示、グリーン(ji=5)なら非表示
     if(G.ji===5){
       document.getElementById('bWnd').style.display='none';
@@ -2271,7 +2353,7 @@ function doUndo(){
     const wlbl=document.getElementById('gWindRowLbl');
     if(wlbl) wlbl.textContent='WIND';
     T('gGaugeClub','');T('gGaugeCost','');
-    T('bShot','SHOOT');E('bShot',false);S('speBox','none');
+    T('bShot','SHOT');E('bShot',false);S('speBox','none');
     // フィリップは1打目はdisabled（2打目以降でenable）
     E('bSpe',false);
   }
@@ -2346,7 +2428,7 @@ function holeStart(){
 
   // フィリップ: ホール開始(1打目)はdisable、着地後にenable
   E('bSpe', G.nwz>0&&G.ch!==2&&G.ch!==3&&G.ch!==5); // 1打目から使用可能
-  E('bShot',false); T('bShot','SHOOT');
+  E('bShot',false); T('bShot','SHOT');
   S('lWind','block');S('vPlmi','block');S('vWind','block');
   S('lPar','block');S('vPar','block');S('lShot','block');S('vShot','block');
   document.getElementById('gStRest').style.display='';
@@ -2769,7 +2851,7 @@ function sRelease(){
   if(G.cmd!==5&&G.cmd!==7) return;
   document.getElementById('gGaugeWrap').style.borderColor='';
   $('bShot').className='';
-  $('bShot').textContent='SHOOT';
+  $('bShot').textContent='SHOT';
   E('bShot',false);
   G.pts=Math.max(0,G.pts-G.mpt);
   T('gPtsV',G.pts);
@@ -2824,7 +2906,7 @@ function resetClubs(drv){
   document.getElementById('gClubPutt').style.display=drv?'none':'flex';
   document.getElementById('gClubShop').style.display='none';
   shotPhase=0;
-  $('bShot').textContent='SHOOT'; $('bShot').className='';
+  $('bShot').textContent='SHOT'; $('bShot').className='';
   E('bShot',false);
   rebuildClubs();
 }
@@ -2847,7 +2929,7 @@ function selC(n){
   rebuildClubs();
   T('gGaugeClub',G.ng+(n<=4?'yd':'m'));
   T('gGaugeCost',`-${G.mpt}pts`);
-  E('bShot',true); $('bShot').className='ready'; $('bShot').textContent='SHOOT';
+  E('bShot',true); $('bShot').className='ready'; $('bShot').textContent='SHOT';
   if(n>=5){
     // 傾斜0でカップインするゲージ値(0..gMax): y2*100/ng
     // ゲージバー上の位置% = gWneed/gMax*100
