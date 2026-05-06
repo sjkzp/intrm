@@ -44,7 +44,7 @@ const L = {
     scCardTitle:'スコアカード', scCardClose:'閉じる',
     recHeader:'🏆 レコード',
     // 地形名
-    terNames:{1:'フェアウェイ',2:'ROUGH',3:'BUNKER',4:'WATER',5:'グリーン',6:'O B'},
+    terNames:{1:'FAIRWAY',2:'ROUGH',3:'BUNKER',4:'WATER',5:'GREEN',6:'O B'},
     lbWind:'風', lbSlope:'傾',
     lbShotBtn:'打つ', lbUseBtn:'使用', lbWaitBtn:'風待ち',
     // 遊び方
