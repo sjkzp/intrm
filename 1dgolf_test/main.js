@@ -41,7 +41,7 @@ const L = {
     lbWait:'風待ち', lbSkill:'特技',
     lbTerrain:'地形', lbScore:'スコア', lbBack:'戻る', lbGiveUp:'ギブアップ',
     lbCpuTurn:'CPU番', lbShop:'SHOP', lbShopScore:'スコア',
-    scCardTitle:'スコアカード', scCardClose:'閉じる',
+    scCardTitle:'スコア カード', scCardClose:'閉じる',
     recHeader:'🏆 レコード',
     recLoading:'読み込み中…',
     recAllTime:'📊 累計実績',
@@ -90,7 +90,7 @@ const L = {
     lbWait:'WAIT', lbSkill:'SKILL',
     lbTerrain:'TERRAIN', lbScore:'SCORE', lbBack:'BACK', lbGiveUp:'give up',
     lbCpuTurn:'CPU TURN', lbShop:'SHOP', lbShopScore:'SCORE',
-    scCardTitle:'SCORECARD', scCardClose:'Close',
+    scCardTitle:'SCORE CARD', scCardClose:'Close',
     recHeader:'🏆 RECORDS',
     recLoading:'Loading…',
     recAllTime:'📊 All-Time Stats',
@@ -213,6 +213,11 @@ function applyLang(){
   if(recH2) recH2.textContent = t.recHeader;
   const recBackBtn = document.getElementById('recBackBtn');
   if(recBackBtn) recBackBtn.textContent = t.recBack;
+  // レコード画面表示中は再描画（All-Time Stats等を切り替え）
+  const scRec = document.getElementById('scRec');
+  if(scRec && scRec.classList.contains('on') && typeof openRecords === 'function'){
+    openRecords();
+  }
 
   // ゲーム画面ラベル
   const gLbMap = {
@@ -591,7 +596,7 @@ function showScoreCard(){
   if(!el||!tbl) return;
   const cr={1:'Practice',2:'Championship'};
   if(VS.active){
-    ttl.textContent='VS SCORECARD';
+    ttl.textContent='VS SCORE CARD';
     // 1PとCPUの両スコアカードを横並び
     const scoreCol=d=>d<=-2?'#f80':d===-1?'#4df':d===0?'#fff':d===1?'#fa4':'#f66';
     const pars=G.holePars;
@@ -622,7 +627,7 @@ function showScoreCard(){
       makeCol(cdN(cpud).split(' ')[0], cpud.col, VS.cpuScores)+
       `</div>`;
   } else {
-    ttl.textContent = (cr[G.cr]||'') + ' SCORECARD';
+    ttl.textContent = (cr[G.cr]||'') + ' SCORE CARD';
     tbl.innerHTML = buildScoreCardHTML();
   }
   el.style.display='flex';
@@ -3585,11 +3590,20 @@ function _noop(){}
 // 起動
 // =============================================
 dbGet('settings','lang').then(saved=>{
-  if(saved==='en'||saved==='ja') _lang=saved;
+  if(saved==='en'||saved==='ja'){
+    // DB保存値を優先
+    _lang=saved;
+  } else {
+    // 未設定ならブラウザ言語で判定（ja以外はEN）
+    const bl=(navigator.language||navigator.userLanguage||'en').toLowerCase();
+    _lang=bl.startsWith('ja')?'ja':'en';
+  }
   applyLang();
   sc('scT');
   buildGaugeTicks();
 }).catch(()=>{
+  const bl=(navigator.language||navigator.userLanguage||'en').toLowerCase();
+  _lang=bl.startsWith('ja')?'ja':'en';
   applyLang();
   sc('scT');
   buildGaugeTicks();
