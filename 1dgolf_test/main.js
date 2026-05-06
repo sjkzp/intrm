@@ -41,7 +41,7 @@ const L = {
     lbDist:'全長', lbLeft:'残り', lbFly:'飛距離', lbPos:'現在',
     lbWait:'風待ち', lbSkill:'特技',
     lbTerrain:'地形', lbScore:'スコア', lbBack:'戻る', lbGiveUp:'ギブアップ',
-    lbCpuTurn:'CPU番', lbShop:'SHOP', lbShopScore:'スコア',
+    lbCpuTurn:'CPU', lbShop:'SHOP', lbShopScore:'スコア',
     scCardTitle:'スコアカード', scCardClose:'閉じる',
     vsScoreCard:'VS スコアカード',
     recHeader:'🏆 レコード',
@@ -60,6 +60,7 @@ const L = {
     lbWind:'風', lbSlope:'傾',
     lbShotBtn:'打つ', lbUseBtn:'使用', lbWaitBtn:'風待ち',
     lbBuy:'購入', lbSkillPlus:'特技+1', lbNextHole:'次のホールへ ›', lbFinish:'コース終了', lbStop:'■ STOP',
+    lbTot:'合計', lbCount:'回',
     // 遊び方
     htTitle:'HOW TO PLAY',
     htBasicsH:'⛳ 基本操作', htBasicsP:'クラブを選んで「SHOT」ボタンを押すとゲージが動きます。ショットするとボールが飛びます。ゲージが高いほど飛距離が伸びます。',
@@ -111,6 +112,7 @@ const L = {
     lbWind:'WIND', lbSlope:'SLP',
     lbShotBtn:'SHOT', lbUseBtn:'USE', lbWaitBtn:'WAIT',
     lbBuy:'BUY', lbSkillPlus:'SKILL+1', lbNextHole:'NEXT HOLE ›', lbFinish:'FINISH', lbStop:'■ STOP',
+    lbTot:'TOT', lbCount:'x',
     // 遊び方
     htTitle:'HOW TO PLAY',
     htBasicsH:'⛳ BASICS', htBasicsP:'Select a club and press the SHOT button to start the gauge. Release/stop to fire the ball. Higher gauge = more distance.',
@@ -630,7 +632,7 @@ function showScoreCard(){
         h+=`<tr style="border-bottom:1px solid #0f0f1a"><td style="padding:2px 3px;color:#aaccee">${i+1}</td><td style="color:#556">${p}</td><td style="color:#ccc;font-weight:bold">${played?s:'-'}</td><td style="color:${played?scoreCol(d):'#666'};font-weight:bold">${played?(d>0?'+':'')+d:'-'}</td></tr>`;
       }
       const td=tot-totPar;
-      h+=`<tr style="border-top:1px solid #2a2a4a"><td colspan="2" style="color:#aaccee">TOT</td><td style="color:#fff;font-weight:bold">${tot}</td><td style="color:${scoreCol(td)};font-weight:bold">${td>0?'+':''}${td}</td></tr>`;
+      h+=`<tr style="border-top:1px solid #2a2a4a"><td colspan="2" style="color:#aaccee">${L[_lang].lbTot}</td><td style="color:#fff;font-weight:bold">${tot}</td><td style="color:${scoreCol(td)};font-weight:bold">${td>0?'+':''}${td}</td></tr>`;
       h+='</table></div>';
       return h;
     }
@@ -2030,7 +2032,7 @@ function showVSResult(){
       html+=`<tr style="border-bottom:1px solid #0f0f1a"><td style="padding:2px;color:#aaccee">${i+1}</td><td style="color:#556">${p}</td><td style="color:#ccc;font-weight:bold">${s}</td><td style="color:${scoreCol(d)};font-weight:bold">${d>0?'+':''}${d}</td></tr>`;
     });
     const totD=tot-totPar;
-    html+=`<tr style="border-top:1px solid #2a2a4a"><td colspan="2" style="color:#aaccee;font-size:11px">TOT</td><td style="color:#fff;font-weight:bold">${tot}</td><td style="color:${scoreCol(totD)};font-weight:bold">${totD>0?'+':''}${totD}</td></tr>`;
+    html+=`<tr style="border-top:1px solid #2a2a4a"><td colspan="2" style="color:#aaccee;font-size:11px">${L[_lang].lbTot}</td><td style="color:#fff;font-weight:bold">${tot}</td><td style="color:${scoreCol(totD)};font-weight:bold">${totD>0?'+':''}${totD}</td></tr>`;
     html+='</table></div>';
     return html;
   }
@@ -3341,11 +3343,11 @@ function endGame(){
   document.getElementById('endScore').style.fontSize='32px';
   document.getElementById('endPts').textContent=G.pts+' pts';
   let rows='';
-  if(G.nHIO>0)rows+=`<div class="row">Hole in One<span>${G.nHIO}x</span></div>`;
-  if(G.nALB>0)rows+=`<div class="row">Albatross<span>${G.nALB}x</span></div>`;
-  if(G.nEAG>0)rows+=`<div class="row">Eagle<span>${G.nEAG}x</span></div>`;
-  if(G.nBIR>0)rows+=`<div class="row">Birdie<span>${G.nBIR}x</span></div>`;
-  if(G.nCHP>0)rows+=`<div class="row">Chip In<span>${G.nCHP}x</span></div>`;
+  if(G.nHIO>0)rows+=`<div class="row">Hole in One<span>${G.nHIO}${L[_lang].lbCount}</span></div>`;
+  if(G.nALB>0)rows+=`<div class="row">Albatross<span>${G.nALB}${L[_lang].lbCount}</span></div>`;
+  if(G.nEAG>0)rows+=`<div class="row">Eagle<span>${G.nEAG}${L[_lang].lbCount}</span></div>`;
+  if(G.nBIR>0)rows+=`<div class="row">Birdie<span>${G.nBIR}${L[_lang].lbCount}</span></div>`;
+  if(G.nCHP>0)rows+=`<div class="row">Chip In<span>${G.nCHP}${L[_lang].lbCount}</span></div>`;
   rows+=`<div class="row">Longest Shot<span>${G.maxy}yd</span></div>`;
   // スコアカード
   rows+=`<div style="margin-top:10px;border-top:1px solid #1a1a2a;padding-top:8px">${buildScoreCardHTML()}</div>`;
@@ -3447,14 +3449,14 @@ function openRecords(){
     html+='<div class="recSection"><h3>'+tRec.recAllTime+'</h3>';
     const hio=ls['hio']||0, chip=ls['chipIn']||0;
     const plays=Object.keys(CD).map(k=>({id:+k,n:cdN(CD[k]),c:ls[`play_${k}`]||0}));
-    html+=`<div class="recStatRow">${tRec.recHIO}<span>${hio}x</span></div>`;
-    html+=`<div class="recStatRow">${tRec.recChip}<span>${chip}x</span></div>`;
+    html+=`<div class="recStatRow">${tRec.recHIO}<span>${hio}${tRec.lbCount}</span></div>`;
+    html+=`<div class="recStatRow">${tRec.recChip}<span>${chip}${tRec.lbCount}</span></div>`;
     html+='</div>';
 
     // ── キャラ別プレイ回数 ──
     html+='<div class="recSection"><h3>'+tRec.recPlays+'</h3>';
     plays.forEach(p=>{
-      html+=`<div class="recStatRow"><span style="color:${CD[p.id].col}">${p.n}</span><span>${p.c}x</span></div>`;
+      html+=`<div class="recStatRow"><span style="color:${CD[p.id].col}">${p.n}</span><span>${p.c}${tRec.lbCount}</span></div>`;
     });
     html+='</div>';
 
@@ -3511,7 +3513,7 @@ function openRecords(){
           const r=runs[ch];
           if(r&&r.holes){totalPar=r.holes.reduce((a,h)=>a+(h.par||4),0);break;}
         }
-        html+=`<tr style="border-top:2px solid #1a1a2a"><td style="color:#aabbcc"><b>TOT</b></td><td class="par"><b>${totalPar||'—'}</b></td>`;
+        html+=`<tr style="border-top:2px solid #1a1a2a"><td style="color:#aabbcc"><b>${tRec.lbTot}</b></td><td class="par"><b>${totalPar||'—'}</b></td>`;
         for(let ch=1;ch<=6;ch++){
           const r=runs[ch];
           if(!r||!r.total){html+='<td style="color:#334">—</td>';continue;}
