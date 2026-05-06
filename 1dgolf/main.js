@@ -16,6 +16,305 @@ window.addEventListener('unhandledrejection', function(e) {
 // ============ ゲームロジック ============
 'use strict';
 
+// =============================================
+// 言語切替システム
+// =============================================
+let _lang = 'ja'; // 'ja' | 'en'
+
+const L = {
+  ja: {
+    btnStart: '▶ ス タ ー ト', btnVS: '⚔ V S モ ー ド',
+    btnRec: '🏆 レコード', btnHow: '？ 遊び方', langBtn: 'EN',
+    charaTitle: 'キャラクター選択', charaSub: 'タップで詳細を表示・選択',
+    charaPrompt: 'キャラを選択してください',
+    vsTitle: '対戦相手選択', vsSub: 'CPUのキャラを選んでください', vsSub1: '操作するキャラを選んでください',
+    btnDecide: '▶ 決定', btnVSDecide: '⚔ 決定',
+    statPow: '腕力：', statTch: '器用さ：', statGeo: '土地勘：', statSpe: '特技：',
+    courseTitle: 'コース選択', coursePrac: '練 習 コ ー ス', courseChamp: '選 手 権 コ ー ス',
+    coursePracMeta: '<span>1600pts</span><span>6ホール</span>',
+    courseChampMeta: '<span>1300pts</span><span>9ホール</span>',
+    courseInfoPrac: '練習コース｜6H｜1600pts', courseInfoChamp: '選手権コース｜9H｜1300pts',
+    howtoClose: '閉じる', recBack: '← 戻る',
+    htCredits: '制作：int ／ キャラグラフィック：YUU（海無軒）',
+    // ゲーム画面ラベル
+    lbHole:'H', lbPar:'Par', lbShot:'打', lbPoints:'Pts',
+    lbDist:'全長', lbLeft:'残り', lbFly:'飛距離', lbPos:'現在',
+    lbWait:'風待ち', lbSkill:'特技',
+    lbTerrain:'地形', lbScore:'スコア', lbBack:'戻る', lbGiveUp:'ギブアップ',
+    lbCpuTurn:'CPU', lbShop:'SHOP', lbShopScore:'スコア',
+    scCardTitle:'スコアカード', scCardClose:'閉じる',
+    vsScoreCard:'VS スコアカード',
+    recHeader:'🏆 レコード',
+    recLoading:'読み込み中…',
+    recAllTime:'📊 累計実績',
+    recHIO:'ホールインワン', recChip:'チップイン',
+    recPlays:'🏌️ キャラ別プレイ数',
+    recBest:'⛳ ベストスコア',
+    recEmpty:'まだ記録がありません',
+    recDelete:'🗑 記録をすべて削除',
+    recCrsNames:{1:'練習コース',2:'選手権コース'},
+    recDelTitle:'記録を削除', recDelBody:'ホールベスト・プレイ回数・<br>実績データがすべて消えます。<br>本当に削除しますか？',
+    recDelCancel:'キャンセル', recDelOk:'削除する', recDelDone:'記録を削除しました',
+    // 地形名
+    terNames:{1:'FAIRWAY',2:'ROUGH',3:'BUNKER',4:'WATER',5:'GREEN',6:'O B'},
+    lbWind:'風', lbSlope:'傾',
+    lbShotBtn:'打つ', lbUseBtn:'使用', lbWaitBtn:'風待ち',
+    lbBuy:'購入', lbSkillPlus:'特技+1', lbNextHole:'次のホールへ ›', lbFinish:'コース終了', lbStop:'■ STOP',
+    lbTot:'合計', lbCount:'回',
+    // 遊び方
+    htTitle:'HOW TO PLAY',
+    htBasicsH:'⛳ 基本操作', htBasicsP:'クラブを選んで「SHOT」ボタンを押すとゲージが動きます。ショットするとボールが飛びます。ゲージが高いほど飛距離が伸びます。',
+    htMobileH:'📱 スマホ操作', htMobileP:'<b>タップ</b> SHOT → <b>■STOP</b> でショット',
+    htPcH:'🖥️ PC操作', htPcP:'<b>クリック長押し</b> SHOT → 離してショット',
+    htWindH:'💨 風待ち', htWindP:'WAITボタンで風の値が変わります。＋なら飛距離が伸び、－なら縮みます。',
+    htTerrainH:'🏌️ 地形',
+    htTerrainList:'<li><b style="color:#7fd87f">ROUGH</b>：飛距離が落ちます</li><li><b style="color:#ddcc44">BUNKER</b>：飛距離大幅減。アイアン(5I/8I)のみ使用可</li><li><b style="color:#6699ff">WATER / OB</b>：ペナルティ＋1打、前の位置から打ち直し</li><li><b style="color:#00ff88">GREEN</b>：パター(PT)を使用。傾斜±0のガイドが表示されます</li>',
+    htSkillH:'✨ 特技',
+    htSkillList:'<li><b>パワーショット</b>：ゲージ上限が120%に</li><li><b>地形無視ショット</b>：ROUGH/BUNKER上でもフェアウェイ飛距離</li><li><b>打ち直し</b>：打数を増やさず前の場所から再ショット</li><li><b>風・傾斜消し</b>：風・傾斜を±0にする</li><li><b>スタートオーバー</b>：ホール最初からやり直し</li>',
+    htScoreH:'🏆 スコアとポイント', htScoreP:'ショットごとにポイント(pts)が減り、ホールクリアで獲得。par+4以上の打数でギブアップとなります。1ホール終了後はクラブ強化や特技回数増加のショップがあります。',
+    htVsH:'⚔ VSモード', htVsP:'選手権コース（9H）のみ。1Pがホールをプレイした後、CPUが同じホールをプレイします。ショップで強化できるのは1Pのみ。',
+  },
+  en: {
+    btnStart: '▶ S T A R T', btnVS: '⚔ V S  M O D E',
+    btnRec: '🏆 Records', btnHow: '？ How to Play', langBtn: 'JP',
+    charaTitle: 'SELECT CHARACTER', charaSub: 'Tap to view details and select',
+    charaPrompt: 'Select a character',
+    vsTitle: 'SELECT OPPONENT', vsSub: 'Choose a CPU character', vsSub1: 'Choose your character',
+    btnDecide: '▶ Select', btnVSDecide: '⚔ Select',
+    statPow: 'Power：', statTch: 'Dexterity：', statGeo: 'Range Finding：', statSpe: 'Skill：',
+    courseTitle: 'SELECT COURSE', coursePrac: 'P R A C T I C E', courseChamp: 'C H A M P I O N S H I P',
+    coursePracMeta: '<span>1600pts</span><span>6 Holes</span>',
+    courseChampMeta: '<span>1300pts</span><span>9 Holes</span>',
+    courseInfoPrac: 'Practice | 6H | 1600pts', courseInfoChamp: 'Championship | 9H | 1300pts',
+    howtoClose: 'Close', recBack: '← Back',
+    htCredits: 'Developer: int ／ Character Art: YUU',
+    // ゲーム画面ラベル
+    lbHole:'HOLE', lbPar:'PAR', lbShot:'SHOT', lbPoints:'POINTS',
+    lbDist:'DIST', lbLeft:'LEFT', lbFly:'SHOT', lbPos:'POS',
+    lbWait:'WAIT', lbSkill:'SKILL',
+    lbTerrain:'TERRAIN', lbScore:'SCORE', lbBack:'BACK', lbGiveUp:'give up',
+    lbCpuTurn:'CPU TURN', lbShop:'SHOP', lbShopScore:'SCORE',
+    scCardTitle:'SCORE CARD', scCardClose:'Close',
+    vsScoreCard:'VS SCORE CARD',
+    recHeader:'🏆 RECORDS',
+    recLoading:'Loading…',
+    recAllTime:'📊 All-Time Stats',
+    recHIO:'Hole in One', recChip:'Chip In',
+    recPlays:'🏌️ Plays by Character',
+    recBest:'⛳ Best Scores',
+    recEmpty:'No records yet',
+    recDelete:'🗑 Delete All Records',
+    recCrsNames:{1:'Practice',2:'Championship'},
+    recDelTitle:'Delete Records', recDelBody:'All best scores, play counts<br>and stats will be erased.<br>Are you sure?',
+    recDelCancel:'Cancel', recDelOk:'Delete', recDelDone:'Records deleted',
+    // 地形名
+    terNames:{1:'FAIRWAY',2:'ROUGH',3:'BUNKER',4:'WATER',5:'GREEN',6:'O B'},
+    lbWind:'WIND', lbSlope:'SLP',
+    lbShotBtn:'SHOT', lbUseBtn:'USE', lbWaitBtn:'WAIT',
+    lbBuy:'BUY', lbSkillPlus:'SKILL+1', lbNextHole:'NEXT HOLE ›', lbFinish:'FINISH', lbStop:'■ STOP',
+    lbTot:'TOT', lbCount:'x',
+    // 遊び方
+    htTitle:'HOW TO PLAY',
+    htBasicsH:'⛳ BASICS', htBasicsP:'Select a club and press the SHOT button to start the gauge. Release/stop to fire the ball. Higher gauge = more distance.',
+    htMobileH:'📱 Mobile', htMobileP:'<b>Tap</b> SHOT → tap <b>■STOP</b> to fire',
+    htPcH:'🖥️ PC', htPcP:'<b>Hold</b> SHOT → release to fire',
+    htWindH:'💨 WAIT FOR WIND', htWindP:'Press WAIT n to change the wind value. + extends distance, − shortens it. Usable n times.',
+    htTerrainH:'🏌️ TERRAIN',
+    htTerrainList:'<li><b style="color:#7fd87f">ROUGH</b>: Distance reduced</li><li><b style="color:#ddcc44">BUNKER</b>: Distance heavily reduced. Irons (5I/8I) only</li><li><b style="color:#6699ff">WATER / OB</b>: +1 stroke penalty, replay from previous position</li><li><b style="color:#00ff88">GREEN</b>: Use putter (PT). Slope ±0 guide is shown</li>',
+    htSkillH:'✨ SKILLS',
+    htSkillList:'<li><b>Power Shot</b>: Gauge cap raised to 120%</li><li><b>Terrain Ignore</b>: Fairway distance even on ROUGH/BUNKER</li><li><b>Retry Shot</b>: Reshoot from previous position without adding a stroke</li><li><b>Wind/Slope Cancel</b>: Sets wind and slope to ±0</li><li><b>Start Over</b>: Restart the hole from the beginning</li>',
+    htScoreH:'🏆 SCORE & POINTS', htScoreP:'Points (pts) decrease per shot and are awarded on hole clear. Give up at par+4 strokes or more. After each hole, visit the SHOP to upgrade clubs or increase skill uses.',
+    htVsH:'⚔ VS MODE', htVsP:'Championship course (9H) only. After Player 1 plays a hole, the CPU plays the same hole. Only Player 1 can upgrade in the SHOP.',
+  }
+};
+
+function toggleLang(){
+  _lang = _lang==='ja' ? 'en' : 'ja';
+  applyLang();
+  dbPut('settings','lang',_lang).catch(()=>{});
+}
+
+function applyLang(){
+  const t = L[_lang];
+  const lb = document.getElementById('langBtn');
+  if(lb) lb.textContent = t.langBtn;
+  const btnMap = {
+    sBtnStart:'btnStart', sBtnVS:'btnVS', sBtnRec:'btnRec', sBtnHow:'btnHow'
+  };
+  Object.entries(btnMap).forEach(([id,key])=>{
+    const el = document.getElementById(id);
+    if(el) el.textContent = t[key];
+  });
+  const dhc = document.getElementById('dlgHowtoClose');
+  if(dhc) dhc.textContent = t.howtoClose;
+  // キャラ選択ヘッダー
+  const cHdr = document.querySelector('#scC #cHeader');
+  if(cHdr){
+    const h2 = cHdr.querySelector('h2');
+    const p  = cHdr.querySelector('p');
+    if(h2 && h2._langKey) h2.textContent = t[h2._langKey] || h2.textContent;
+    if(p  && p._langKey)  p.textContent  = t[p._langKey]  || p.textContent;
+  }
+  // キャラ詳細ラベル（テキストノードを直接更新）
+  const dStatMap = {dStatPow:'statPow', dStatTch:'statTch', dStatGeo:'statGeo', dStatSpe:'statSpe'};
+  Object.entries(dStatMap).forEach(([elId,key])=>{
+    const el = document.getElementById(elId);
+    if(el && el.childNodes[0]) el.childNodes[0].textContent = t[key];
+  });
+  const cdn = document.getElementById('cDetailName');
+  if(cdn && cdn.dataset.empty==='1') cdn.textContent = t.charaPrompt;
+  // 決定ボタン
+  const cbn = document.getElementById('cBtnNormal');
+  if(cbn) cbn.textContent = t.btnDecide;
+  const cbnvs = document.getElementById('cBtnVSoppo');
+  if(cbnvs) cbnvs.textContent = t.btnVSDecide;
+  // コース選択
+  const crH2 = document.querySelector('#crHeader h2');
+  if(crH2) crH2.textContent = t.courseTitle;
+  const cpName = document.querySelector('#crPrac .crName');
+  const ccName = document.querySelector('#crChamp .crName');
+  const cpMeta = document.querySelector('#crPrac .crMeta');
+  const ccMeta = document.querySelector('#crChamp .crMeta');
+  if(cpName) cpName.textContent = t.coursePrac;
+  if(ccName) ccName.textContent = t.courseChamp;
+  if(cpMeta) cpMeta.innerHTML   = t.coursePracMeta;
+  if(ccMeta) ccMeta.innerHTML   = t.courseChampMeta;
+  const cct = document.getElementById('crConfirmTitle');
+  if(cct) cct.textContent = t.courseConfirmTitle || 'ARE YOU READY?';
+
+  // キャラ詳細パネルが表示されている場合は名前・特技を再描画
+  const cdn2 = document.getElementById('cDetailName');
+  if(cdn2 && cdn2.dataset.empty !== '1'){
+    const selCard = document.querySelector('.csCard.sel');
+    if(selCard){
+      const selId = parseInt(selCard.id.replace('cs',''));
+      const d = (typeof CD !== 'undefined') && CD[selId];
+      if(d){
+        cdn2.textContent = cdN(d);
+        const dSpe = document.getElementById('dSpe');
+        if(dSpe) dSpe.textContent = cdS(d);
+      }
+    }
+  }
+  // speBox（特技フラッシュ）が表示中なら更新
+  const speBox = document.getElementById('speBox');
+  if(speBox && speBox.style.display !== 'none' && typeof G !== 'undefined'){
+    const curD = (typeof CD !== 'undefined') && CD[G.ch];
+    if(curD) speBox.textContent = cdS(curD) || 'SKILL';
+  }
+
+  // キャラ選択画面が表示中ならグリッドを再描画（カード名を即時反映）
+  const scC = document.getElementById('scC');
+  if(scC && scC.classList.contains('on') && typeof drawSlots === 'function'){
+    drawSlots();
+    // 再描画後にselectionを復元
+    if(typeof pendingChara !== 'undefined' && pendingChara){
+      const prevSel = document.getElementById('cs'+pendingChara);
+      if(prevSel) prevSel.classList.add('sel');
+    }
+  }
+
+  // レコード画面
+  const recH2 = document.querySelector('#recHeader h2');
+  if(recH2) recH2.textContent = t.recHeader;
+  const recBackBtn = document.getElementById('recBackBtn');
+  if(recBackBtn) recBackBtn.textContent = t.recBack;
+  // レコード画面表示中は再描画（All-Time Stats等を切り替え）
+  const scRec = document.getElementById('scRec');
+  if(scRec && scRec.classList.contains('on') && typeof openRecords === 'function'){
+    openRecords();
+  }
+
+  // ゲーム画面ラベル
+  const gLbMap = {
+    lbHole:'lbHole', lbPar:'lbPar', lbShot:'lbShot', lbPoints:'lbPoints',
+    lbDist:'lbDist', lbLeft:'lbLeft', lbFly:'lbFly', lbPos:'lbPos',
+    lbWait:'lbWait', lbTerrain:'lbTerrain', lbScore:'lbScore',
+    lbBack:'lbBack', lbGiveUp:'lbGiveUp', lbCpuTurn:'lbCpuTurn',
+    lbShop:'lbShop', lbShopScore:'lbShopScore',
+  };
+  Object.entries(gLbMap).forEach(([id,key])=>{
+    const el = document.getElementById(id);
+    if(el) el.textContent = t[key];
+  });
+  const scct = document.getElementById('scCardTitle');
+  if(scct) scct.textContent = t.scCardTitle;
+  const sccl = document.getElementById('scCardClose');
+  if(sccl) sccl.textContent = t.scCardClose;
+  const bSpeEl = document.getElementById('bSpeLbl');
+  if(bSpeEl) bSpeEl.textContent = t.lbSkill;
+
+  // CPU番バナーの名称更新
+  const cpuNameEl = document.getElementById('gCpuName');
+  if(cpuNameEl && typeof VS !== 'undefined' && VS.cpuCh){
+    const cpuDa = CD[VS.cpuCh];
+    if(cpuDa) cpuNameEl.textContent = cdN(cpuDa);
+  }
+
+  // bPro ラベル更新
+  const bProEl = document.getElementById('bPro');
+  if(bProEl && bProEl.style.display !== 'none'){
+    const ct = bProEl.textContent;
+    if(ct==='NEXT HOLE ›'||ct==='次のホールへ ›') bProEl.textContent=L[_lang].lbNextHole;
+    else if(ct==='FINISH'||ct==='コース終了') bProEl.textContent=L[_lang].lbFinish;
+  }
+
+  // ゲーム中ならsetTer/updWindLabelを再実行して地形名・風ラベルを更新
+  if(typeof G !== 'undefined' && G.ji){
+    setTer(G.ji, true);
+    updWindLabel();
+  }
+  // bShotのラベル（SHOTモード時のみ更新、充電中・購入中は触らない）
+  const bShotEl = document.getElementById('bShot');
+  // bShot が「待機状態」のラベルなら言語に合わせて更新
+  if(bShotEl){
+    const cur = bShotEl.textContent;
+    if(cur==='SHOT'||cur==='打つ') bShotEl.textContent=L[_lang].lbShotBtn;
+    else if(cur==='BUY'||cur==='購入') bShotEl.textContent=L[_lang].lbBuy;
+    else if(cur==='USE'||cur==='使用') bShotEl.textContent=L[_lang].lbUseBtn;
+  }
+
+  // 遊び方ダイアログ
+  const htCreditsEl = document.getElementById('htCredits');
+  if(htCreditsEl) htCreditsEl.textContent = t.htCredits;
+
+  const htMap = {
+    htTitle:'htTitle', htBasicsH:'htBasicsH', htBasicsP:'htBasicsP',
+    htMobileH:'htMobileH', htPcH:'htPcH', htPcP:'htPcP',
+    htWindH:'htWindH', htWindP:'htWindP',
+    htTerrainH:'htTerrainH', htSkillH:'htSkillH',
+    htScoreH:'htScoreH', htScoreP:'htScoreP',
+    htVsH:'htVsH', htVsP:'htVsP',
+  };
+  Object.entries(htMap).forEach(([key,id])=>{
+    const el = document.getElementById(id);
+    if(el) el.textContent = t[key];
+  });
+  // innerHTML が必要な要素
+  const htMobileP = document.getElementById('htMobileP');
+  if(htMobileP) htMobileP.innerHTML = t.htMobileP;
+  const htPcPEl = document.getElementById('htPcP');
+  if(htPcPEl) htPcPEl.innerHTML = t.htPcP;
+  const htTerrainList = document.getElementById('htTerrainList');
+  if(htTerrainList) htTerrainList.innerHTML = t.htTerrainList;
+  const htSkillList = document.getElementById('htSkillList');
+  if(htSkillList) htSkillList.innerHTML = t.htSkillList;
+}
+
+// キャラ名・特技名を言語別に返す
+function cdN(d){ return _lang==='ja' ? (d.jn||d.n) : d.n; }
+function cdS(d){ return _lang==='ja' ? (d.js||d.s) : d.s; }
+
+function _setCharaHeader(h2text, ptext, h2key, pkey){
+  const cHdr = document.querySelector('#scC #cHeader');
+  if(!cHdr) return;
+  const h2 = cHdr.querySelector('h2'); const p = cHdr.querySelector('p');
+  if(h2){ h2.textContent=h2text; h2._langKey=h2key; }
+  if(p) { p.textContent=ptext;   p._langKey=pkey;   }
+}
+
+
+
 
 // =============================================
 // SE (Web Audio API)
@@ -81,22 +380,22 @@ function seChime(){
 }
 
 const CD={
- 1:{n:'一之瀬 水無',  p:'★',      t:'★★★★★',g:'★★★★★',s:' パワーショット',  col:'#6fdf6f',ic:'水',
+ 1:{n:'Mina Ichinose',    jn:'一之瀬 水無', p:'★',      t:'★★★★★',g:'★★★★★',s:'Power Shot',     js:'パワーショット',  col:'#6fdf6f',ic:'水',
     spd:30,sc:1,mx:100,s7:40,sc7:1,x7:100,wz:3,wt:7,pw:800,
     w1:200,c1:90,w2:180,c2:70,i1:130,d1:60,i2:100,d2:40,p1:30,e1:10,p2:15,e2:0,gW:102},
- 2:{n:'右村 走馬',    p:'★★★',   t:'★★★',   g:'★★★',   s:'地形無視ショット',col:'#6fa8df',ic:'右',
+ 2:{n:'Soma Migimura',    jn:'右村 走馬',   p:'★★★',   t:'★★★',   g:'★★★',   s:'Terrain Ignore',  js:'地形無視ショット',col:'#6fa8df',ic:'右',
     spd:50,sc:4,mx:112,s7:50,sc7:4,x7:112,wz:2,wt:4,pw:950,
     w1:230,c1:120,w2:200,c2:100,i1:160,d1:80,i2:130,d2:60,p1:30,e1:30,p2:15,e2:10,gW:114},
- 3:{n:'柴田 綴',      p:'★★★★★★',t:'★',      g:'★★',    s:'　　打ち直し',   col:'#df9f4f',ic:'柴',
+ 3:{n:'Tsuduru Shibata',  jn:'柴田 綴',     p:'★★★★★★',t:'★',      g:'★★',    s:'Retry Shot',      js:'打ち直し',        col:'#df9f4f',ic:'柴',
     spd:28,sc:7,mx:133,s7:28,sc7:7,x7:133,wz:2,wt:2,pw:1050,
     w1:290,c1:190,w2:270,c2:150,i1:230,d1:110,i2:190,d2:80,p1:30,e1:40,p2:15,e2:20,gW:135},
- 4:{n:'神 響子',      p:'★★',     t:'★★★★',  g:'★★★★',  s:'　風・傾斜消し',col:'#df6fdf',ic:'神',
+ 4:{n:'Kyoko Jin',        jn:'神 響子',     p:'★★',     t:'★★★★',  g:'★★★★',  s:'Wind/Slope Cancel',js:'風・傾斜消し',    col:'#df6fdf',ic:'神',
     spd:50,sc:3,mx:108,s7:50,sc7:3,x7:108,wz:4,wt:5,pw:650,
     w1:220,c1:110,w2:190,c2:90,i1:160,d1:70,i2:120,d2:40,p1:30,e1:20,p2:15,e2:10,gW:110},
- 5:{n:'フィリップ 北崎',p:'★★★★',t:'★★★',   g:'★★★★',  s:'スタートオーバー',col:'#ffdf6f',ic:'P',
+ 5:{n:'Philip Kitazaki',  jn:'フィリップ 北崎',p:'★★★★',t:'★★★',   g:'★★★★',  s:'Start Over',      js:'スタートオーバー',col:'#ffdf6f',ic:'P',
     spd:43,sc:5,mx:120,s7:40,sc7:5,x7:120,wz:1,wt:3,pw:1200,
     w1:240,c1:150,w2:220,c2:130,i1:180,d1:100,i2:150,d2:80,p1:30,e1:40,p2:15,e2:20,gW:122},
- 6:{n:'一之瀬 旗雄',  p:'★★★★★',t:'★★★★★',g:'★★★★★',s:'　　　無し',     col:'#ff6f6f',ic:'旗',
+ 6:{n:'Hatao Ichinose',   jn:'一之瀬 旗雄', p:'★★★★★',t:'★★★★★',g:'★★★★★',s:'None',             js:'無し',            col:'#ff6f6f',ic:'旗',
     spd:27,sc:1,mx:125,s7:27,sc7:1,x7:125,wz:0,wt:6,pw:0,
     w1:270,c1:100,w2:250,c2:80,i1:200,d1:70,i2:170,d2:50,p1:30,e1:30,p2:15,e2:10,gW:127},
 };
@@ -254,7 +553,7 @@ function buildScoreCardHTML(){
   const scores = G.holeScores;
   const pars   = G.holePars;
   const n = scores.length;
-  if(n===0) return '<div style="color:#666;text-align:center;padding:12px">まだスコアなし</div>';
+  if(n===0) return '<div style="color:#666;text-align:center;padding:12px">No scores yet</div>';
 
   // スコア色
   const scoreCol = d => d<=-2?'#f80':d===-1?'#4df':d===0?'#fff':d===1?'#fa4':'#f66';
@@ -265,7 +564,7 @@ function buildScoreCardHTML(){
   <thead><tr style="border-bottom:1px solid #2a2a4a;color:#668;font-size:10px">
     <th style="padding:3px 4px;text-align:center">HOLE</th>
     <th style="padding:3px 4px;text-align:center">PAR</th>
-    <th style="padding:3px 4px;text-align:center">打数</th>
+    <th style="padding:3px 4px;text-align:center">SHOTS</th>
     <th style="padding:3px 4px;text-align:center">±</th>
     <th style="padding:3px 4px;text-align:center"></th>
   </tr></thead><tbody>`;
@@ -297,11 +596,11 @@ function buildScoreCardHTML(){
 
   // 凡例
   html += `<div style="display:flex;gap:8px;padding:6px 4px;flex-wrap:wrap;justify-content:center">
-    <span style="color:#f80;font-size:10px">◎ イーグル以上</span>
-    <span style="color:#4df;font-size:10px">○ バーディー</span>
-    <span style="color:#fff;font-size:10px">― パー</span>
-    <span style="color:#fa4;font-size:10px">□ ボギー</span>
-    <span style="color:#f66;font-size:10px">× ダブル以上</span>
+    <span style="color:#f80;font-size:10px">◎ Eagle+</span>
+    <span style="color:#4df;font-size:10px">○ Birdie</span>
+    <span style="color:#fff;font-size:10px">― Par</span>
+    <span style="color:#fa4;font-size:10px">□ Bogey</span>
+    <span style="color:#f66;font-size:10px">× Double+</span>
   </div>`;
   return html;
 }
@@ -311,9 +610,9 @@ function showScoreCard(){
   const tbl=document.getElementById('scCardTable');
   const ttl=document.getElementById('scCardTitle');
   if(!el||!tbl) return;
-  const cr={1:'練習コース',2:'選手権コース'};
+  const cr={1:'Practice',2:'Championship'};
   if(VS.active){
-    ttl.textContent='VS スコアカード';
+    ttl.textContent=L[_lang].vsScoreCard;
     // 1PとCPUの両スコアカードを横並び
     const scoreCol=d=>d<=-2?'#f80':d===-1?'#4df':d===0?'#fff':d===1?'#fa4':'#f66';
     const pars=G.holePars;
@@ -322,7 +621,7 @@ function showScoreCard(){
       let h=`<div style="flex:1;background:#060612;border:1px solid ${col}44;border-radius:8px;padding:6px;min-width:0">`;
       h+=`<div style="color:${col};font-size:11px;font-weight:bold;text-align:center;margin-bottom:4px">${label}</div>`;
       h+=`<table style="width:100%;border-collapse:collapse;font-size:10px;font-family:monospace">`;
-      h+=`<tr style="color:#556"><td style="padding:1px 3px">H</td><td>Par</td><td>打</td><td>±</td></tr>`;
+      h+=`<tr style="color:#556"><td style="padding:1px 3px">H</td><td>Par</td><td>S</td><td>±</td></tr>`;
       let tot=0,totPar=0;
       const maxLen=Math.max(scores.length, pars.length);
       for(let i=0;i<maxLen;i++){
@@ -333,18 +632,19 @@ function showScoreCard(){
         h+=`<tr style="border-bottom:1px solid #0f0f1a"><td style="padding:2px 3px;color:#aaccee">${i+1}</td><td style="color:#556">${p}</td><td style="color:#ccc;font-weight:bold">${played?s:'-'}</td><td style="color:${played?scoreCol(d):'#666'};font-weight:bold">${played?(d>0?'+':'')+d:'-'}</td></tr>`;
       }
       const td=tot-totPar;
-      h+=`<tr style="border-top:1px solid #2a2a4a"><td colspan="2" style="color:#aaccee">計</td><td style="color:#fff;font-weight:bold">${tot}</td><td style="color:${scoreCol(td)};font-weight:bold">${td>0?'+':''}${td}</td></tr>`;
+      h+=`<tr style="border-top:1px solid #2a2a4a"><td colspan="2" style="color:#aaccee">${L[_lang].lbTot}</td><td style="color:#fff;font-weight:bold">${tot}</td><td style="color:${scoreCol(td)};font-weight:bold">${td>0?'+':''}${td}</td></tr>`;
       h+='</table></div>';
       return h;
     }
     const pd=CD[G.ch]||{n:'YOU',col:'#aaccee'};
     const cpud=CD[VS.cpuCh]||{n:'CPU',col:'#aaaaaa'};
     tbl.innerHTML=`<div style="display:flex;gap:6px;width:100%">`+
-      makeCol('YOU '+pd.n.split(' ').pop(), pd.col, G.holeScores)+
-      makeCol(cpud.n.split(' ').pop(), cpud.col, VS.cpuScores)+
+      makeCol('YOU '+cdN(pd).split(' ')[0], pd.col, G.holeScores)+
+      makeCol(cdN(cpud).split(' ')[0], cpud.col, VS.cpuScores)+
       `</div>`;
   } else {
-    ttl.textContent = (cr[G.cr]||'') + ' スコアカード';
+    const crNames=L[_lang].recCrsNames||{1:'Practice',2:'Championship'};
+    ttl.textContent = (crNames[G.cr]||'') + ' ' + L[_lang].scCardTitle;
     tbl.innerHTML = buildScoreCardHTML();
   }
   el.style.display='flex';
@@ -386,13 +686,11 @@ function drawSlotsVS(step){
   const hdr=document.getElementById('cHeader');
   grid.innerHTML='';
   if(step===1){
-    hdr.querySelector('h2').textContent='キャラクター選択';
-    hdr.querySelector('p').textContent='操作するキャラを選んでください';
+    _setCharaHeader(L[_lang].charaTitle, L[_lang].vsSub1, 'charaTitle', 'vsSub1');
     document.getElementById('cBtnNormal').style.display='';
     document.getElementById('cBtnVSoppo').style.display='none';
   } else {
-    hdr.querySelector('h2').textContent='対戦相手選択';
-    hdr.querySelector('p').textContent='CPUのキャラクターを選んでください';
+    _setCharaHeader(L[_lang].vsTitle, L[_lang].vsSub, 'vsTitle', 'vsSub');
     document.getElementById('cBtnNormal').style.display='none';
     document.getElementById('cBtnVSoppo').style.display='';
   }
@@ -409,7 +707,7 @@ function drawSlotsVS(step){
       card.innerHTML=(imgSrc
         ?`<img src="${imgSrc}" style="max-width:80%;max-height:72px;width:72px;height:72px;object-fit:contain">`
         :`<div class="csIcon" style="color:${d.col}">${d.ic}</div>`)+
-        `<div class="csName" style="color:${d.col}aa">${d.n}</div>`;
+        `<div class="csName" style="color:${d.col}aa">${cdN(d)}</div>`;
     } else {
       card.innerHTML=`<div class="csLockMark">🔒</div><div class="csName" style="color:#333">???</div>`;
     }
@@ -420,8 +718,8 @@ function drawSlotsVS(step){
   pendingChara=0;
   const cdet=document.getElementById('cDetail');
   if(cdet) cdet.style.display='flex';
-  document.getElementById('cDetailName').textContent='キャラを選択してください';
-  document.getElementById('cDetailName').style.color='#888';
+  const cdn0=document.getElementById('cDetailName');
+  if(cdn0){cdn0.textContent=L[_lang].charaPrompt; cdn0.style.color='#888'; cdn0.dataset.empty='1';}
   ['dPow','dTch','dGeo','dSpe'].forEach(id=>{document.getElementById(id).textContent='';});
 }
 
@@ -433,7 +731,7 @@ function confirmVSOppo(){
   document.getElementById('cDetail').style.display='none';
   // コース選択へ（選手権のみ）
   G.cr=2; G.pts=1300;
-  T('crConfirmInfo','選手権コース｜9H｜1300pts');
+  T('crConfirmInfo', L[_lang].courseInfoChamp);
   document.getElementById('crConfirm').style.display='flex';
   sc('scCR'); updCRbtns(); G.cmd=2;
   updGaugeWaku();
@@ -520,7 +818,7 @@ function vsStartPlayer(){
   if(ti){ti.innerHTML='';ti.style.display='none';}
   document.getElementById('gGaugeArea').style.display='';
   const tc=document.getElementById('gTerCard'); if(tc) tc.style.display='';
-  $('bShot').textContent='打つ'; $('bShot').className='';
+  $('bShot').textContent=L[_lang].lbShotBtn; $('bShot').className='';
   $('bShot').style.visibility='';
   E('bShot',false);
   document.getElementById('bWnd').style.display=''; // 再表示
@@ -563,7 +861,7 @@ function showVSInterScore(afterCPU){
   document.getElementById('bWnd').style.display='none';
   document.getElementById('bSpe').style.display='none';
   // バナーにVSスコア表示（CPU番終了後=afterCPU時はSHOP文字非表示）
-  const s=G.sc, sg=s<0?'－':s>0?'＋':'±';
+  const s=G.sc, sg=s<0?'-':s>0?'+':'±';
   const banner=document.getElementById('gShopBanner');
   if(banner){
     if(!afterCPU){
@@ -582,15 +880,15 @@ function showVSInterScore(afterCPU){
     const n=G.holeScores.length;
     const psc=G.sc;
     const csc=VS.cpuSc;
-    const psg=psc<0?'－':psc>0?'＋':'±';
-    const csg=csc<0?'－':csc>0?'＋':'±';
+    const psg=psc<0?'-':psc>0?'+':'±';
+    const csg=csc<0?'-':csc>0?'+':'±';
     const pCol=psc<csc?'#4f4':psc>csc?'#f44':'#ff4';
     const cCol=csc<psc?'#4f4':csc>psc?'#f44':'#ff4';
     ti.innerHTML=
-      `<span style="color:#aaccee;font-size:12px">H${afterCPU?G.nH-1:G.nH}終了</span>`+
+      `<span style="color:#aaccee;font-size:12px">H${afterCPU?G.nH-1:G.nH} Done</span>`+
       `<span style="margin-left:8px;color:${pCol};font-size:13px;font-weight:bold">YOU ${psg}${Math.abs(psc)}</span>`+
       `<span style="color:#666;margin:0 6px">vs</span>`+
-      `<span style="color:${cCol};font-size:13px;font-weight:bold">${cpud.n.split(' ')[1]||cpud.n} ${csg}${Math.abs(csc)}</span>`+
+      `<span style="color:${cCol};font-size:13px;font-weight:bold">${cdN(cpud).split(' ')[0]} ${csg}${Math.abs(csc)}</span>`+
       `<button onclick="showScoreCard()" style="margin-left:auto;background:#061228;border:1px solid #2a5a8a;color:#88ccee;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;touch-action:manipulation">📋</button>`;
     ti.style.display='flex';
     ti.style.alignItems='center';
@@ -675,7 +973,7 @@ function startCPUHole(){
   const cpuBanner=document.getElementById('gCpuBanner');
   if(cpuBanner){
     cpuBanner.style.display='flex';
-    cpuBanner.querySelector('#gCpuName').textContent=cpuD.n;
+    cpuBanner.querySelector('#gCpuName').textContent=cdN(cpuD);
     cpuBanner.style.borderColor=cpuD.col+'88';
   }
   // ホール初期化（CPU用）
@@ -688,7 +986,7 @@ function startCPUHole(){
   updHUD();updGauge();setTer(1);updMap();windK();
   showTerrainInfo();
   S('scBox','none');S('gUp','none');S('bPro','none');S('speBox','none');
-  E('bShot',false); T('bShot','打つ');
+  E('bShot',false); T('bShot',L[_lang].lbShotBtn);
   document.getElementById('bWnd').style.display='';
   T('bWndN',G.nw); E('bWnd',false);
   document.getElementById('bWnd').style.display='none'; // CPU番は非表示
@@ -770,7 +1068,7 @@ function cpuTakeTurn(){
         else if(cond2){G._cpuTargetDist=drv120;}
         else if(cond3){G._cpuTargetDist=G.y2;}
         seSpecial();
-        T('speBox',CD[cpuCh].s||'特技使用'); S('speBox','flex');
+        T('speBox',cdS(CD[cpuCh])||'SKILL'); S('speBox','flex');
         updGaugeWaku(); updGauge();
         cpuCalcGauge(); // gMax=120で再計算
       }
@@ -783,7 +1081,7 @@ function cpuTakeTurn(){
       if(needIgnore && G.nwz>0){
         G.spc=2;
         seSpecial();
-        T('speBox',CD[cpuCh].s||'特技使用'); S('speBox','flex');
+        T('speBox',cdS(CD[cpuCh])||'SKILL'); S('speBox','flex');
       }
     }
 
@@ -792,7 +1090,7 @@ function cpuTakeTurn(){
     else if(cpuCh===4 && G.wind<0 && G.nwz>0){
       G.wind=0; G.spc=4;
       seSpecial();
-      T('speBox',CD[cpuCh].s||'特技使用'); S('speBox','flex');
+      T('speBox',cdS(CD[cpuCh])||'SKILL'); S('speBox','flex');
       showWind();
       cpuCalcGauge();
     }
@@ -809,7 +1107,7 @@ function cpuTakeTurn(){
       if(G.y2>putt100reach && G.y2<=putt120reach){
         G.gMax=120; G.spc=1;
         seSpecial();
-        T('speBox',CD[cpuCh].s||'特技使用'); S('speBox','flex');
+        T('speBox',cdS(CD[cpuCh])||'SKILL'); S('speBox','flex');
         updGaugeWaku(); updGauge();
         cpuCalcGauge();
       }
@@ -819,7 +1117,7 @@ function cpuTakeTurn(){
     if(cpuCh===4 && G.wind<0 && G.nwz>0){
       G.wind=0; G.spc=4;
       seSpecial();
-      T('speBox',CD[cpuCh].s||'特技使用'); S('speBox','flex');
+      T('speBox',cdS(CD[cpuCh])||'SKILL'); S('speBox','flex');
       showWind();
       cpuCalcGauge();
     }
@@ -1727,20 +2025,20 @@ function showVSResult(){
     html+=`</div>`;
     html+=`<div style="color:${col};font-size:11px;font-weight:bold;margin-bottom:4px;text-align:center">${isPlayer?'YOU':''}<br>${name}</div>`;
     html+=`<table style="width:100%;border-collapse:collapse;font-size:10px;font-family:monospace">`;
-    html+=`<tr style="color:#556"><td style="padding:1px 2px">H</td><td>Par</td><td>打</td><td>±</td></tr>`;
+    html+=`<tr style="color:#556"><td style="padding:1px 2px">H</td><td>Par</td><td>S</td><td>±</td></tr>`;
     let tot=0,totPar=0;
     scores.forEach((s,i)=>{
       const p=pars[i]||4,d=s-p;tot+=s;totPar+=p;
       html+=`<tr style="border-bottom:1px solid #0f0f1a"><td style="padding:2px;color:#aaccee">${i+1}</td><td style="color:#556">${p}</td><td style="color:#ccc;font-weight:bold">${s}</td><td style="color:${scoreCol(d)};font-weight:bold">${d>0?'+':''}${d}</td></tr>`;
     });
     const totD=tot-totPar;
-    html+=`<tr style="border-top:1px solid #2a2a4a"><td colspan="2" style="color:#aaccee;font-size:11px">計</td><td style="color:#fff;font-weight:bold">${tot}</td><td style="color:${scoreCol(totD)};font-weight:bold">${totD>0?'+':''}${totD}</td></tr>`;
+    html+=`<tr style="border-top:1px solid #2a2a4a"><td colspan="2" style="color:#aaccee;font-size:11px">${L[_lang].lbTot}</td><td style="color:#fff;font-weight:bold">${tot}</td><td style="color:${scoreCol(totD)};font-weight:bold">${totD>0?'+':''}${totD}</td></tr>`;
     html+='</table></div>';
     return html;
   }
   document.getElementById('vsEndCards').innerHTML=
-    makeCard(pd.n,pd.col,pScores,true,pc)+
-    makeCard(cpud.n,cpud.col,cScores,false,cc);
+    makeCard(cdN(pd),pd.col,pScores,true,pc)+
+    makeCard(cdN(cpud),cpud.col,cScores,false,cc);
   sc('scVSEnd');
 }
 
@@ -1753,7 +2051,7 @@ function buildFormula(ng, gW, gMax, wind, ji, result, isPutt){
     const wt={'-5':40,'-4':52,'-3':64,'-2':76,'-1':88,'0':100,'1':112,'2':124,'3':136,'4':148,'5':160};
     const slope = Math.max(-5,Math.min(5,wind));
     const wtVal = wt[String(slope)]||100;
-    return `PT: ${ng}m × ${gPct}% ゲージ × 傾斜${slope>=0?'+':''}${slope}(×${wtVal}%) → ${result}m`;
+    return `PT: ${ng}m × ${gPct}% gauge × slope${slope>=0?'+':''}${slope}(×${wtVal}%) → ${result}m`;
   } else {
     const wt={'-9':56,'-8':63,'-7':69,'-6':74,'-5':78,'-4':84,'-3':89,'-2':93,'-1':96,
       '0':100,'1':104,'2':107,'3':111,'4':116,'5':122,'6':126,'7':131,'8':137,'9':144};
@@ -1764,10 +2062,10 @@ function buildFormula(ng, gW, gMax, wind, ji, result, isPutt){
     if(ji===2){
       const isIron=(G.mpt===G.d1||G.mpt===G.d2);
       afterTer=Math.round(base*(isIron?.65:.58));
-      terStr=isIron?' ×ラフ(×65%)'  :' ×ラフ(×58%)';
+      terStr=isIron?' ×ROUGH(×65%)':' ×ROUGH(×58%)';
     } else if(ji===3){
       afterTer=Math.round(base*.28);
-      terStr=' ×バンカー(×28%)';
+      terStr=' ×BUNKER(×28%)';
     }
     const afterWind=Math.round(afterTer*(wtVal/100));
     // ブレ（G._bu, G._buSign から）
@@ -1775,10 +2073,10 @@ function buildFormula(ng, gW, gMax, wind, ji, result, isPutt){
     let buStr='';
     if(bu>0){
       const dir=sgn>=0?'+':'−';
-      buStr=` ${dir}${bu}(ブレ)`;
+      buStr=` ${dir}${bu}(var)`;
     }
     // ブレを計算の一部として先に表示: ng×ゲージ×風±ブレ = result
-    return `${ng}yd × ${gPct}%ゲージ${terStr} × 風${wind>=0?'+':''}${wind}(×${wtVal}%)${buStr} = ${result}yd`;
+    return `${ng}yd × ${gPct}% gauge${terStr} × wind${wind>=0?'+':''}${wind}(×${wtVal}%)${buStr} = ${result}yd`;
   }
 }
 
@@ -1876,7 +2174,7 @@ function startPt(){
         const lastP=G.cr===2?9:6;
         if(G.ns>=(G.par+4)){
           S('gUp','block');S('speBox','none');showGiveUpFlash();
-          if(G.nH===lastP){G.ns+=2;G.sc+=(G.ns-G.par);T('bPro','コース終了');S('bPro','block');}
+          if(G.nH===lastP){G.ns+=2;G.sc+=(G.ns-G.par);T('bPro',L[_lang].lbFinish);S('bPro','block');}
           else{E('bShot',true);T('bShot','>');G.cmd=15;}
           showFormula();
         } else {
@@ -1921,7 +2219,7 @@ function dropChk(){
         // VS時はホール結果を記録してからCPU番へ
         G.cmd=14; E('bShot',true); $('bShot').textContent='>';
       } else {
-        T('bPro','コース終了');S('bPro','block');
+        T('bPro',L[_lang].lbFinish);S('bPro','block');
       }
     }
       else{E('bShot',true);T('bShot','>');G.cmd=15;} // 15=ギブアップ後→次ホール
@@ -1942,7 +2240,7 @@ function dropChk(){
         // VS時はホール結果を記録してからCPU番へ
         G.cmd=14; E('bShot',true); $('bShot').textContent='>';
       } else {
-        T('bPro','コース終了');S('bPro','block');
+        T('bPro',L[_lang].lbFinish);S('bPro','block');
       }
     }
     else{E('bShot',true);T('bShot','>');G.cmd=15;} // 15=ギブアップ後→次ホール
@@ -1978,7 +2276,7 @@ function nextShot(){
   const sfNs=document.getElementById('gShotFormula');
   if(sfNs){sfNs.textContent='';sfNs.style.display='none';}G._formula='';
   S('gUp','none');G.gW=0;updGauge();G.y3=0;G.cmd=4;
-  T('bShot','打つ');E('bShot',false);S('speBox','none');
+  T('bShot',L[_lang].lbShotBtn);E('bShot',false);S('speBox','none');
   T('vShot',G.ns);T('vYd3','0');
   S('bx2','none');S('bx3','none');S('bx1','block');
   S('bVwC','block');S('bVwS','none');S('bTj2','none');
@@ -2021,7 +2319,7 @@ function nextShot(){
     T('uYd2','yd'); T('uYd3','yd');
     document.getElementById('bWnd').style.display=''; // グリーン外では再表示
     resetClubs(true); windK();
-    T('lWind','風：');
+    T('lWind','WIND:');
   }
   // 特技ボタン有効化（ch5=2打目以降、ch3=常時、その他=グリーン外のみ）
   if(G.ch===5) E('bSpe', G.nwz>0);       // フィリップ: 2打目以降
@@ -2047,7 +2345,7 @@ function spCk(){
   }
 
   const d=CD[ch];
-  T('speBox',d.s||'特技使用');S('speBox','flex');
+  T('speBox',cdS(d)||'SKILL');S('speBox','flex');
   if(ch===1){
     G.gMax=120;G.spc=1;
     updGaugeWaku(); // 目盛りを120%基準に即座に再描画
@@ -2069,7 +2367,7 @@ function spCk(){
     // クラブエリアを非表示（誤タップ防止）
     document.getElementById('gClubNormal').style.display='none';
     document.getElementById('gClubPutt').style.display='none';
-    E('bShot',true);T('bShot','使用する');
+    E('bShot',true);T('bShot',L[_lang].lbUseBtn);
     // タッチ/クリック両方で確実に doUndo を呼ぶ専用ハンドラを設定
     const bsEl=document.getElementById('bShot');
     if(bsEl) bsEl._tsuduruHandler = function(e){
@@ -2084,7 +2382,7 @@ function spCk(){
   else if(ch===4){G.wind=0;G.spc=4;showWind();}
   else if(ch===5){
     E('bSpe',false); // 使用確定までbSpeを無効化（nwzはdoUndo時に減算）
-    G.cmd=13;G.spc=5;G.sel=0;rebuildClubs();E('bShot',true);T('bShot','使用する');
+    G.cmd=13;G.spc=5;G.sel=0;rebuildClubs();E('bShot',true);T('bShot',L[_lang].lbUseBtn);
   }
 
 }
@@ -2104,7 +2402,7 @@ function doUndo(){
     // ji<5(グリーン外)に戻る場合はコースの風パラメータを復元
     if(G.ji<5){ loadHD(); } // wa/wz/kzをコース値に戻す
     resetClubs(G.ji<5);windK();
-    T('bShot','打つ');E('bShot',false);S('speBox','none');E('bSpe',G.nwz>0);
+    T('bShot',L[_lang].lbShotBtn);E('bShot',false);S('speBox','none');E('bSpe',G.nwz>0);
     // bWnd: グリーン以外なら表示、グリーン(ji=5)なら非表示
     if(G.ji===5){
       document.getElementById('bWnd').style.display='none';
@@ -2127,10 +2425,9 @@ function doUndo(){
     setTer(1);updPos();resetClubs(true);windK();
     T('uYd2','yd');T('uYd3','yd');
     // 風ラベルをリセット
-    const wlbl=document.getElementById('gWindRowLbl');
-    if(wlbl) wlbl.textContent='風';
+    updWindLabel();
     T('gGaugeClub','');T('gGaugeCost','');
-    T('bShot','打つ');E('bShot',false);S('speBox','none');
+    T('bShot',L[_lang].lbShotBtn);E('bShot',false);S('speBox','none');
     // フィリップは1打目はdisabled（2打目以降でenable）
     E('bSpe',false);
   }
@@ -2205,7 +2502,7 @@ function holeStart(){
 
   // フィリップ: ホール開始(1打目)はdisable、着地後にenable
   E('bSpe', G.nwz>0&&G.ch!==2&&G.ch!==3&&G.ch!==5); // 1打目から使用可能
-  E('bShot',false); T('bShot','打つ');
+  E('bShot',false); T('bShot',L[_lang].lbShotBtn);
   S('lWind','block');S('vPlmi','block');S('vWind','block');
   S('lPar','block');S('vPar','block');S('lShot','block');S('vShot','block');
   document.getElementById('gStRest').style.display='';
@@ -2319,7 +2616,7 @@ function drawSlots(){
       card.innerHTML = (imgSrc
         ? `<img src="${imgSrc}" style="max-width:80%;max-height:72px;width:72px;height:72px;object-fit:contain">`
         : `<div class="csIcon" style="color:${d.col}">${d.ic}</div>`) +
-        `<div class="csName" style="color:${d.col}aa">${d.n}</div>`;
+        `<div class="csName" style="color:${d.col}aa">${cdN(d)}</div>`;
     } else {
       card.innerHTML = `<div class="csLockMark">🔒</div>`+
         `<div class="csName" style="color:#333">???</div>`;
@@ -2332,8 +2629,10 @@ function drawSlots(){
   // cDetail をリセット（2回目以降の表示に対応）
   const cdet=document.getElementById('cDetail');
   if(cdet) cdet.style.display='flex';
-  document.getElementById('cDetailName').textContent='キャラを選択してください';
-  document.getElementById('cDetailName').style.color='#888';
+  const cdn1=document.getElementById('cDetailName');
+  if(cdn1){cdn1.textContent=L[_lang].charaPrompt; cdn1.style.color='#888'; cdn1.dataset.empty='1';}
+  // cHeaderのlangKey設定（通常モード）
+  _setCharaHeader(L[_lang].charaTitle, L[_lang].charaSub, 'charaTitle', 'charaSub');
   document.getElementById('dPow').textContent='';
   document.getElementById('dTch').textContent='';
   document.getElementById('dGeo').textContent='';
@@ -2350,12 +2649,12 @@ function tapChara(n){
   document.querySelectorAll('.csCard').forEach(c=>c.classList.remove('sel'));
   document.getElementById('cs'+n).classList.add('sel');
   const d=CD[n];
-  document.getElementById('cDetailName').textContent=d.n;
-  document.getElementById('cDetailName').style.color=d.col;
+  const cdnEl=document.getElementById('cDetailName');
+  if(cdnEl){cdnEl.textContent=cdN(d); cdnEl.style.color=d.col; cdnEl.dataset.empty='0';}
   document.getElementById('dPow').textContent=d.p;
   document.getElementById('dTch').textContent=d.t;
   document.getElementById('dGeo').textContent=d.g;
-  document.getElementById('dSpe').textContent=d.s;
+  document.getElementById('dSpe').textContent=cdS(d);
 }
 
 function confirmChara(){
@@ -2372,8 +2671,7 @@ function confirmChara(){
     vsStep=2;
     // 相手選択UIに切り替え（grid再描画はしない）
     const hdr=document.getElementById('cHeader');
-    hdr.querySelector('h2').textContent='対戦相手選択';
-    hdr.querySelector('p').textContent='CPUのキャラクターを選んでください';
+    _setCharaHeader(L[_lang].vsTitle, L[_lang].vsSub, 'vsTitle', 'vsSub');
     document.getElementById('cBtnNormal').style.display='none';
     document.getElementById('cBtnVSoppo').style.display='';
     // 自分のカード以外を相手候補として再描画（自分のカードは空ボックスのまま）
@@ -2391,7 +2689,7 @@ function confirmChara(){
         card.innerHTML=(imgSrc
           ?`<img src="${imgSrc}" style="max-width:80%;max-height:72px;width:72px;height:72px;object-fit:contain">`
           :`<div class="csIcon" style="color:${d.col}">${d.ic}</div>`)+
-          `<div class="csName" style="color:${d.col}aa">${d.n}</div>`;
+          `<div class="csName" style="color:${d.col}aa">${cdN(d)}</div>`;
       } else {
         card.innerHTML=`<div class="csLockMark">🔒</div><div class="csName" style="color:#333">???</div>`;
       }
@@ -2402,7 +2700,7 @@ function confirmChara(){
       newCard.addEventListener('touchend',e=>{e.preventDefault();tapChara(n);});
     }
     pendingChara=0;
-    document.getElementById('cDetailName').textContent='キャラを選択してください';
+    document.getElementById('cDetailName').textContent=L[_lang].charaPrompt;
     document.getElementById('cDetailName').style.color='#888';
     ['dPow','dTch','dGeo','dSpe'].forEach(id=>{document.getElementById(id).textContent='';});
     return;
@@ -2427,12 +2725,12 @@ function goToCR(){
 function selCR(n){
   if(n===3) return; // EDITコース廃止
   G.cr=n; G.pts=n===1?1600:1300;
-  const info = {1:'練習コース｜6H｜1600pts', 2:'選手権コース｜9H｜1300pts'};
+  const info = {1:L[_lang].courseInfoPrac, 2:L[_lang].courseInfoChamp};
   T('crConfirmInfo', info[n]||'');
   document.getElementById('crConfirm').style.display='flex';
 }
 function fmtClick(){
-  if(confirm('記録を初期化しますか？')) alert('初期化しました');
+  if(confirm('Reset all records?')) alert('Reset complete');
 }
 function yesClick(){
   document.getElementById('crConfirm').style.display='none';
@@ -2495,23 +2793,24 @@ function buildGaugeTicks(){
 }
 function showWind(){
   const w=G.wind;
-  T('gWindSign',w>0?'＋':w<0?'－':'±');
+  T('gWindSign',w>0?'+':w<0?'-':'±');
   T('gWindVal',Math.abs(w));
 }
 function updWindLabel(){
   // グリーン上は「傾」、それ以外は「風」
   const lbl=document.getElementById('gWindRowLbl');
-  if(lbl) lbl.textContent = G.ji===5 ? '傾' : '風';
+  if(lbl) lbl.textContent = G.ji===5 ? L[_lang].lbSlope : L[_lang].lbWind;
 }
 function setTer(j, skipWindLabel){
   G.ji=j;
+  const terN = L[_lang].terNames;
   const cfg={
-    1:{n:'フェアウェイ',bg:'#08180a',col:'#7fff7f',border:'#2a5a2a'},
-    2:{n:'ラフ',bg:'#101808',col:'#aaf04a',border:'#3a5a18'},
-    3:{n:'バンカー',bg:'#1a1400',col:'#ddcc44',border:'#5a4800'},
-    4:{n:'ウォーター',bg:'#000818',col:'#4488ff',border:'#183060'},
-    5:{n:'グリーン',bg:'#001808',col:'#00ff88',border:'#005830'},
-    6:{n:'O B',bg:'#180000',col:'#ff4444',border:'#580000'},
+    1:{n:terN[1], bg:'#08180a',col:'#7fff7f',border:'#2a5a2a'},
+    2:{n:terN[2], bg:'#101808',col:'#aaf04a',border:'#3a5a18'},
+    3:{n:terN[3], bg:'#1a1400',col:'#ddcc44',border:'#5a4800'},
+    4:{n:terN[4], bg:'#000818',col:'#4488ff',border:'#183060'},
+    5:{n:terN[5], bg:'#001808',col:'#00ff88',border:'#005830'},
+    6:{n:terN[6], bg:'#180000',col:'#ff4444',border:'#580000'},
   };
   const c=cfg[j]||cfg[1];
   const tc=document.getElementById('gTerCard');
@@ -2611,7 +2910,7 @@ function sDnCore(){
   document.getElementById('bWnd').disabled=true;
   document.getElementById('bSpe').disabled=true;
   $('bShot').className='charging';
-  $('bShot').textContent='■ STOP';
+  $('bShot').textContent=L[_lang].lbStop;
   if(G.gIv)clearInterval(G.gIv);
   G.gIv=setInterval(()=>{
     if(!G.mHeld)return;
@@ -2627,7 +2926,7 @@ function sRelease(){
   if(G.cmd!==5&&G.cmd!==7) return;
   document.getElementById('gGaugeWrap').style.borderColor='';
   $('bShot').className='';
-  $('bShot').textContent='打つ';
+  $('bShot').textContent=L[_lang].lbShotBtn;
   E('bShot',false);
   G.pts=Math.max(0,G.pts-G.mpt);
   T('gPtsV',G.pts);
@@ -2682,7 +2981,7 @@ function resetClubs(drv){
   document.getElementById('gClubPutt').style.display=drv?'none':'flex';
   document.getElementById('gClubShop').style.display='none';
   shotPhase=0;
-  $('bShot').textContent='打つ'; $('bShot').className='';
+  $('bShot').textContent=L[_lang].lbShotBtn; $('bShot').className='';
   E('bShot',false);
   rebuildClubs();
 }
@@ -2705,7 +3004,7 @@ function selC(n){
   rebuildClubs();
   T('gGaugeClub',G.ng+(n<=4?'yd':'m'));
   T('gGaugeCost',`-${G.mpt}pts`);
-  E('bShot',true); $('bShot').className='ready'; $('bShot').textContent='打つ';
+  E('bShot',true); $('bShot').className='ready'; $('bShot').textContent=L[_lang].lbShotBtn;
   if(n>=5){
     // 傾斜0でカップインするゲージ値(0..gMax): y2*100/ng
     // ゲージバー上の位置% = gWneed/gMax*100
@@ -2722,9 +3021,9 @@ function selC(n){
 // スコアフラッシュを表示する共通関数（1P・CPU共用）
 function showScoreFlash(ns, par, bon, dur){
   const df=ns-par;
-  const SL=[{d:-99,n:'ホールインワン！',c:'#ff0',sub:'HOLE IN ONE!'},{d:-4,n:'コンドル',c:'#f80',sub:'CONDOR'},{d:-3,n:'アルバトロス',c:'#f80',sub:'ALBATROSS'},
-    {d:-2,n:'イーグル',c:'#4f4',sub:'EAGLE'},{d:-1,n:'バーディー',c:'#4df',sub:'BIRDIE'},{d:0,n:'パー',c:'#fff',sub:'PAR'},
-    {d:1,n:'ボギー',c:'#fa4',sub:'BOGEY'},{d:2,n:'ダブルボギー',c:'#f84',sub:'DOUBLE BOGEY'},{d:3,n:'トリプルボギー',c:'#f44',sub:'TRIPLE BOGEY'},{d:99,n:'クアドラボギー',c:'#f22',sub:'QUAD BOGEY'}];
+  const SL=[{d:-99,n:'HOLE IN ONE!',c:'#ff0',sub:''},{d:-4,n:'CONDOR',c:'#f80',sub:''},{d:-3,n:'ALBATROSS',c:'#f80',sub:''},
+    {d:-2,n:'EAGLE',c:'#4f4',sub:''},{d:-1,n:'BIRDIE',c:'#4df',sub:''},{d:0,n:'PAR',c:'#fff',sub:''},
+    {d:1,n:'BOGEY',c:'#fa4',sub:''},{d:2,n:'DOUBLE BOGEY',c:'#f84',sub:''},{d:3,n:'TRIPLE BOGEY',c:'#f44',sub:''},{d:99,n:'QUAD BOGEY',c:'#f22',sub:''}];
   const entry=(ns===1?SL[0]:SL.slice(1).find(e=>df<=e.d))||SL[SL.length-1];
   const sf=document.getElementById('gScoreFlash');
   const st=document.getElementById('gScoreFlashTxt');
@@ -2742,8 +3041,8 @@ function showGiveUpFlash(){
   const st=document.getElementById('gScoreFlashTxt');
   const ss=document.getElementById('gScoreFlashSub');
   sf.style.borderColor='#f4488888';
-  st.style.color='#f88'; st.textContent='ギブアップ';
-  ss.textContent='GIVE UP';
+  st.style.color='#f88'; st.textContent='GIVE UP';
+  ss.textContent='';
   sf.style.display='block';
   setTimeout(()=>sf.style.display='none', 1300);
 }
@@ -2766,9 +3065,9 @@ function judgeShot(){
   else if(df>=4)  G.mpt=20+Math.trunc(G.bon/4);
   G.sc+=(G.ns-G.par);
   if(G.cmd===5){G.nCHP++; dbRecordChipIn();}
-  const SL=[{d:-99,n:'ホールインワン！',c:'#ff0',sub:'HOLE IN ONE!'},{d:-4,n:'コンドル',c:'#f80',sub:'CONDOR'},{d:-3,n:'アルバトロス',c:'#f80',sub:'ALBATROSS'},
-    {d:-2,n:'イーグル',c:'#4f4',sub:'EAGLE'},{d:-1,n:'バーディー',c:'#4df',sub:'BIRDIE'},{d:0,n:'パー',c:'#fff',sub:'PAR'},
-    {d:1,n:'ボギー',c:'#fa4',sub:'BOGEY'},{d:2,n:'ダブルボギー',c:'#f84',sub:'DOUBLE BOGEY'},{d:3,n:'トリプルボギー',c:'#f44',sub:'TRIPLE BOGEY'},{d:99,n:'クアドラボギー',c:'#f22',sub:'QUAD BOGEY'}];
+  const SL=[{d:-99,n:'HOLE IN ONE!',c:'#ff0',sub:''},{d:-4,n:'CONDOR',c:'#f80',sub:''},{d:-3,n:'ALBATROSS',c:'#f80',sub:''},
+    {d:-2,n:'EAGLE',c:'#4f4',sub:''},{d:-1,n:'BIRDIE',c:'#4df',sub:''},{d:0,n:'PAR',c:'#fff',sub:''},
+    {d:1,n:'BOGEY',c:'#fa4',sub:''},{d:2,n:'DOUBLE BOGEY',c:'#f84',sub:''},{d:3,n:'TRIPLE BOGEY',c:'#f44',sub:''},{d:99,n:'QUAD BOGEY',c:'#f22',sub:''}];
   const entry=(G.ns===1?SL[0]:SL.slice(1).find(e=>df<=e.d))||SL[SL.length-1];
   seHoleIn();
   showFormula();
@@ -2793,7 +3092,7 @@ function buildShop(){
     {n:3,k:G.ki1,lb:G.ki1>=4?'-':`5I+${G.ki1===3?'20':'10'}yd\n-${G.pi1}pts`,dis:G.ki1>=4||G.pts<G.pi1},
     {n:4,k:G.ki2,lb:G.ki2>=4?'-':`8I+${G.ki2===3?'20':'10'}yd\n-${G.pi2}pts`,dis:G.ki2>=4||G.pts<G.pi2},
   ].map(c=>`<button class="cBtn${c.dis?' dis':''}" id="rb${c.n}" onclick="selShop(${c.n})" style="white-space:pre-line;font-size:10px;line-height:1.3;flex:1">${c.lb}</button>`).join('');
-  sc2.innerHTML=G.nwz<9?`<button class="cBtn" id="rb7" onclick="selShop(7)" style="font-size:11px;flex:1">特技+1<br><span style="font-size:10px;color:#f88">-${G.pw}pts</span></button>`:'';
+  sc2.innerHTML=G.nwz<9?`<button class="cBtn" id="rb7" onclick="selShop(7)" style="font-size:11px;flex:1">${L[_lang].lbSkillPlus}<br><span style="font-size:10px;color:#f88">-${G.pw}pts</span></button>`:'';
   if(G.pw<=0||G.nwz>=9) {const e=$(7);if(e)e.classList.add('dis');}
 }
 function selShop(n){
@@ -2803,7 +3102,7 @@ function selShop(n){
   const pr={1:G.pw1,2:G.pw2,3:G.pi1,4:G.pi2,7:G.pw};
   G.price=pr[n]||0;
   T('gGaugeCost',`-${G.price}pts`);
-  E('bShot',true); $('bShot').textContent='購入'; $('bShot').className='ready';
+  E('bShot',true); $('bShot').textContent=L[_lang].lbBuy; $('bShot').className='ready';
 }
 function shopBuy(){
   if(!G.sel||G.pts<G.price)return;
@@ -2815,7 +3114,7 @@ function shopBuy(){
   else if(G.sel===4){G.i2+=(G.ki2===3?20:10);G.ki2++;}
   else if(G.sel===7){G.nwz++;T('bSpeN',G.nwz);}
   pChk();G.sel=0;
-  E('bShot',false);T('gGaugeCost','');$('bShot').textContent='購入';$('bShot').className='';
+  E('bShot',false);T('gGaugeCost','');$('bShot').textContent=L[_lang].lbBuy;$('bShot').className='';
   buildShop();
 }
 function enterShop(){
@@ -2831,7 +3130,7 @@ function enterShop(){
   // 買い物画面では計算式を非表示
   const sfShop=document.getElementById('gShotFormula');
   if(sfShop){sfShop.textContent='';sfShop.style.display='none';}G._formula='';
-  E('bShot',false);$('bShot').textContent='購入';$('bShot').className='';
+  E('bShot',false);$('bShot').textContent=L[_lang].lbBuy;$('bShot').className='';
   document.getElementById('gClubNormal').style.display='flex';
   document.getElementById('gClubPutt').style.display='none';
   document.getElementById('gClubShop').style.display='flex';
@@ -2859,9 +3158,9 @@ function enterShop(){
   S('bVwC',''); // bVwSは非表示のまま
   E('bWnd',false);E('bSpe',false);
   document.getElementById('bPro').style.display='block';
-  T('bPro', VS.active ? '>' : '次のホールへ ›');
+  T('bPro', VS.active ? '>' : L[_lang].lbNextHole);
   // gShopBanner を表示
-  const s=G.sc, sg=s<0?'－':s>0?'＋':'±';
+  const s=G.sc, sg=s<0?'-':s>0?'+':'±';
   T('gGaugeClub','');
   const banner=document.getElementById('gShopBanner');
   if(banner){
@@ -2875,11 +3174,11 @@ function enterShop(){
     if(VS.active){
       const cpud=CD[VS.cpuCh]||{n:'CPU',col:'#aaa'};
       const psc=G.sc, csc=VS.cpuSc;
-      const psg=psc<0?'－':psc>0?'＋':'±';
-      const csg=csc<0?'－':csc>0?'＋':'±';
+      const psg=psc<0?'-':psc>0?'+':'±';
+      const csg=csc<0?'-':csc>0?'+':'±';
       const pCol=psc<csc?'#4f4':psc>csc?'#f44':'#ff4';
       const cCol=csc<psc?'#4f4':csc>psc?'#f44':'#ff4';
-      const cpuShort=cpud.n.split(' ').pop();
+      const cpuShort=cdN(cpud).split(' ')[0];
       ti.innerHTML=
         `<span style="color:#88ccee;font-size:11px;margin-right:6px">VS</span>`+
         `<span style="color:${pCol};font-size:13px;font-weight:bold">YOU ${psg}${Math.abs(psc)}</span>`+
@@ -2993,11 +3292,11 @@ function showTerrainInfo(){
 function vwS(){
   const sp=document.getElementById('gSubPanel');
   sp.className='on';
-  const ns=['水無','走馬','綴','響子','P北崎','旗雄'];
+  const ns=['Mina','Soma','Tsuduru','Kyoko','Philip','Hatao'];
   const ss=[G.sm,G.ss,G.st,G.sk,G.sp,G.sh];
-  let h='<table><thead><tr><th>名前</th><th style="text-align:right">スコア</th></tr></thead><tbody>';
+  let h='<table><thead><tr><th>Name</th><th style="text-align:right">Score</th></tr></thead><tbody>';
   for(let i=0;i<6;i++){
-    const s=ss[i],sg=s<0?'－':s>0?'＋':'±',hi=i+1===G.ch?'color:#f88':'color:#99a';
+    const s=ss[i],sg=s<0?'-':s>0?'+':'±',hi=i+1===G.ch?'color:#f88':'color:#99a';
     h+=`<tr><td style="${hi}">${ns[i]}</td><td style="${hi};text-align:right">${sg}${Math.abs(s)}</td></tr>`;
   }
   h+='</tbody></table>';
@@ -3037,19 +3336,19 @@ function endGame(){
     ? `<img src="${endImgSrc}" style="width:165px;height:165px;object-fit:contain">`
     : `<span style="font-size:56px">${d.ic}</span>`;
   document.getElementById('endFig').style.borderColor='';
-  const cr={1:'練習コース',2:'選手権コース',3:'エディット'};
+  const cr={1:'Practice',2:'Championship',3:'Edit'};
   T('endCrs',cr[G.cr]||'');
-  const s=G.sc, sg=s<0?'－':s>0?'＋':'±';
+  const s=G.sc, sg=s<0?'-':s>0?'+':'±';
   document.getElementById('endScore').innerHTML=`<span style="color:${s<=0?'#4f4':'#f84'}">${sg}${Math.abs(s)}</span>`;
   document.getElementById('endScore').style.fontSize='32px';
   document.getElementById('endPts').textContent=G.pts+' pts';
   let rows='';
-  if(G.nHIO>0)rows+=`<div class="row">ホールインワン<span>${G.nHIO}回</span></div>`;
-  if(G.nALB>0)rows+=`<div class="row">アルバトロス<span>${G.nALB}回</span></div>`;
-  if(G.nEAG>0)rows+=`<div class="row">イーグル<span>${G.nEAG}回</span></div>`;
-  if(G.nBIR>0)rows+=`<div class="row">バーディー<span>${G.nBIR}回</span></div>`;
-  if(G.nCHP>0)rows+=`<div class="row">チップイン<span>${G.nCHP}回</span></div>`;
-  rows+=`<div class="row">最長ショット<span>${G.maxy}yd</span></div>`;
+  if(G.nHIO>0)rows+=`<div class="row">Hole in One<span>${G.nHIO}${L[_lang].lbCount}</span></div>`;
+  if(G.nALB>0)rows+=`<div class="row">Albatross<span>${G.nALB}${L[_lang].lbCount}</span></div>`;
+  if(G.nEAG>0)rows+=`<div class="row">Eagle<span>${G.nEAG}${L[_lang].lbCount}</span></div>`;
+  if(G.nBIR>0)rows+=`<div class="row">Birdie<span>${G.nBIR}${L[_lang].lbCount}</span></div>`;
+  if(G.nCHP>0)rows+=`<div class="row">Chip In<span>${G.nCHP}${L[_lang].lbCount}</span></div>`;
+  rows+=`<div class="row">Longest Shot<span>${G.maxy}yd</span></div>`;
   // スコアカード
   rows+=`<div style="margin-top:10px;border-top:1px solid #1a1a2a;padding-top:8px">${buildScoreCardHTML()}</div>`;
   document.getElementById('endStatBox').innerHTML=rows;
@@ -3058,7 +3357,7 @@ function endGame(){
 // =============================================
 // IndexedDB 記録モジュール (1DGOLF_DB)
 // =============================================
-const DB_NAME='1dgolf_records', DB_VER=1;
+const DB_NAME='1dgolf_records', DB_VER=2;
 let _db=null;
 function dbOpen(){
   return new Promise((res,rej)=>{
@@ -3070,6 +3369,8 @@ function dbOpen(){
         db.createObjectStore('bestScores');
       if(!db.objectStoreNames.contains('lifetimeStats'))
         db.createObjectStore('lifetimeStats');
+      if(!db.objectStoreNames.contains('settings'))
+        db.createObjectStore('settings');
     };
     req.onsuccess=e=>{_db=e.target.result;res(_db);};
     req.onerror=e=>rej(e.target.error);
@@ -3133,9 +3434,10 @@ function dbGetAllRecords(){
 function openRecords(){
   sc('scRec');
   const body=document.getElementById('recBody');
-  body.innerHTML='<div style="color:#667;font-size:13px;text-align:center;padding:20px">読み込み中…</div>';
+  const tRec=L[_lang];
+  body.innerHTML='<div style="color:#667;font-size:13px;text-align:center;padding:20px">'+tRec.recLoading+'</div>';
 
-  const COURSE_NAMES={1:'練習コース',2:'選手権コース'};
+  const COURSE_NAMES=tRec.recCrsNames;
   const HOLE_COUNTS={1:6,2:9};
 
   dbGetAllRecords().then(rec=>{
@@ -3144,17 +3446,17 @@ function openRecords(){
     let html='';
 
     // ── 累計実績 ──
-    html+='<div class="recSection"><h3>📊 累計実績</h3>';
+    html+='<div class="recSection"><h3>'+tRec.recAllTime+'</h3>';
     const hio=ls['hio']||0, chip=ls['chipIn']||0;
-    const plays=Object.keys(CD).map(k=>({id:+k,n:CD[k].n,c:ls[`play_${k}`]||0}));
-    html+=`<div class="recStatRow">ホールインワン<span>${hio}回</span></div>`;
-    html+=`<div class="recStatRow">チップイン<span>${chip}回</span></div>`;
+    const plays=Object.keys(CD).map(k=>({id:+k,n:cdN(CD[k]),c:ls[`play_${k}`]||0}));
+    html+=`<div class="recStatRow">${tRec.recHIO}<span>${hio}${tRec.lbCount}</span></div>`;
+    html+=`<div class="recStatRow">${tRec.recChip}<span>${chip}${tRec.lbCount}</span></div>`;
     html+='</div>';
 
     // ── キャラ別プレイ回数 ──
-    html+='<div class="recSection"><h3>🏌️ キャラ別プレイ回数</h3>';
+    html+='<div class="recSection"><h3>'+tRec.recPlays+'</h3>';
     plays.forEach(p=>{
-      html+=`<div class="recStatRow"><span style="color:${CD[p.id].col}">${p.n}</span><span>${p.c}回</span></div>`;
+      html+=`<div class="recStatRow"><span style="color:${CD[p.id].col}">${p.n}</span><span>${p.c}${tRec.lbCount}</span></div>`;
     });
     html+='</div>';
 
@@ -3168,7 +3470,7 @@ function openRecords(){
       }
       if(!hasData) return;
 
-      html+=`<div class="recSection"><h3>⛳ ${COURSE_NAMES[cr]} ベストスコア</h3>`;
+      html+=`<div class="recSection"><h3>${tRec.recBest}（${COURSE_NAMES[cr]}）</h3>`;
       html+='<table class="recTable">';
       html+='<colgroup><col style="width:18px"><col style="width:22px">';
       for(let ch=1;ch<=6;ch++) html+='<col>';
@@ -3211,7 +3513,7 @@ function openRecords(){
           const r=runs[ch];
           if(r&&r.holes){totalPar=r.holes.reduce((a,h)=>a+(h.par||4),0);break;}
         }
-        html+=`<tr style="border-top:2px solid #1a1a2a"><td style="color:#aabbcc"><b>計</b></td><td class="par"><b>${totalPar||'—'}</b></td>`;
+        html+=`<tr style="border-top:2px solid #1a1a2a"><td style="color:#aabbcc"><b>${tRec.lbTot}</b></td><td class="par"><b>${totalPar||'—'}</b></td>`;
         for(let ch=1;ch<=6;ch++){
           const r=runs[ch];
           if(!r||!r.total){html+='<td style="color:#334">—</td>';continue;}
@@ -3227,14 +3529,14 @@ function openRecords(){
       html+='</tbody></table></div>';
     });
 
-    if(!html) html='<div class="recEmpty">まだ記録がありません</div>';
+    if(!html) html='<div class="recEmpty">'+tRec.recEmpty+'</div>';
     // 削除ボタン：スクロール内の末尾に配置（戻るボタンとの誤タップ防止のため大きく余白）
     html+=`<div style="margin-top:40px;padding:16px 0 24px;text-align:center">
-      <button onclick="confirmDeleteRecords()" style="background:transparent;border:1px solid #2a2a3a;color:#556;border-radius:6px;font-size:11px;padding:8px 18px;cursor:pointer;touch-action:manipulation;letter-spacing:0.5px">🗑 記録をすべて削除</button>
+      <button onclick="confirmDeleteRecords()" style="background:transparent;border:1px solid #2a2a3a;color:#556;border-radius:6px;font-size:11px;padding:8px 18px;cursor:pointer;touch-action:manipulation;letter-spacing:0.5px">${tRec.recDelete}</button>
     </div>`;
     body.innerHTML=html;
   }).catch(()=>{
-    body.innerHTML='<div class="recEmpty" style="color:#f44">記録の読み込みに失敗しました</div>';
+    body.innerHTML='<div class="recEmpty" style="color:#f44">'+(L[_lang].recLoading||'Error')+'</div>';
   });
 }
 
@@ -3245,13 +3547,14 @@ function confirmDeleteRecords(){
   const dlg=document.createElement('div');
   dlg.id='recDelDlg';
   dlg.style.cssText='position:fixed;inset:0;background:#000c;display:flex;align-items:center;justify-content:center;z-index:200';
+  const td=L[_lang];
   dlg.innerHTML=`
     <div style="background:#0a0a14;border:2px solid #446;border-radius:12px;padding:20px;width:80%;max-width:280px;display:flex;flex-direction:column;gap:14px">
-      <div style="color:#aac;font-size:13px;text-align:center;font-weight:bold">記録を削除</div>
-      <div style="color:#889;font-size:12px;text-align:center;line-height:1.6">ホールベスト・プレイ回数・<br>実績データがすべて消えます。<br>本当に削除しますか？</div>
+      <div style="color:#aac;font-size:13px;text-align:center;font-weight:bold">${td.recDelTitle}</div>
+      <div style="color:#889;font-size:12px;text-align:center;line-height:1.6">${td.recDelBody}</div>
       <div style="display:flex;gap:10px">
-        <button onclick="document.getElementById('recDelDlg').remove()" style="flex:1;background:#1a0a0a;border:2px solid #a44;color:#faa;border-radius:8px;font-size:14px;padding:11px;cursor:pointer;touch-action:manipulation">キャンセル</button>
-        <button onclick="execDeleteRecords()" style="flex:1;background:#0a0a0a;border:2px solid #555;color:#888;border-radius:8px;font-size:14px;padding:11px;cursor:pointer;touch-action:manipulation">削除する</button>
+        <button onclick="document.getElementById('recDelDlg').remove()" style="flex:1;background:#1a0a0a;border:2px solid #a44;color:#faa;border-radius:8px;font-size:14px;padding:11px;cursor:pointer;touch-action:manipulation">${td.recDelCancel}</button>
+        <button onclick="execDeleteRecords()" style="flex:1;background:#0a0a0a;border:2px solid #555;color:#888;border-radius:8px;font-size:14px;padding:11px;cursor:pointer;touch-action:manipulation">${td.recDelOk}</button>
       </div>
     </div>`;
   document.body.appendChild(dlg);
@@ -3272,7 +3575,7 @@ function execDeleteRecords(){
       done.innerHTML=`
         <div style="background:#0a0a14;border:2px solid #446;border-radius:12px;padding:24px 20px;width:80%;max-width:280px;display:flex;flex-direction:column;gap:14px;text-align:center">
           <div style="font-size:28px">🗑</div>
-          <div style="color:#aac;font-size:14px">記録を削除しました</div>
+          <div style="color:#aac;font-size:14px">${L[_lang].recDelDone}</div>
           <button onclick="document.getElementById('recDoneDlg').remove();openRecords()" style="background:#0a1a0a;border:2px solid #4a8;color:#8fa;border-radius:8px;font-size:14px;padding:11px;cursor:pointer;touch-action:manipulation">OK</button>
         </div>`;
       document.body.appendChild(done);
@@ -3303,6 +3606,23 @@ function _noop(){}
 // =============================================
 // 起動
 // =============================================
-sc('scT');
-buildGaugeTicks();
+dbGet('settings','lang').then(saved=>{
+  if(saved==='en'||saved==='ja'){
+    // DB保存値を優先
+    _lang=saved;
+  } else {
+    // 未設定ならブラウザ言語で判定（ja以外はEN）
+    const bl=(navigator.language||navigator.userLanguage||'en').toLowerCase();
+    _lang=bl.startsWith('ja')?'ja':'en';
+  }
+  applyLang();
+  sc('scT');
+  buildGaugeTicks();
+}).catch(()=>{
+  const bl=(navigator.language||navigator.userLanguage||'en').toLowerCase();
+  _lang=bl.startsWith('ja')?'ja':'en';
+  applyLang();
+  sc('scT');
+  buildGaugeTicks();
+});
 
