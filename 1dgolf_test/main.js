@@ -43,10 +43,21 @@ const L = {
     lbCpuTurn:'CPU番', lbShop:'SHOP', lbShopScore:'スコア',
     scCardTitle:'スコアカード', scCardClose:'閉じる',
     recHeader:'🏆 レコード',
+    recLoading:'読み込み中…',
+    recAllTime:'📊 累計実績',
+    recHIO:'ホールインワン', recChip:'チップイン',
+    recPlays:'🏌️ キャラ別プレイ数',
+    recBest:'⛳ ベストスコア',
+    recEmpty:'まだ記録がありません',
+    recDelete:'🗑 記録をすべて削除',
+    recCrsNames:{1:'練習コース',2:'選手権コース'},
+    recDelTitle:'記録を削除', recDelBody:'ホールベスト・プレイ回数・<br>実績データがすべて消えます。<br>本当に削除しますか？',
+    recDelCancel:'キャンセル', recDelOk:'削除する', recDelDone:'記録を削除しました',
     // 地形名
     terNames:{1:'FAIRWAY',2:'ROUGH',3:'BUNKER',4:'WATER',5:'GREEN',6:'O B'},
     lbWind:'風', lbSlope:'傾',
     lbShotBtn:'打つ', lbUseBtn:'使用', lbWaitBtn:'風待ち',
+    lbBuy:'購入', lbSkillPlus:'特技+1', lbNextHole:'次のホールへ ›', lbFinish:'コース終了', lbStop:'■ STOP',
     // 遊び方
     htTitle:'HOW TO PLAY',
     htBasicsH:'⛳ 基本操作', htBasicsP:'クラブを選んで「SHOT」ボタンを押すとゲージが動きます。ショットするとボールが飛びます。ゲージが高いほど飛距離が伸びます。',
@@ -81,10 +92,21 @@ const L = {
     lbCpuTurn:'CPU TURN', lbShop:'SHOP', lbShopScore:'SCORE',
     scCardTitle:'SCORECARD', scCardClose:'Close',
     recHeader:'🏆 RECORDS',
+    recLoading:'Loading…',
+    recAllTime:'📊 All-Time Stats',
+    recHIO:'Hole in One', recChip:'Chip In',
+    recPlays:'🏌️ Plays by Character',
+    recBest:'⛳ Best Scores',
+    recEmpty:'No records yet',
+    recDelete:'🗑 Delete All Records',
+    recCrsNames:{1:'Practice',2:'Championship'},
+    recDelTitle:'Delete Records', recDelBody:'All best scores, play counts<br>and stats will be erased.<br>Are you sure?',
+    recDelCancel:'Cancel', recDelOk:'Delete', recDelDone:'Records deleted',
     // 地形名
     terNames:{1:'FAIRWAY',2:'ROUGH',3:'BUNKER',4:'WATER',5:'GREEN',6:'O B'},
     lbWind:'WIND', lbSlope:'SLP',
     lbShotBtn:'SHOT', lbUseBtn:'USE', lbWaitBtn:'WAIT',
+    lbBuy:'BUY', lbSkillPlus:'SKILL+1', lbNextHole:'NEXT HOLE ›', lbFinish:'FINISH', lbStop:'■ STOP',
     // 遊び方
     htTitle:'HOW TO PLAY',
     htBasicsH:'⛳ BASICS', htBasicsP:'Select a club and press the SHOT button to start the gauge. Release/stop to fire the ball. Higher gauge = more distance.',
@@ -211,6 +233,14 @@ function applyLang(){
   const bSpeEl = document.getElementById('bSpeLbl');
   if(bSpeEl) bSpeEl.textContent = t.lbSkill;
 
+  // bPro ラベル更新
+  const bProEl = document.getElementById('bPro');
+  if(bProEl && bProEl.style.display !== 'none'){
+    const ct = bProEl.textContent;
+    if(ct==='NEXT HOLE ›'||ct==='次のホールへ ›') bProEl.textContent=L[_lang].lbNextHole;
+    else if(ct==='FINISH'||ct==='コース終了') bProEl.textContent=L[_lang].lbFinish;
+  }
+
   // ゲーム中ならsetTer/updWindLabelを再実行して地形名・風ラベルを更新
   if(typeof G !== 'undefined' && G.ji){
     setTer(G.ji, true);
@@ -218,8 +248,12 @@ function applyLang(){
   }
   // bShotのラベル（SHOTモード時のみ更新、充電中・購入中は触らない）
   const bShotEl = document.getElementById('bShot');
-  if(bShotEl && (bShotEl.textContent === 'SHOT' || bShotEl.textContent === '打つ')){
-    bShotEl.textContent = L[_lang].lbShotBtn;
+  // bShot が「待機状態」のラベルなら言語に合わせて更新
+  if(bShotEl){
+    const cur = bShotEl.textContent;
+    if(cur==='SHOT'||cur==='打つ') bShotEl.textContent=L[_lang].lbShotBtn;
+    else if(cur==='BUY'||cur==='購入') bShotEl.textContent=L[_lang].lbBuy;
+    else if(cur==='USE'||cur==='使用') bShotEl.textContent=L[_lang].lbUseBtn;
   }
 
   // 遊び方ダイアログ
@@ -762,7 +796,7 @@ function vsStartPlayer(){
   if(ti){ti.innerHTML='';ti.style.display='none';}
   document.getElementById('gGaugeArea').style.display='';
   const tc=document.getElementById('gTerCard'); if(tc) tc.style.display='';
-  $('bShot').textContent='SHOT'; $('bShot').className='';
+  $('bShot').textContent=L[_lang].lbShotBtn; $('bShot').className='';
   $('bShot').style.visibility='';
   E('bShot',false);
   document.getElementById('bWnd').style.display=''; // 再表示
@@ -2118,7 +2152,7 @@ function startPt(){
         const lastP=G.cr===2?9:6;
         if(G.ns>=(G.par+4)){
           S('gUp','block');S('speBox','none');showGiveUpFlash();
-          if(G.nH===lastP){G.ns+=2;G.sc+=(G.ns-G.par);T('bPro','FINISH');S('bPro','block');}
+          if(G.nH===lastP){G.ns+=2;G.sc+=(G.ns-G.par);T('bPro',L[_lang].lbFinish);S('bPro','block');}
           else{E('bShot',true);T('bShot','>');G.cmd=15;}
           showFormula();
         } else {
@@ -2163,7 +2197,7 @@ function dropChk(){
         // VS時はホール結果を記録してからCPU番へ
         G.cmd=14; E('bShot',true); $('bShot').textContent='>';
       } else {
-        T('bPro','FINISH');S('bPro','block');
+        T('bPro',L[_lang].lbFinish);S('bPro','block');
       }
     }
       else{E('bShot',true);T('bShot','>');G.cmd=15;} // 15=ギブアップ後→次ホール
@@ -2184,7 +2218,7 @@ function dropChk(){
         // VS時はホール結果を記録してからCPU番へ
         G.cmd=14; E('bShot',true); $('bShot').textContent='>';
       } else {
-        T('bPro','FINISH');S('bPro','block');
+        T('bPro',L[_lang].lbFinish);S('bPro','block');
       }
     }
     else{E('bShot',true);T('bShot','>');G.cmd=15;} // 15=ギブアップ後→次ホール
@@ -2369,8 +2403,7 @@ function doUndo(){
     setTer(1);updPos();resetClubs(true);windK();
     T('uYd2','yd');T('uYd3','yd');
     // 風ラベルをリセット
-    const wlbl=document.getElementById('gWindRowLbl');
-    if(wlbl) wlbl.textContent='WIND';
+    updWindLabel();
     T('gGaugeClub','');T('gGaugeCost','');
     T('bShot',L[_lang].lbShotBtn);E('bShot',false);S('speBox','none');
     // フィリップは1打目はdisabled（2打目以降でenable）
@@ -2855,7 +2888,7 @@ function sDnCore(){
   document.getElementById('bWnd').disabled=true;
   document.getElementById('bSpe').disabled=true;
   $('bShot').className='charging';
-  $('bShot').textContent='■ STOP';
+  $('bShot').textContent=L[_lang].lbStop;
   if(G.gIv)clearInterval(G.gIv);
   G.gIv=setInterval(()=>{
     if(!G.mHeld)return;
@@ -2871,7 +2904,7 @@ function sRelease(){
   if(G.cmd!==5&&G.cmd!==7) return;
   document.getElementById('gGaugeWrap').style.borderColor='';
   $('bShot').className='';
-  $('bShot').textContent='SHOT';
+  $('bShot').textContent=L[_lang].lbShotBtn;
   E('bShot',false);
   G.pts=Math.max(0,G.pts-G.mpt);
   T('gPtsV',G.pts);
@@ -3037,7 +3070,7 @@ function buildShop(){
     {n:3,k:G.ki1,lb:G.ki1>=4?'-':`5I+${G.ki1===3?'20':'10'}yd\n-${G.pi1}pts`,dis:G.ki1>=4||G.pts<G.pi1},
     {n:4,k:G.ki2,lb:G.ki2>=4?'-':`8I+${G.ki2===3?'20':'10'}yd\n-${G.pi2}pts`,dis:G.ki2>=4||G.pts<G.pi2},
   ].map(c=>`<button class="cBtn${c.dis?' dis':''}" id="rb${c.n}" onclick="selShop(${c.n})" style="white-space:pre-line;font-size:10px;line-height:1.3;flex:1">${c.lb}</button>`).join('');
-  sc2.innerHTML=G.nwz<9?`<button class="cBtn" id="rb7" onclick="selShop(7)" style="font-size:11px;flex:1">SKILL+1<br><span style="font-size:10px;color:#f88">-${G.pw}pts</span></button>`:'';
+  sc2.innerHTML=G.nwz<9?`<button class="cBtn" id="rb7" onclick="selShop(7)" style="font-size:11px;flex:1">${L[_lang].lbSkillPlus}<br><span style="font-size:10px;color:#f88">-${G.pw}pts</span></button>`:'';
   if(G.pw<=0||G.nwz>=9) {const e=$(7);if(e)e.classList.add('dis');}
 }
 function selShop(n){
@@ -3047,7 +3080,7 @@ function selShop(n){
   const pr={1:G.pw1,2:G.pw2,3:G.pi1,4:G.pi2,7:G.pw};
   G.price=pr[n]||0;
   T('gGaugeCost',`-${G.price}pts`);
-  E('bShot',true); $('bShot').textContent='BUY'; $('bShot').className='ready';
+  E('bShot',true); $('bShot').textContent=L[_lang].lbBuy; $('bShot').className='ready';
 }
 function shopBuy(){
   if(!G.sel||G.pts<G.price)return;
@@ -3059,7 +3092,7 @@ function shopBuy(){
   else if(G.sel===4){G.i2+=(G.ki2===3?20:10);G.ki2++;}
   else if(G.sel===7){G.nwz++;T('bSpeN',G.nwz);}
   pChk();G.sel=0;
-  E('bShot',false);T('gGaugeCost','');$('bShot').textContent='BUY';$('bShot').className='';
+  E('bShot',false);T('gGaugeCost','');$('bShot').textContent=L[_lang].lbBuy;$('bShot').className='';
   buildShop();
 }
 function enterShop(){
@@ -3075,7 +3108,7 @@ function enterShop(){
   // 買い物画面では計算式を非表示
   const sfShop=document.getElementById('gShotFormula');
   if(sfShop){sfShop.textContent='';sfShop.style.display='none';}G._formula='';
-  E('bShot',false);$('bShot').textContent='BUY';$('bShot').className='';
+  E('bShot',false);$('bShot').textContent=L[_lang].lbBuy;$('bShot').className='';
   document.getElementById('gClubNormal').style.display='flex';
   document.getElementById('gClubPutt').style.display='none';
   document.getElementById('gClubShop').style.display='flex';
@@ -3103,7 +3136,7 @@ function enterShop(){
   S('bVwC',''); // bVwSは非表示のまま
   E('bWnd',false);E('bSpe',false);
   document.getElementById('bPro').style.display='block';
-  T('bPro', VS.active ? '>' : 'NEXT HOLE ›');
+  T('bPro', VS.active ? '>' : L[_lang].lbNextHole);
   // gShopBanner を表示
   const s=G.sc, sg=s<0?'-':s>0?'+':'±';
   T('gGaugeClub','');
@@ -3379,9 +3412,10 @@ function dbGetAllRecords(){
 function openRecords(){
   sc('scRec');
   const body=document.getElementById('recBody');
-  body.innerHTML='<div style="color:#667;font-size:13px;text-align:center;padding:20px">Loading…</div>';
+  const tRec=L[_lang];
+  body.innerHTML='<div style="color:#667;font-size:13px;text-align:center;padding:20px">'+tRec.recLoading+'</div>';
 
-  const COURSE_NAMES={1:'Practice',2:'Championship'};
+  const COURSE_NAMES=tRec.recCrsNames;
   const HOLE_COUNTS={1:6,2:9};
 
   dbGetAllRecords().then(rec=>{
@@ -3390,15 +3424,15 @@ function openRecords(){
     let html='';
 
     // ── 累計実績 ──
-    html+='<div class="recSection"><h3>📊 All-Time Stats</h3>';
+    html+='<div class="recSection"><h3>'+tRec.recAllTime+'</h3>';
     const hio=ls['hio']||0, chip=ls['chipIn']||0;
     const plays=Object.keys(CD).map(k=>({id:+k,n:cdN(CD[k]),c:ls[`play_${k}`]||0}));
-    html+=`<div class="recStatRow">Hole in One<span>${hio}x</span></div>`;
-    html+=`<div class="recStatRow">Chip In<span>${chip}x</span></div>`;
+    html+=`<div class="recStatRow">${tRec.recHIO}<span>${hio}x</span></div>`;
+    html+=`<div class="recStatRow">${tRec.recChip}<span>${chip}x</span></div>`;
     html+='</div>';
 
     // ── キャラ別プレイ回数 ──
-    html+='<div class="recSection"><h3>🏌️ Plays by Character</h3>';
+    html+='<div class="recSection"><h3>'+tRec.recPlays+'</h3>';
     plays.forEach(p=>{
       html+=`<div class="recStatRow"><span style="color:${CD[p.id].col}">${p.n}</span><span>${p.c}x</span></div>`;
     });
@@ -3414,7 +3448,7 @@ function openRecords(){
       }
       if(!hasData) return;
 
-      html+=`<div class="recSection"><h3>⛳ ${COURSE_NAMES[cr]} Best Scores</h3>`;
+      html+=`<div class="recSection"><h3>${tRec.recBest}（${COURSE_NAMES[cr]}）</h3>`;
       html+='<table class="recTable">';
       html+='<colgroup><col style="width:18px"><col style="width:22px">';
       for(let ch=1;ch<=6;ch++) html+='<col>';
@@ -3473,14 +3507,14 @@ function openRecords(){
       html+='</tbody></table></div>';
     });
 
-    if(!html) html='<div class="recEmpty">No records yet</div>';
+    if(!html) html='<div class="recEmpty">'+tRec.recEmpty+'</div>';
     // 削除ボタン：スクロール内の末尾に配置（戻るボタンとの誤タップ防止のため大きく余白）
     html+=`<div style="margin-top:40px;padding:16px 0 24px;text-align:center">
-      <button onclick="confirmDeleteRecords()" style="background:transparent;border:1px solid #2a2a3a;color:#556;border-radius:6px;font-size:11px;padding:8px 18px;cursor:pointer;touch-action:manipulation;letter-spacing:0.5px">🗑 Delete All Records</button>
+      <button onclick="confirmDeleteRecords()" style="background:transparent;border:1px solid #2a2a3a;color:#556;border-radius:6px;font-size:11px;padding:8px 18px;cursor:pointer;touch-action:manipulation;letter-spacing:0.5px">'+tRec.recDelete+'</button>
     </div>`;
     body.innerHTML=html;
   }).catch(()=>{
-    body.innerHTML='<div class="recEmpty" style="color:#f44">Failed to load records</div>';
+    body.innerHTML='<div class="recEmpty" style="color:#f44">'+(L[_lang].recLoading||'Error')+'</div>';
   });
 }
 
@@ -3491,13 +3525,14 @@ function confirmDeleteRecords(){
   const dlg=document.createElement('div');
   dlg.id='recDelDlg';
   dlg.style.cssText='position:fixed;inset:0;background:#000c;display:flex;align-items:center;justify-content:center;z-index:200';
+  const td=L[_lang];
   dlg.innerHTML=`
     <div style="background:#0a0a14;border:2px solid #446;border-radius:12px;padding:20px;width:80%;max-width:280px;display:flex;flex-direction:column;gap:14px">
-      <div style="color:#aac;font-size:13px;text-align:center;font-weight:bold">Delete Records</div>
-      <div style="color:#889;font-size:12px;text-align:center;line-height:1.6">All best scores, play counts<br>and stats will be erased.<br>Are you sure?</div>
+      <div style="color:#aac;font-size:13px;text-align:center;font-weight:bold">${td.recDelTitle}</div>
+      <div style="color:#889;font-size:12px;text-align:center;line-height:1.6">${td.recDelBody}</div>
       <div style="display:flex;gap:10px">
-        <button onclick="document.getElementById('recDelDlg').remove()" style="flex:1;background:#1a0a0a;border:2px solid #a44;color:#faa;border-radius:8px;font-size:14px;padding:11px;cursor:pointer;touch-action:manipulation">Cancel</button>
-        <button onclick="execDeleteRecords()" style="flex:1;background:#0a0a0a;border:2px solid #555;color:#888;border-radius:8px;font-size:14px;padding:11px;cursor:pointer;touch-action:manipulation">Delete</button>
+        <button onclick="document.getElementById('recDelDlg').remove()" style="flex:1;background:#1a0a0a;border:2px solid #a44;color:#faa;border-radius:8px;font-size:14px;padding:11px;cursor:pointer;touch-action:manipulation">${td.recDelCancel}</button>
+        <button onclick="execDeleteRecords()" style="flex:1;background:#0a0a0a;border:2px solid #555;color:#888;border-radius:8px;font-size:14px;padding:11px;cursor:pointer;touch-action:manipulation">${td.recDelOk}</button>
       </div>
     </div>`;
   document.body.appendChild(dlg);
@@ -3518,7 +3553,7 @@ function execDeleteRecords(){
       done.innerHTML=`
         <div style="background:#0a0a14;border:2px solid #446;border-radius:12px;padding:24px 20px;width:80%;max-width:280px;display:flex;flex-direction:column;gap:14px;text-align:center">
           <div style="font-size:28px">🗑</div>
-          <div style="color:#aac;font-size:14px">Records deleted</div>
+          <div style="color:#aac;font-size:14px">${L[_lang].recDelDone}</div>
           <button onclick="document.getElementById('recDoneDlg').remove();openRecords()" style="background:#0a1a0a;border:2px solid #4a8;color:#8fa;border-radius:8px;font-size:14px;padding:11px;cursor:pointer;touch-action:manipulation">OK</button>
         </div>`;
       document.body.appendChild(done);
