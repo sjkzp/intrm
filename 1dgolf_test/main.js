@@ -36,13 +36,17 @@ const L = {
     courseInfoPrac: '練習コース｜6H｜1600pts', courseInfoChamp: '選手権コース｜9H｜1300pts',
     howtoClose: '閉じる', recBack: '← 戻る',
     // ゲーム画面ラベル
-    lbHole:'HOLE', lbPar:'PAR', lbShot:'SHOT', lbPoints:'POINTS',
+    lbHole:'H', lbPar:'Par', lbShot:'打', lbPoints:'Pts',
     lbDist:'全長', lbLeft:'残り', lbFly:'飛距離', lbPos:'現在',
     lbWait:'風待ち', lbSkill:'特技',
     lbTerrain:'地形', lbScore:'スコア', lbBack:'戻る', lbGiveUp:'ギブアップ',
     lbCpuTurn:'CPU番', lbShop:'SHOP', lbShopScore:'スコア',
     scCardTitle:'スコアカード', scCardClose:'閉じる',
     recHeader:'🏆 レコード',
+    // 地形名
+    terNames:{1:'フェアウェイ',2:'ROUGH',3:'BUNKER',4:'WATER',5:'グリーン',6:'O B'},
+    lbWind:'風', lbSlope:'傾',
+    lbShotBtn:'打つ', lbUseBtn:'使用', lbWaitBtn:'風待ち',
     // 遊び方
     htTitle:'HOW TO PLAY',
     htBasicsH:'⛳ 基本操作', htBasicsP:'クラブを選んで「SHOT」ボタンを押すとゲージが動きます。ショットするとボールが飛びます。ゲージが高いほど飛距離が伸びます。',
@@ -77,6 +81,10 @@ const L = {
     lbCpuTurn:'CPU TURN', lbShop:'SHOP', lbShopScore:'SCORE',
     scCardTitle:'SCORECARD', scCardClose:'Close',
     recHeader:'🏆 RECORDS',
+    // 地形名
+    terNames:{1:'FAIRWAY',2:'ROUGH',3:'BUNKER',4:'WATER',5:'GREEN',6:'O B'},
+    lbWind:'WIND', lbSlope:'SLP',
+    lbShotBtn:'SHOT', lbUseBtn:'USE', lbWaitBtn:'WAIT',
     // 遊び方
     htTitle:'HOW TO PLAY',
     htBasicsH:'⛳ BASICS', htBasicsP:'Select a club and press the SHOT button to start the gauge. Release/stop to fire the ball. Higher gauge = more distance.',
@@ -202,6 +210,17 @@ function applyLang(){
   if(sccl) sccl.textContent = t.scCardClose;
   const bSpeEl = document.getElementById('bSpeLbl');
   if(bSpeEl) bSpeEl.textContent = t.lbSkill;
+
+  // ゲーム中ならsetTer/updWindLabelを再実行して地形名・風ラベルを更新
+  if(typeof G !== 'undefined' && G.ji){
+    setTer(G.ji, true);
+    updWindLabel();
+  }
+  // bShotのラベル（SHOTモード時のみ更新、充電中・購入中は触らない）
+  const bShotEl = document.getElementById('bShot');
+  if(bShotEl && (bShotEl.textContent === 'SHOT' || bShotEl.textContent === '打つ')){
+    bShotEl.textContent = L[_lang].lbShotBtn;
+  }
 
   // 遊び方ダイアログ
   const htMap = {
@@ -911,7 +930,7 @@ function startCPUHole(){
   updHUD();updGauge();setTer(1);updMap();windK();
   showTerrainInfo();
   S('scBox','none');S('gUp','none');S('bPro','none');S('speBox','none');
-  E('bShot',false); T('bShot','SHOT');
+  E('bShot',false); T('bShot',L[_lang].lbShotBtn);
   document.getElementById('bWnd').style.display='';
   T('bWndN',G.nw); E('bWnd',false);
   document.getElementById('bWnd').style.display='none'; // CPU番は非表示
@@ -2201,7 +2220,7 @@ function nextShot(){
   const sfNs=document.getElementById('gShotFormula');
   if(sfNs){sfNs.textContent='';sfNs.style.display='none';}G._formula='';
   S('gUp','none');G.gW=0;updGauge();G.y3=0;G.cmd=4;
-  T('bShot','SHOT');E('bShot',false);S('speBox','none');
+  T('bShot',L[_lang].lbShotBtn);E('bShot',false);S('speBox','none');
   T('vShot',G.ns);T('vYd3','0');
   S('bx2','none');S('bx3','none');S('bx1','block');
   S('bVwC','block');S('bVwS','none');S('bTj2','none');
@@ -2292,7 +2311,7 @@ function spCk(){
     // クラブエリアを非表示（誤タップ防止）
     document.getElementById('gClubNormal').style.display='none';
     document.getElementById('gClubPutt').style.display='none';
-    E('bShot',true);T('bShot','USE');
+    E('bShot',true);T('bShot',L[_lang].lbUseBtn);
     // タッチ/クリック両方で確実に doUndo を呼ぶ専用ハンドラを設定
     const bsEl=document.getElementById('bShot');
     if(bsEl) bsEl._tsuduruHandler = function(e){
@@ -2307,7 +2326,7 @@ function spCk(){
   else if(ch===4){G.wind=0;G.spc=4;showWind();}
   else if(ch===5){
     E('bSpe',false); // 使用確定までbSpeを無効化（nwzはdoUndo時に減算）
-    G.cmd=13;G.spc=5;G.sel=0;rebuildClubs();E('bShot',true);T('bShot','USE');
+    G.cmd=13;G.spc=5;G.sel=0;rebuildClubs();E('bShot',true);T('bShot',L[_lang].lbUseBtn);
   }
 
 }
@@ -2327,7 +2346,7 @@ function doUndo(){
     // ji<5(グリーン外)に戻る場合はコースの風パラメータを復元
     if(G.ji<5){ loadHD(); } // wa/wz/kzをコース値に戻す
     resetClubs(G.ji<5);windK();
-    T('bShot','SHOT');E('bShot',false);S('speBox','none');E('bSpe',G.nwz>0);
+    T('bShot',L[_lang].lbShotBtn);E('bShot',false);S('speBox','none');E('bSpe',G.nwz>0);
     // bWnd: グリーン以外なら表示、グリーン(ji=5)なら非表示
     if(G.ji===5){
       document.getElementById('bWnd').style.display='none';
@@ -2353,7 +2372,7 @@ function doUndo(){
     const wlbl=document.getElementById('gWindRowLbl');
     if(wlbl) wlbl.textContent='WIND';
     T('gGaugeClub','');T('gGaugeCost','');
-    T('bShot','SHOT');E('bShot',false);S('speBox','none');
+    T('bShot',L[_lang].lbShotBtn);E('bShot',false);S('speBox','none');
     // フィリップは1打目はdisabled（2打目以降でenable）
     E('bSpe',false);
   }
@@ -2428,7 +2447,7 @@ function holeStart(){
 
   // フィリップ: ホール開始(1打目)はdisable、着地後にenable
   E('bSpe', G.nwz>0&&G.ch!==2&&G.ch!==3&&G.ch!==5); // 1打目から使用可能
-  E('bShot',false); T('bShot','SHOT');
+  E('bShot',false); T('bShot',L[_lang].lbShotBtn);
   S('lWind','block');S('vPlmi','block');S('vWind','block');
   S('lPar','block');S('vPar','block');S('lShot','block');S('vShot','block');
   document.getElementById('gStRest').style.display='';
@@ -2725,17 +2744,18 @@ function showWind(){
 function updWindLabel(){
   // グリーン上は「傾」、それ以外は「風」
   const lbl=document.getElementById('gWindRowLbl');
-  if(lbl) lbl.textContent = G.ji===5 ? 'SLP' : 'WIND';
+  if(lbl) lbl.textContent = G.ji===5 ? L[_lang].lbSlope : L[_lang].lbWind;
 }
 function setTer(j, skipWindLabel){
   G.ji=j;
+  const terN = L[_lang].terNames;
   const cfg={
-    1:{n:'FAIRWAY', bg:'#08180a',col:'#7fff7f',border:'#2a5a2a'},
-    2:{n:'ROUGH',   bg:'#101808',col:'#aaf04a',border:'#3a5a18'},
-    3:{n:'BUNKER',  bg:'#1a1400',col:'#ddcc44',border:'#5a4800'},
-    4:{n:'WATER',   bg:'#000818',col:'#4488ff',border:'#183060'},
-    5:{n:'GREEN',   bg:'#001808',col:'#00ff88',border:'#005830'},
-    6:{n:'O B',     bg:'#180000',col:'#ff4444',border:'#580000'},
+    1:{n:terN[1], bg:'#08180a',col:'#7fff7f',border:'#2a5a2a'},
+    2:{n:terN[2], bg:'#101808',col:'#aaf04a',border:'#3a5a18'},
+    3:{n:terN[3], bg:'#1a1400',col:'#ddcc44',border:'#5a4800'},
+    4:{n:terN[4], bg:'#000818',col:'#4488ff',border:'#183060'},
+    5:{n:terN[5], bg:'#001808',col:'#00ff88',border:'#005830'},
+    6:{n:terN[6], bg:'#180000',col:'#ff4444',border:'#580000'},
   };
   const c=cfg[j]||cfg[1];
   const tc=document.getElementById('gTerCard');
