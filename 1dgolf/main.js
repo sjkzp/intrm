@@ -1789,6 +1789,7 @@ function cpuDropChk(){
     G.wa=G.gwa;G.wz=G.gwz;G.kz=G.gkz;windK();
     G.wind=Math.max(-5,Math.min(5,G.wind));
     T('uYd2','m'); T('uYd3','m'); // グリーン上は単位をmに
+    updWindLabel(); // 「傾/SLP」ラベルに切替
   }
   if(G.ns>=(G.par+4)){cpuFinishHole();return;}
   G.lp=G.cp;
