@@ -304,6 +304,7 @@ function applyLang(){
 // キャラ名・特技名を言語別に返す
 function cdN(d){ return _lang==='ja' ? (d.jn||d.n) : d.n; }
 function cdS(d){ return _lang==='ja' ? (d.js||d.s) : d.s; }
+function cdIC(d){ return _lang==='ja' ? d.ic : (d.eic||d.ic); }
 
 function _setCharaHeader(h2text, ptext, h2key, pkey){
   const cHdr = document.querySelector('#scC #cHeader');
@@ -380,22 +381,22 @@ function seChime(){
 }
 
 const CD={
- 1:{n:'Mina Ichinose',    jn:'一之瀬 水無', p:'★',      t:'★★★★★',g:'★★★★★',s:'Power Shot',     js:'パワーショット',  col:'#6fdf6f',ic:'水',
+ 1:{n:'Mina Ichinose',    jn:'一之瀬 水無', p:'★',      t:'★★★★★',g:'★★★★★',s:'Power Shot',     js:'パワーショット',  col:'#6fdf6f',ic:'水',eic:'M',
     spd:30,sc:1,mx:100,s7:40,sc7:1,x7:100,wz:3,wt:7,pw:800,
     w1:200,c1:90,w2:180,c2:70,i1:130,d1:60,i2:100,d2:40,p1:30,e1:10,p2:15,e2:0,gW:102},
- 2:{n:'Soma Migimura',    jn:'右村 走馬',   p:'★★★',   t:'★★★',   g:'★★★',   s:'Terrain Ignore',  js:'地形無視ショット',col:'#6fa8df',ic:'右',
+ 2:{n:'Soma Migimura',    jn:'右村 走馬',   p:'★★★',   t:'★★★',   g:'★★★',   s:'Terrain Ignore',  js:'地形無視ショット',col:'#6fa8df',ic:'右',eic:'S',
     spd:50,sc:4,mx:112,s7:50,sc7:4,x7:112,wz:2,wt:4,pw:950,
     w1:230,c1:120,w2:200,c2:100,i1:160,d1:80,i2:130,d2:60,p1:30,e1:30,p2:15,e2:10,gW:114},
- 3:{n:'Tsuduru Shibata',  jn:'柴田 綴',     p:'★★★★★★',t:'★',      g:'★★',    s:'Retry Shot',      js:'打ち直し',        col:'#df9f4f',ic:'柴',
+ 3:{n:'Tsuduru Shibata',  jn:'柴田 綴',     p:'★★★★★★',t:'★',      g:'★★',    s:'Retry Shot',      js:'打ち直し',        col:'#df9f4f',ic:'柴',eic:'T',
     spd:28,sc:7,mx:133,s7:28,sc7:7,x7:133,wz:2,wt:2,pw:1050,
     w1:290,c1:190,w2:270,c2:150,i1:230,d1:110,i2:190,d2:80,p1:30,e1:40,p2:15,e2:20,gW:135},
- 4:{n:'Kyoko Jin',        jn:'神 響子',     p:'★★',     t:'★★★★',  g:'★★★★',  s:'Wind/Slope Cancel',js:'風・傾斜消し',    col:'#df6fdf',ic:'神',
+ 4:{n:'Kyoko Jin',        jn:'神 響子',     p:'★★',     t:'★★★★',  g:'★★★★',  s:'Wind/Slope Cancel',js:'風・傾斜消し',    col:'#df6fdf',ic:'神',eic:'K',
     spd:50,sc:3,mx:108,s7:50,sc7:3,x7:108,wz:4,wt:5,pw:650,
     w1:220,c1:110,w2:190,c2:90,i1:160,d1:70,i2:120,d2:40,p1:30,e1:20,p2:15,e2:10,gW:110},
- 5:{n:'Philip Kitazaki',  jn:'フィリップ 北崎',p:'★★★★',t:'★★★',   g:'★★★★',  s:'Start Over',      js:'スタートオーバー',col:'#ffdf6f',ic:'P',
+ 5:{n:'Philip Kitazaki',  jn:'フィリップ 北崎',p:'★★★★',t:'★★★',   g:'★★★★',  s:'Start Over',      js:'スタートオーバー',col:'#ffdf6f',ic:'P',eic:'P',
     spd:43,sc:5,mx:120,s7:40,sc7:5,x7:120,wz:1,wt:3,pw:1200,
     w1:240,c1:150,w2:220,c2:130,i1:180,d1:100,i2:150,d2:80,p1:30,e1:40,p2:15,e2:20,gW:122},
- 6:{n:'Hatao Ichinose',   jn:'一之瀬 旗雄', p:'★★★★★',t:'★★★★★',g:'★★★★★',s:'None',             js:'無し',            col:'#ff6f6f',ic:'旗',
+ 6:{n:'Hatao Ichinose',   jn:'一之瀬 旗雄', p:'★★★★★',t:'★★★★★',g:'★★★★★',s:'None',             js:'無し',            col:'#ff6f6f',ic:'旗',eic:'H',
     spd:27,sc:1,mx:125,s7:27,sc7:1,x7:125,wz:0,wt:6,pw:0,
     w1:270,c1:100,w2:250,c2:80,i1:200,d1:70,i2:170,d2:50,p1:30,e1:30,p2:15,e2:10,gW:127},
 };
@@ -3477,7 +3478,7 @@ function openRecords(){
       for(let ch=1;ch<=6;ch++) html+='<col>';
       html+='</colgroup>';
       html+='<thead><tr><th>H</th><th>Par</th>';
-      for(let ch=1;ch<=6;ch++) html+=`<th style="color:${CD[ch].col}">${CD[ch].ic}</th>`;
+      for(let ch=1;ch<=6;ch++) html+=`<th style="color:${CD[ch].col}">${cdIC(CD[ch])}</th>`;
       html+='</tr></thead><tbody>';
 
       // 各キャラのrunデータを取得
