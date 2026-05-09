@@ -590,7 +590,7 @@ function rlEnterShop(){
   document.getElementById('gClubShop').style.display='flex';
   S('gGiveUp',false); S('bPro',false); S('gTerCard',false);
   document.getElementById('gGaugeArea').style.display='none';
-  T('gHlV',G.nH); T('gPtsV',G.pts); T('gParV',G.par);
+  T('gHlV',G.nH); updPtsDisp(); T('gParV',G.par);
   S('speBox','none');
   document.querySelectorAll('#gTop .gTopSeg').forEach(s=>{s.style.visibility='';});
   const gPtsEl=document.getElementById('gPtsV');
@@ -1014,7 +1014,7 @@ function startGameVS(){
 // VSモード用 afterJ: プレイヤーターン終了→CPUターン or ゲーム終了
 function afterJVS(){
   // プレイヤーターン終了
-  G.pts+=G.mpt; T('gPtsV',G.pts); S('scBox','none'); S('terBox','flex');
+  G.pts+=G.mpt; updPtsDisp(); S('scBox','none'); S('terBox','flex');
   // 重複push防止: このホールがまだ記録されていない場合のみpush
   if(G.holeScores.length < G.nH){
     G.holeScores.push(G.ns); G.holePars.push(G.par);
@@ -1455,7 +1455,7 @@ function cpuFireShot(){
   // pts消費
   // VS.cpuPts=Math.max(0,VS.cpuPts-G.mpt);
   // G.pts=VS.cpuPts; 
-  // T('gPtsV',G.pts);
+  // updPtsDisp();
   G.t0=Date.now();
   if(G.ji===5){ startPtCPU(); } else { startMvCPU(); }
 }
@@ -2525,7 +2525,7 @@ function dropChk(){
 
 function afterJ(){
   if(VS.active){afterJVS();return;}
-  G.pts+=G.mpt;T('gPtsV',G.pts);S('scBox','none');S('terBox','flex');
+  G.pts+=G.mpt;updPtsDisp();S('scBox','none');S('terBox','flex');
   // ホール結果を記録
   G.holeScores.push(G.ns);
   G.holePars.push(G.par);
@@ -2678,7 +2678,7 @@ function doUndo(){
     G.spc=0;G.mpt=0;G.cmd=4;
     // gMax をキャラデフォルトに戻す（水無特技後の打ち直し対応）
     G.gMax=CD[G.ch].mx;
-    T('gPtsV',G.pts);T('vYd2',G.y2);T('vYd3','0');T('vShot',G.ns);
+    updPtsDisp();T('vYd2',G.y2);T('vYd3','0');T('vShot',G.ns);
     setTer(G.ji);updPos();
     // クラブエリアを再表示してからresetClubs
     document.getElementById('gClubNormal').style.display='flex';
@@ -2867,6 +2867,18 @@ const ID_MAP = {
 const $=id=>{const mapped=ID_MAP.hasOwnProperty(id)?ID_MAP[id]:id; return mapped?document.getElementById(mapped):null;};
 const T=(id,v)=>{const e=$(id);if(e)e.textContent=v;};
 const S=(id,v)=>{const e=$(id);if(!e)return;
+// RL時のpts表示を一元管理するヘルパー
+function updPtsDisp(){
+  const el=document.getElementById('gPtsV');
+  const lb=document.getElementById('lbPoints');
+  if(G.cr===3){
+    if(el) el.textContent=RL.deck.length+'🃏';
+    if(lb) lb.textContent='DECK';
+  } else {
+    if(el) el.textContent=G.pts;
+    if(lb) lb.textContent='POINTS';
+  }
+}
   if(v==='flex')e.style.display='flex';
   else if(v||v==='')e.style.display=v===true?'':v;
   else e.style.display='none';
@@ -3053,7 +3065,7 @@ function noClick(){
 // ゲーム HUD アダプター
 // =============================================
 function updHUD(){
-  T('gHlV',G.nH); T('gPtsV',G.pts);
+  T('gHlV',G.nH); updPtsDisp();
   T('gParV',G.par); T('gShotV',G.ns);
   T('vYd1',G.y1); T('vYd2',Math.abs(G.y2)); T('vYd3',G.y3);
   // 現在位置: アニメ中(G.mv!=null)はcp+y3、停止中はcp
@@ -3228,8 +3240,8 @@ function sRelease(){
   $('bShot').className='';
   $('bShot').textContent=L[_lang].lbShotBtn;
   E('bShot',false);
-  G.pts=Math.max(0,G.pts-G.mpt);
-  T('gPtsV',G.pts);
+  if(G.cr!==3) G.pts=Math.max(0,G.pts-G.mpt);
+  updPtsDisp();
   seShot();
   // ショット計算前の値をキャプチャ
   const _ng=G.ng, _gW=G.gW, _gMax=G.gMax, _wind=G.wind, _ji=G.ji;
@@ -3405,9 +3417,10 @@ function selShop(n){
   E('bShot',true); $('bShot').textContent=L[_lang].lbBuy; $('bShot').className='ready';
 }
 function shopBuy(){
+  if(G.cr===3) return; // RLモードは通常ショップ不使用
   if(!G.sel||G.pts<G.price)return;
   seBuy();
-  G.pts-=G.price;T('gPtsV',G.pts);
+  G.pts-=G.price;updPtsDisp();
   if(G.sel===1){G.w1+=(G.kw1===3?20:10);G.kw1++;}
   else if(G.sel===2){G.w2+=(G.kw2===3?20:10);G.kw2++;}
   else if(G.sel===3){G.i1+=(G.ki1===3?20:10);G.ki1++;}
@@ -3438,7 +3451,7 @@ function enterShop(){
   S('gGiveUp',false);S('bPro',false);S('gTerCard',false);
   document.getElementById('gGaugeArea').style.display='none';
   // gClubArea は表示したまま（ショップボタンを見せる）
-  T('gHlV',G.nH);T('gPtsV',G.pts);T('gParV',G.par);
+  T('gHlV',G.nH);updPtsDisp();T('gParV',G.par);
   S('speBox','none'); // 特技名ラベルを非表示（カップイン時に表示されたままになる問題）
   // visibility を確実に戻す（CPU番で非表示にした可能性あり）
   document.querySelectorAll('#gTop .gTopSeg').forEach(s=>{s.style.visibility='';});
@@ -3642,7 +3655,9 @@ function endGame(){
   const s=G.sc, sg=s<0?'-':s>0?'+':'±';
   document.getElementById('endScore').innerHTML=`<span style="color:${s<=0?'#4f4':'#f84'}">${sg}${Math.abs(s)}</span>`;
   document.getElementById('endScore').style.fontSize='32px';
-  document.getElementById('endPts').textContent=G.pts+' pts';
+  document.getElementById('endPts').textContent=G.cr===3
+    ? '🃏 デッキ '+RL.deck.length+'枚'
+    : G.pts+' pts';
   let rows='';
   if(G.nHIO>0)rows+=`<div class="row">Hole in One<span>${G.nHIO}${L[_lang].lbCount}</span></div>`;
   if(G.nALB>0)rows+=`<div class="row">Albatross<span>${G.nALB}${L[_lang].lbCount}</span></div>`;
