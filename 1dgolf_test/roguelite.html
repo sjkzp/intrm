@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>1D Golf – Roguelite</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none}
+html,body{width:100%;height:100%;overflow:hidden;background:#111;font-family:"Hiragino Kaku Gothic ProN","MS Gothic",monospace}
+body{display:flex;justify-content:center}
+button{font-family:inherit;cursor:pointer;border:none;outline:none}
+button:active{opacity:.75}
+#app{position:fixed;top:0;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;display:flex;flex-direction:column;background:#080810;overflow:hidden}
+.sc{position:absolute;inset:0;display:none;flex-direction:column}
+.sc.on{display:flex}
+
+/* タイトル */
+#scT{background:linear-gradient(160deg,#0a0018,#000508);align-items:center;justify-content:center;gap:24px;padding:32px 24px}
+#tLogoMain{font-size:30px;font-weight:bold;color:#b088ff;letter-spacing:4px;text-align:center;text-shadow:0 0 20px #8844cc88}
+#tLogoSub{font-size:13px;color:#664488;letter-spacing:3px;text-align:center;margin-top:6px}
+#tDesc{color:#667;font-size:12px;text-align:center;line-height:1.9;max-width:280px}
+.btn-title{background:linear-gradient(#1a0838,#0e0420);border:2px solid #7733bb;color:#bb88ff;border-radius:10px;font-size:16px;padding:16px;letter-spacing:2px;touch-action:manipulation;width:100%;max-width:300px}
+.btn-back{background:#080810;border:1px solid #221133;color:#443355;border-radius:8px;font-size:13px;padding:10px;touch-action:manipulation;width:100%;max-width:300px}
+
+/* HUD */
+#gTop{background:#04040e;border-bottom:1px solid #161628;padding:7px 12px;display:flex;align-items:center;flex-shrink:0}
+.gSeg{display:flex;flex-direction:column;align-items:center;flex:1}
+.gLb{font-size:10px;color:#445;letter-spacing:1px}
+.gVl{font-size:19px;font-weight:bold;color:#fff;line-height:1.1}
+.gDiv{width:1px;background:#161628;height:26px;margin:0 3px}
+
+/* マップ */
+/* gMap は canvas で描画 */
+
+/* 地形範囲バー */
+#gTerInfo{padding:3px 10px;background:#050510;border-bottom:1px solid #1a1a2a;flex-shrink:0;font-size:11px;display:flex;flex-wrap:wrap;gap:3px 6px;align-items:center;min-height:20px;line-height:1.5}
+
+/* 状況 */
+#gSitu{display:flex;gap:6px;padding:6px 10px;flex-shrink:0}
+#gTerCard{background:#060614;border:1px solid #1a1a30;border-radius:8px;padding:6px 10px;flex:1;display:flex;flex-direction:column;gap:2px}
+#gTerName{font-size:13px;font-weight:bold}
+#gWindLine{font-size:12px;font-weight:bold;color:#88ccff}
+#gTerNote{font-size:10px;color:#446}
+#gDistCard{background:#060614;border:1px solid #1a1a30;border-radius:8px;padding:6px 10px;flex:1.4;display:grid;grid-template-columns:1fr 1fr;gap:2px 8px}
+.dSt{display:flex;flex-direction:column}
+.dStLb{font-size:10px;color:#446}
+.dStVl{font-size:16px;font-weight:bold;color:#dde;line-height:1.1}
+.dStVl small{font-size:9px;color:#446;font-weight:normal}
+
+/* バフ帯 */
+#gBuffBar{background:#0a0020;border-bottom:1px solid #220044;padding:3px 12px;font-size:11px;color:#dd88ff;display:none;flex-shrink:0;text-align:center}
+/* メッセージ */
+#gMsg{display:none;background:#060010;border-bottom:1px solid #1a0033;padding:3px 12px;font-size:11px;color:#cc88ff;text-align:center;flex-shrink:0}
+
+/* 手札カード */
+#gCardArea{padding:4px 10px 2px;flex-shrink:0}
+#gCardLabel{font-size:10px;color:#fff;letter-spacing:1px;margin-bottom:3px}
+#gHand{display:flex;gap:5px;flex-wrap:wrap}
+.hCard{background:#12060d;border:2px solid #3a1244;border-radius:7px;padding:5px 8px;touch-action:manipulation;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:56px;cursor:pointer;transition:border-color .1s,transform .1s}
+.hCard:active{transform:scale(.95)}
+.hCard.active{border-color:#dd44ff;box-shadow:0 0 8px #dd44ff50;background:#1a0828}
+.hCard .cIc{font-size:16px;line-height:1}
+.hCard .cNm{font-size:9px;color:#885599;text-align:center;line-height:1.2}
+
+/* 飛距離選択 */
+#gDistArea{flex:1;display:flex;flex-direction:column;padding:4px 10px 3px;gap:4px;min-height:0}
+#gDistLabel{display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+#gDistLabelTxt{font-size:10px;color:#fff;letter-spacing:1px}
+#gDistPreview{font-size:11px;color:#ffdd44;font-weight:bold}
+#gDistGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;overflow-y:auto}
+.dBtn{background:#0a0a18;border:2px solid #1e1e35;border-radius:8px;padding:9px 4px;touch-action:manipulation;display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer;transition:border-color .12s,background .12s}
+.dBtn .dYd{font-size:16px;font-weight:bold;color:#99aacc;line-height:1}
+.dBtn .dLb{font-size:9px;color:#334;min-height:12px}
+.dBtn.sel{background:#0f1a30;border-color:#4488ff;box-shadow:0 0 8px #4488ff40}
+.dBtn.sel .dYd{color:#88bbff}
+.dBtn.putt{background:#060d18;border-color:#102040}
+.dBtn.putt.sel{border-color:#44aaff;background:#081828}
+.dBtn.putt .dYd{color:#66aaff}
+.dBtn.dis{opacity:.3;pointer-events:none}
+
+/* ショットボタン行 */
+#gShotRow{padding:4px 10px 7px;display:flex;gap:6px;flex-shrink:0}
+#bFire{flex:3;background:linear-gradient(#1a1438,#100c28);border:2px solid #4433aa;color:#7766cc;border-radius:10px;font-size:15px;font-weight:bold;padding:12px;touch-action:manipulation;transition:all .15s}
+#bFire.ready{border-color:#aa88ff;color:#ddccff;background:linear-gradient(#2a1a48,#180e34)}
+#bCard{flex:1;background:#0e040a;border:2px solid #3a1040;color:#885599;border-radius:10px;font-size:12px;padding:12px 6px;touch-action:manipulation;text-align:center;line-height:1.4}
+
+/* ショップ */
+#gShop{display:none;flex-direction:column;flex:1;overflow:hidden}
+#gShopHdr{background:#050010;border-bottom:1px solid #221133;padding:10px 14px;flex-shrink:0}
+#gShopHdr h3{color:#cc88ff;font-size:14px;font-weight:bold}
+#gShopHdr p{color:#443355;font-size:11px;margin-top:2px}
+#gShopList{display:flex;flex-direction:column;gap:8px;padding:10px;flex:1;overflow-y:auto}
+.sCard{background:#0a0418;border:2px solid #2a1040;border-radius:10px;padding:11px 12px;display:flex;align-items:center;gap:11px;touch-action:manipulation;cursor:pointer}
+.sCard:active{background:#140828;border-color:#8844cc}
+.sIc{font-size:22px;width:30px;text-align:center;flex-shrink:0}
+.sBody{flex:1}
+.sName{font-size:14px;font-weight:bold;color:#cc88ff}
+.sDesc{font-size:11px;color:#553366;margin-top:2px}
+.sTag{font-size:9px;padding:1px 5px;border-radius:3px;margin-top:4px;display:inline-block;background:#100408;color:#dd44aa;border:1px solid #440022}
+#bShopSkip{margin:0 10px 12px;background:#060610;border:1px solid #1a1128;color:#3a2a4a;border-radius:8px;font-size:13px;padding:10px;touch-action:manipulation;flex-shrink:0}
+
+/* フラッシュ */
+#gFlash{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#050510ee;border:3px solid #556;border-radius:12px;padding:14px 28px;text-align:center;display:none;z-index:40;pointer-events:none;min-width:160px}
+#gFlashTxt{font-size:22px;font-weight:bold}
+#gFlashSub{font-size:12px;color:#778;margin-top:4px}
+
+/* エンディング */
+#scEnd{background:#000;align-items:center;justify-content:center;flex-direction:column;gap:14px;padding:24px;overflow-y:auto}
+#endEmoji{font-size:64px}
+#endTitle{color:#cc88ff;font-size:22px;font-weight:bold}
+#endSub{color:#446;font-size:12px}
+#endScore{font-size:36px;font-weight:bold;text-align:center}
+#endCards{color:#8866aa;font-size:13px}
+#endBox{background:#060610;border:1px solid #1a1128;border-radius:10px;width:100%;max-width:300px;padding:14px}
+#endBox .row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #0c0c18;font-size:13px;color:#556}
+#endBox .row span{color:#ccd;font-weight:bold}
+#bRestart{background:linear-gradient(#1a0838,#0e0420);border:2px solid #7733bb;color:#bb88ff;border-radius:10px;font-size:15px;padding:14px 32px;touch-action:manipulation}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- タイトル -->
+<div id="scT" class="sc on">
+  <div><div id="tLogoMain">🃏 ROGUELITE</div><div id="tLogoSub">1D GOLF</div></div>
+  <div id="tDesc">マスを選んで進む<br>カードで状況を有利にする<br>ローグライク型ゴルフ。9H攻略せよ。</div>
+  <button class="btn-title" onclick="startRun()" style="margin-top:8px">▶ START</button>
+  <button class="btn-back" onclick="location.href='1dgolf.html'">← メインゲームへ</button>
+</div>
+
+<!-- ゲーム -->
+<div id="scG" class="sc">
+  <div id="gTop">
+    <div class="gSeg"><div class="gLb">HOLE</div><div class="gVl" id="gHlV" style="color:#88ccff">1</div></div>
+    <div class="gDiv"></div>
+    <div class="gSeg"><div class="gLb">PAR</div><div class="gVl" id="gParV" style="color:#88ffaa">-</div></div>
+    <div class="gDiv"></div>
+    <div class="gSeg"><div class="gLb">SHOT</div><div class="gVl" id="gShotV">0</div></div>
+    <div class="gDiv"></div>
+    <div class="gSeg" style="flex:1.3"><div class="gLb">SCORE</div><div class="gVl" id="gScV" style="color:#ffdd44">±0</div></div>
+    <div class="gDiv"></div>
+    <div class="gSeg" style="flex:1.3"><div class="gLb">CARD</div><div class="gVl" id="gCardV" style="color:#cc88ff">0</div></div>
+  </div>
+  <!-- マップ canvas -->
+  <canvas id="gMap" height="52" style="width:100%;display:block;flex-shrink:0"></canvas>
+  <!-- 地形範囲テキストバー -->
+  <div id="gTerInfo" style="padding:3px 10px;background:#050510;border-bottom:1px solid #1a1a2a;flex-shrink:0;font-size:11px;display:flex;flex-wrap:wrap;gap:3px 6px;align-items:center;min-height:20px;line-height:1.5"></div>
+  <div id="gSitu">
+    <div id="gTerCard">
+      <div id="gTerName" style="color:#8fdf8f">FAIR</div>
+      <div id="gWindLine">風 ±0マス</div>
+      <div id="gTerNote"></div>
+    </div>
+    <div id="gDistCard">
+      <div class="dSt"><div class="dStLb">REMAIN</div><div class="dStVl" id="vRem">-</div></div>
+      <div class="dSt"><div class="dStLb">TOTAL</div><div class="dStVl" id="vTot">-</div></div>
+      <div class="dSt"><div class="dStLb">FLEW</div><div class="dStVl" id="vFly">0</div></div>
+      <div class="dSt"><div class="dStLb">RESULT</div><div class="dStVl" id="vRes" style="color:#ffdd44">-</div></div>
+    </div>
+  </div>
+  <div id="gBuffBar"></div>
+  <div id="gMsg"></div>
+  <div id="gCardArea">
+    <div id="gCardLabel">🃏 手札カード（タップで使用）</div>
+    <div id="gHand"></div>
+  </div>
+  <div id="gDistArea">
+    <div id="gDistLabel">
+      <span id="gDistLabelTxt">⛳ 進むマス数を選択</span>
+      <span id="gDistPreview"></span>
+    </div>
+    <div id="gDistGrid"></div>
+  </div>
+  <div id="gShotRow">
+    <button id="bFire" onclick="fireShot()">マス数を選択してください</button>
+    <button id="bCard" onclick="toggleCardMode()">🃏<br><span style="font-size:9px" id="bCardSub">カード</span></button>
+  </div>
+  <div id="gShop">
+    <div id="gShopHdr"><h3>🃏 カードショップ</h3><p>1枚を手札に追加（スキップ可）</p></div>
+    <div id="gShopList"></div>
+    <button id="bShopSkip" onclick="shopSkip()">スキップ</button>
+  </div>
+  <div id="gFlash"><div id="gFlashTxt"></div><div id="gFlashSub"></div></div>
+</div>
+
+<!-- エンディング -->
+<div id="scEnd" class="sc">
+  <div id="endEmoji">⛳</div>
+  <div id="endTitle">FINISH</div>
+  <div id="endSub">9 Holes Roguelite</div>
+  <div id="endScore"></div>
+  <div id="endCards"></div>
+  <div id="endBox"></div>
+  <button id="bRestart" onclick="sc('scT')">▶ もう一度</button>
+</div>
+</div>
+
+<script>
+'use strict';
+
+// ─── コースデータ（マス単位。1マス≒20yd） ───
+// y=総マス数, g=グリーンマス数, wz=風の最大±マス数
+// Ra/Rz=ROUGH, Wa/Wz=WATER, Ba/Bz=BUNKER の開始・終了マス
+const C2=[null,
+  {par:5,y:27,g:2,wz:1,wa:0,gwa:0,gwz:1,gkz:0,Ra:[9,13,22],Rz:[11,14,23],Wa:[20,0,0],Wz:[22,0,0],Ba:[11,24,0],Bz:[13,26,0]},
+  {par:3,y:8, g:2,wz:2,wa:1,gwa:0,gwz:2,gkz:1,Ra:[0,0,0], Rz:[0,0,0], Wa:[0,0,0], Wz:[6,0,0], Ba:[6,0,0],  Bz:[7,0,0]},
+  {par:5,y:28,g:2,wz:2,wa:1,gwa:1,gwz:1,gkz:0,Ra:[10,24,0],Rz:[14,27,0],Wa:[1,15,0],Wz:[8,20,0],Ba:[22,0,0],Bz:[24,0,0]},
+  {par:6,y:33,g:2,wz:3,wa:0,gwa:1,gwz:2,gkz:1,Ra:[5,18,28],Rz:[11,23,30],Wa:[11,23,0],Wz:[16,28,0],Ba:[30,0,0],Bz:[31,0,0]},
+  {par:4,y:25,g:2,wz:1,wa:1,gwa:1,gwz:2,gkz:0,Ra:[8,19,0], Rz:[10,24,0],Wa:[12,0,0],Wz:[19,0,0],Ba:[4,10,0],Bz:[6,10,0]},
+  {par:5,y:39,g:2,wz:3,wa:2,gwa:1,gwz:2,gkz:0,Ra:[0,0,0], Rz:[0,0,0], Wa:[0,0,0], Wz:[0,0,0], Ba:[0,0,0], Bz:[0,0,0]},
+  {par:3,y:13,g:2,wz:3,wa:1,gwa:1,gwz:1,gkz:0,Ra:[0,12,0], Rz:[0,12,0],Wa:[11,0,0],Wz:[12,0,0],Ba:[0,4,10],Bz:[3,8,11]},
+  {par:5,y:24,g:2,wz:2,wa:0,gwa:1,gwz:2,gkz:1,Ra:[5,14,0], Rz:[9,18,0],Wa:[9,19,0],Wz:[12,22,0],Ba:[12,0,0],Bz:[14,0,0]},
+  {par:6,y:43,g:2,wz:3,wa:2,gwa:1,gwz:2,gkz:1,Ra:[7,14,20],Rz:[10,16,29],Wa:[16,36,40],Wz:[20,39,42],Ba:[11,29,39],Bz:[13,30,40]},
+];
+const C2D=[null,1,1,2,3,2,3,2,2,3];
+
+// ─── 飛距離リスト（マス） ───
+const DIST_FAIR=[1,2,3,4,5,6,7,8,9,10,12,15];
+const DIST_PUTT=[1,2,3,4,5]; // グリーン用
+
+// ─── カードマスター ───
+const CM={
+  eOB: {nm:'OB保険',   ic:'🛡', desc:'次のOB→ROUGH変換',              fn(G){G.bOB=true;}},
+  eWT: {nm:'池保険',   ic:'🚤', desc:'次の池→ROUGH変換',              fn(G){G.bWT=true;}},
+  eIG: {nm:'地形無視', ic:'🌿', desc:'このショット：ROUGH/BKR補正なし',fn(G){G.bIG=true;}},
+  ePL: {nm:'+3マス',   ic:'✨', desc:'このショットの進行+3マス',       fn(G){G.bEx=(G.bEx||0)+3;}},
+  ePL2:{nm:'+5マス',   ic:'💫', desc:'このショットの進行+5マス',       fn(G){G.bEx=(G.bEx||0)+5;}},
+  eSC: {nm:'スコア+1', ic:'📈', desc:'このホールの評価1段UP',          fn(G){G.bSC=true;}},
+  eUD: {nm:'打ち直し', ic:'↩',  desc:'直前のショットを取り消す',       fn(G){undoShot();}},
+  eWN: {nm:'風消し',   ic:'🌀', desc:'このショットの風影響を0に',      fn(G){G.bWN=true;G.wind=0;showWind();}},
+  ePT: {nm:'PT+2',     ic:'🎯', desc:'このパット：+2マス選択肢追加',   fn(G){G.bPT=true;}},
+};
+const SHOP_POOL=['eOB','eWT','eIG','ePL','ePL2','eSC','eUD','eWN','ePT'];
+const INIT_HAND=['eOB','eWT','eIG','ePL','eWN'];
+
+// ─── 状態 ───
+let G={},hand=[],acquired=[],courseOrder=[],totalSc=0,holeLog=[],selDist=0,cardMode=false;
+
+function sc(id){document.querySelectorAll('.sc').forEach(e=>e.classList.remove('on'));el(id).classList.add('on');}
+function el(id){return document.getElementById(id);}
+function T(id,v){const e=el(id);if(e)e.textContent=v;}
+
+// ─── コース生成 ───
+function genCourse(){
+  const p=[1,2,3,4,5,6,7,8,9];
+  for(let t=0;t<20;t++){
+    for(let i=8;i>0;i--){const j=0|Math.random()*(i+1);[p[i],p[j]]=[p[j],p[i]];}
+    const ps=p.reduce((s,i)=>s+C2[i].par,0);
+    const p3=p.filter(i=>C2[i].par===3).length;
+    const eh=p.slice(0,3).filter(i=>C2D[i]===3).length;
+    if(ps>=34&&ps<=38&&p3>=1&&p3<=2&&eh<=1)return[...p];
+  }
+  return[2,5,7,1,3,8,6,4,9];
+}
+
+// ─── ゲーム開始 ───
+function startRun(){
+  courseOrder=genCourse();
+  hand=[...INIT_HAND];acquired=[];totalSc=0;holeLog=[];selDist=0;cardMode=false;
+  G={nH:1,par:4,y1:0,y2:0,y3:0,cp:0,lp:0,gz:0,gkz:0,gwa:0,gwz:0,
+     Ra:[0,0,0],Rz:[0,0,0],Wa:[0,0,0],Wz:[0,0,0],Ba:[0,0,0],Bz:[0,0,0],
+     wa:0,wz:0,kz:0,wind:0,ns:0,ji:1,inGreen:false,
+     bOB:false,bWT:false,bIG:false,bEx:0,bSC:false,bWN:false,bPT:false,
+     lns:0,lcp:0,lji:1,ly2:0,
+     nHIO:0,nEAG:0,nBIR:0,nCHP:0,nBOG:0,maxy:0};
+  sc('scG');holeStart();
+}
+
+// ─── ホール開始 ───
+function holeStart(){
+  const h=C2[courseOrder[G.nH-1]];
+  G.par=h.par;G.y1=h.y;G.gz=h.g;
+  G.wa=h.wa||0;G.wz=h.wz||0;
+  G.gkz=h.gkz||0;G.gwa=h.gwa||0;G.gwz=h.gwz||0;
+  G.Ra=[...h.Ra];G.Rz=[...h.Rz];G.Wa=[...h.Wa];G.Wz=[...h.Wz];G.Ba=[...h.Ba];G.Bz=[...h.Bz];
+  G.cp=0;G.lp=0;G.y2=G.y1;G.y3=0;G.ns=0;G.ji=1;G.inGreen=false;
+  G.lns=0;G.lcp=0;G.lji=1;G.ly2=G.y1;
+  G.bOB=false;G.bWT=false;G.bIG=false;G.bEx=0;G.bSC=false;G.bWN=false;G.bPT=false;
+  selDist=0;cardMode=false;
+  genWind();updMap();updHUD();updPos();setTer(1);updBuff();showTerInfo();
+  showGameUI();buildDistGrid();renderHand();hideMsg();
+}
+
+function showGameUI(){
+  el('gCardArea').style.display='';el('gDistArea').style.display='flex';
+  el('gShotRow').style.display='flex';el('gShop').style.display='none';
+  el('gShop').style.flex='';
+}
+
+// ─── 風生成 ───
+function genWind(){
+  const wz=G.inGreen?G.gwz:G.wz;
+  const wa=G.inGreen?G.gwa:G.wa;
+  if(!wz){G.wind=0;showWind();return;}
+  let w=0|((Math.random()*2-1)*wz+.5*(Math.random()<.5?1:-1));
+  w=Math.max(-wz,Math.min(wz,w));
+  if(wa>0&&w>=0)w=Math.min(w+1,wz);
+  if(wa<0&&w<=0)w=Math.max(w-1,-wz);
+  G.wind=w;showWind();
+}
+function showWind(){
+  const w=G.wind, s=w>0?'+':w<0?'':'±';
+  el('gWindLine').textContent='風 '+(w===0?'±0':s+w)+'マス';
+  el('gWindLine').style.color=w>0?'#ffaa44':w<0?'#44aaff':'#778';
+}
+
+// ─── HUD ───
+function updHUD(){
+  T('gHlV',G.nH);T('gParV',G.par);T('gShotV',G.ns);T('gCardV',hand.length);
+  const sg=totalSc<0?'':totalSc>0?'+':'±';
+  el('gScV').textContent=sg+totalSc;
+  el('gScV').style.color=totalSc<0?'#44ff88':totalSc>0?'#ff8844':'#ffdd44';
+  const u='マス';
+  const remEl=el('vRem');
+  remEl.innerHTML=Math.max(0,G.y2)+'<small>'+u+'</small>';
+  remEl.style.color=G.inGreen?'#44ffaa':'#dde';
+  el('vTot').innerHTML=G.y1+'<small>'+u+'</small>';
+  el('vFly').innerHTML=G.y3+'<small>'+u+'</small>';
+  if(selDist>0){
+    const fd=calcFinal(selDist);
+    const exStr=G.bEx?'(+'+G.bEx+')':'';
+    el('vRes').innerHTML=fd+exStr+'<small>マス</small>';
+    el('vRes').style.color='#ffdd44';
+    const wStr=G.wind!==0&&!G.bWN?' 風'+(G.wind>0?'+':'')+G.wind:'';
+    el('gDistPreview').textContent='実≒'+fd+'マス'+wStr;
+    el('gDistPreview').style.color='#ffdd44';
+    el('bFire').textContent='⛳ SHOT '+selDist+'→'+fd+'マス';
+    el('bFire').className='ready';
+  } else {
+    el('vRes').innerHTML='<small style="color:#446">選択待ち</small>';
+    el('gDistPreview').textContent='';
+    el('bFire').textContent='マス数を選択してください';
+    el('bFire').className='';
+  }
+}
+
+// ─── 進行計算 ───
+function calcFinal(base){
+  let d=base+(G.bEx||0);
+  if(!G.inGreen){
+    // 地形補正（マス切り捨て）
+    if(G.ji===2&&!G.bIG) d=Math.max(1,0|d*.58);
+    else if(G.ji===3&&!G.bIG) d=Math.max(1,0|d*.28);
+    // 風補正（マス加減算）
+    const w=G.bWN?0:G.wind;
+    d=Math.max(1,d+w);
+    // ブレ（±1マス、50%確率）
+    if(Math.random()<.5) d+=Math.random()<.5?1:-1;
+    d=Math.max(1,d);
+  } else {
+    // グリーン：傾斜補正（±1マス）
+    const slope=G.bWN?0:G.wind;
+    d=Math.max(1,d+slope);
+  }
+  return d;
+}
+
+// ─── 飛距離グリッド構築 ───
+function buildDistGrid(){
+  const cont=el('gDistGrid');cont.innerHTML='';
+  let list;
+  if(G.inGreen){
+    list=[...DIST_PUTT];
+    if(G.bPT) list=[...new Set([...list,Math.min(G.y2+2,G.y2+2)])].sort((a,b)=>a-b);
+  } else {
+    list=[...DIST_FAIR];
+  }
+  list.forEach(v=>{
+    const btn=document.createElement('button');
+    btn.className='dBtn'+(G.inGreen?' putt':'');
+    btn.dataset.v=v;
+    const fd=calcFinal(v);
+    const diff=fd-v;
+    const diffStr=diff>0?'+'+diff:diff<0?String(diff):'';
+    btn.innerHTML='<div class="dYd">'+v+'</div><div class="dLb">'+diffStr+'</div>';
+    if(!G.inGreen&&v>G.y2+G.wz+5) btn.classList.add('dis');
+    btn.onclick=()=>tapDist(v);
+    cont.appendChild(btn);
+  });
+  if(selDist) highlightDist(selDist);
+}
+
+function tapDist(v){selDist=selDist===v?0:v;highlightDist(selDist);updHUD();}
+function highlightDist(v){document.querySelectorAll('.dBtn').forEach(b=>b.classList.toggle('sel',+b.dataset.v===v));}
+
+// ─── 手札レンダリング ───
+function renderHand(){
+  const cont=el('gHand');cont.innerHTML='';
+  hand.forEach((cid,idx)=>{
+    const c=CM[cid];if(!c)return;
+    const div=document.createElement('div');
+    div.className='hCard';
+    div.innerHTML='<div class="cIc">'+c.ic+'</div><div class="cNm">'+c.nm+'</div>';
+    div.onclick=()=>useCard(idx);
+    cont.appendChild(div);
+  });
+  T('gCardV',hand.length);
+}
+
+function useCard(idx){
+  const cid=hand[idx];const c=CM[cid];if(!c)return;
+  if(cid==='eUD'&&G.ns===0){showMsg('まだショットしていません');return;}
+  c.fn(G);
+  hand.splice(idx,1);acquired.push(cid);
+  renderHand();updBuff();updHUD();buildDistGrid();
+  showMsg(c.ic+' '+c.nm+'を使用');
+}
+
+function toggleCardMode(){cardMode=!cardMode;el('bCard').className=cardMode?'active':'';}
+
+// ─── ショット ───
+function fireShot(){
+  if(!selDist)return;
+  const fd=calcFinal(selDist);
+  G.lns=G.ns;G.lcp=G.cp;G.lji=G.ji;G.ly2=G.y2;
+  G.bIG=false;G.bEx=0;G.bWN=false;G.bPT=false;
+  G.ns++;G.y3=fd;G.maxy=Math.max(G.maxy,fd);
+  selDist=0;
+  G.inGreen?puttLand(fd):shotLand(fd);
+}
+
+// ─── 着地判定 ───
+function shotLand(dist){
+  const prev=G.cp;
+  G.cp=prev+dist;G.y2=G.y1-G.cp;
+  let ji=1;
+  for(let i=0;i<3;i++){
+    if(G.cp>=G.Ra[i]&&G.cp<=G.Rz[i])ji=2;
+    if(G.cp>=G.Wa[i]&&G.cp<=G.Wz[i])ji=4;
+    if(G.cp>=G.Ba[i]&&G.cp<=G.Bz[i])ji=3;
+  }
+  const gStart=G.y1-G.gz;
+  if(G.cp>=gStart&&G.cp<=G.y1+G.gz)ji=5;
+  if(G.cp>G.y1+G.gz)ji=6;
+  if(G.cp===0)ji=1;
+  // ハザード処理
+  if(ji===4&&G.bWT){
+    G.bWT=false;ji=2;G.cp=prev+Math.max(1,0|dist*.6);G.y2=G.y1-G.cp;
+    showMsg('🚤 池→ROUGH（保険発動）');updBuff();
+  } else if(ji===6&&G.bOB){
+    G.bOB=false;ji=2;G.cp=prev;G.y2=G.y1-G.cp;
+    showMsg('🛡 OB→ROUGH（保険発動）');updBuff();
+  } else if(ji===4||ji===6){
+    G.ns++;showMsg((ji===4?'💧 池ポチャ':'⛔ OB')+' ペナルティ+1打');
+    G.cp=prev;G.y2=G.y1-G.cp;ji=1;
+    for(let i=0;i<3;i++){if(G.cp>=G.Ra[i]&&G.cp<=G.Rz[i])ji=2;if(G.cp>=G.Ba[i]&&G.cp<=G.Bz[i])ji=3;}
+  }
+  setTer(ji);updPos();updHUD();
+  if(ji===5){
+    G.inGreen=true;G.y2=Math.abs(G.y1-G.cp);
+    G.wz=G.gwz;G.wa=G.gwa;genWind();
+    el('gTerNote').textContent='傾斜:'+G.wind+'マス';
+    // グリーンオン：残り距離をフラッシュ表示
+    showFlash('🟢 グリーンオン！', 'カップまで '+G.y2+' マス', '#44ffaa');
+    setTimeout(hideFlash, 1100);
+  }
+  buildDistGrid();
+  if(G.ns>=G.par+4)endHole(true);
+}
+
+function puttLand(dist){
+  const rem=G.y2;
+  if(dist>=rem-1&&dist<=rem+1){
+    G.y2=0;G.cp=G.y1;updPos();updHUD();buildDistGrid();endHole(false);return;
+  }
+  G.y2=dist>rem+1?dist-rem:Math.max(1,rem-dist);
+  updHUD();buildDistGrid();
+  if(G.ns>=G.par+4)endHole(true);
+}
+
+// ─── 打ち直し ───
+function undoShot(){
+  if(G.ns===0)return;
+  G.ns=G.lns;G.cp=G.lcp;G.ji=G.lji;G.y2=G.ly2;G.y3=0;
+  G.inGreen=(G.lji===5);selDist=0;
+  setTer(G.lji);updPos();updHUD();genWind();buildDistGrid();
+  showMsg('↩ 打ち直し！直前のショットを取消');
+}
+
+// ─── 地形 ───
+const TI={
+  1:{n:'FAIR',  c:'#8fdf8f',bg:'',       nt:''},
+  2:{n:'ROUGH', c:'#ccdd44',bg:'#0a1200',nt:'進行×58%'},
+  3:{n:'BUNKER',c:'#ffdd66',bg:'#120e00',nt:'進行×28%'},
+  4:{n:'WATER', c:'#66aaff',bg:'#00050f',nt:'池ポチャ'},
+  5:{n:'GREEN', c:'#44ffaa',bg:'#00100a',nt:'パット'},
+  6:{n:'OB',    c:'#ff4444',bg:'#100000',nt:'OB'},
+};
+function setTer(ji){
+  G.ji=ji;const t=TI[ji]||TI[1];
+  el('gTerName').textContent=t.n;el('gTerName').style.color=t.c;
+  el('gTerCard').style.background=t.bg;el('gTerNote').textContent=t.nt;
+}
+
+// ─── 地形範囲バー ───
+function showTerInfo(){
+  const bar=el('gTerInfo');if(!bar)return;
+  const zones=[];
+  G.Ra.forEach((a,i)=>{if(a||G.Rz[i])zones.push({s:a,h:'<span style="color:#88dd66">R:'+a+'-'+G.Rz[i]+'</span>'});});
+  G.Wa.forEach((a,i)=>{if(a||G.Wz[i])zones.push({s:a,h:'<span style="color:#6699ff">W:'+a+'-'+G.Wz[i]+'</span>'});});
+  G.Ba.forEach((a,i)=>{if(a||G.Bz[i])zones.push({s:a,h:'<span style="color:#ddcc44">B:'+a+'-'+G.Bz[i]+'</span>'});});
+  zones.sort((a,b)=>a.s-b.s);
+  const parts=zones.map(z=>z.h);
+  parts.push('<span style="color:#00ff88">G:'+(G.y1-G.gz)+'-'+G.y1+'</span>');
+  bar.innerHTML=parts.join('<span style="color:#333;margin:0 2px">｜</span>');
+}
+
+// ─── マップ Canvas 描画 ───
+// 各マスの地形を優先度で1色に決定（水>BKR>ROUGH>GREEN>FAIR）
+function getTerColor(sq){
+  const y=G.y1, gz=G.gz;
+  // 水
+  for(let i=0;i<3;i++) if(sq>=G.Wa[i]&&sq<=G.Wz[i]&&(G.Wa[i]||G.Wz[i])) return 'W';
+  // バンカー
+  for(let i=0;i<3;i++) if(sq>=G.Ba[i]&&sq<=G.Bz[i]&&(G.Ba[i]||G.Bz[i])) return 'B';
+  // ラフ
+  for(let i=0;i<3;i++) if(sq>=G.Ra[i]&&sq<=G.Rz[i]&&(G.Ra[i]||G.Rz[i])) return 'R';
+  // グリーン
+  if(sq>=(y-gz)&&sq<=y) return 'G';
+  // OB
+  if(sq>y) return 'O';
+  return 'F'; // フェア
+}
+const TC={F:'#1a4a1a',R:'#3a5a10',B:'#5a4800',W:'#0a1a5a',G:'#0a5a30',O:'#5a0a0a'};
+const TBC={F:'#0d2a0d',R:'#1a3000',B:'#302400',W:'#05103a',G:'#054a20',O:'#3a0505'};
+
+function drawMap(){
+  const cv=el('gMap');if(!cv||!cv.getContext)return;
+  const W=cv.offsetWidth||cv.parentElement?.offsetWidth||380;
+  cv.width=W;
+  const ctx=cv.getContext('2d');
+  const y=G.y1; if(!y)return;
+  const H=cv.height;
+  // 1マスの幅（最小1px）
+  const sq=Math.max(1, Math.floor((W-2)/y));
+  const totalW=sq*y;
+  const ox=Math.floor((W-totalW)/2); // 中央寄せ余白
+  const GAP=1; // マス間ギャップ
+  const mH=H-12; // マス本体高さ（下段にラベル用余白）
+  ctx.clearRect(0,0,W,H);
+  // 背景
+  ctx.fillStyle='#030d07';
+  ctx.fillRect(0,0,W,H);
+
+  for(let s=0;s<y;s++){
+    const tc=getTerColor(s);
+    const x=ox+s*sq;
+    const inner=sq-GAP;
+    // マス本体
+    ctx.fillStyle=TC[tc];
+    ctx.fillRect(x,0,inner,mH);
+    // 外枠
+    ctx.strokeStyle=TBC[tc];
+    ctx.lineWidth=0.5;
+    ctx.strokeRect(x+0.25,0.25,inner-0.5,mH-0.5);
+    // マス番号（5の倍数のみ）
+    if(s>0&&s%5===0){
+      ctx.fillStyle='#334';
+      ctx.font='7px monospace';
+      ctx.textAlign='center';
+      ctx.fillText(s, x+inner/2, H-2);
+    }
+  }
+
+  // 現在位置マーカー
+  if(G.ji!==6){
+    const cp=Math.min(G.cp, y);
+    const px=ox+cp*sq;
+    // コマ（白い丸）
+    const cy=mH/2;
+    const r=Math.min(sq*0.38, 7);
+    ctx.beginPath();
+    ctx.arc(px-sq/2+sq/2, cy, r, 0, Math.PI*2);
+    ctx.fillStyle='rgba(255,255,255,0.92)';
+    ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,0.4)';
+    ctx.lineWidth=1;
+    ctx.stroke();
+    // 位置ライン
+    ctx.strokeStyle='rgba(255,255,255,0.35)';
+    ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(px-sq/2+sq/2, 0);
+    ctx.lineTo(px-sq/2+sq/2, mH);
+    ctx.stroke();
+  }
+}
+
+function updMap(){ drawMap(); }
+function updPos(){ drawMap(); }
+
+// ─── バフ表示 ───
+function updBuff(){
+  const msgs=[];
+  if(G.bOB)msgs.push('🛡OB');if(G.bWT)msgs.push('🚤池');
+  if(G.bIG)msgs.push('🌿地形無視');
+  if(G.bEx)msgs.push('✨+'+G.bEx+'マス');if(G.bSC)msgs.push('📈SC+1');
+  if(G.bWN)msgs.push('🌀風0');if(G.bPT)msgs.push('🎯PT+2');
+  const b=el('gBuffBar');
+  if(msgs.length){b.textContent=msgs.join('  ');b.style.display='block';}else b.style.display='none';
+}
+
+// ─── ホール終了 ───
+function endHole(giveUp){
+  const df=G.ns-G.par+(G.bSC?-1:0);
+  holeLog.push({ns:G.ns,par:G.par,df:G.ns-G.par});
+  totalSc+=G.ns-G.par;
+  if(G.ns===1)G.nHIO++;
+  if(df<=-2)G.nEAG++;else if(df===-1)G.nBIR++;else if(df===0)G.nCHP++;else G.nBOG++;
+  const lm={'-4':'Condor🦅','-3':'Albatross🦅','-2':'Eagle🦅','-1':'Birdie🐦','0':'Par⛳','1':'Bogey','2':'D.Bogey'};
+  const cm={'-4':'#f80','-3':'#f80','-2':'#f80','-1':'#4df','0':'#fff','1':'#fa4','2':'#f55'};
+  const k=String(Math.max(-4,Math.min(2,df)));
+  showFlash(giveUp?'Give Up 😔':(lm[k]||'+'+df),G.ns+'打 / Par'+G.par,giveUp?'#f55':(cm[k]||'#f55'));
+  setTimeout(()=>{hideFlash();G.nH>=9?endGame():enterShop();},1400);
+}
+
+// ─── ショップ ───
+function enterShop(){
+  el('gCardArea').style.display='none';el('gDistArea').style.display='none';
+  el('gShotRow').style.display='none';
+  el('gShop').style.display='flex';el('gShop').style.flex='1';
+  const pool=[...SHOP_POOL].sort(()=>Math.random()-0.5).slice(0,3);
+  const cont=el('gShopList');cont.innerHTML='';
+  pool.forEach(cid=>{
+    const c=CM[cid];if(!c)return;
+    const d=document.createElement('div');d.className='sCard';
+    d.innerHTML='<div class="sIc">'+c.ic+'</div><div class="sBody"><div class="sName">'+c.nm+'</div><div class="sDesc">'+c.desc+'</div><span class="sTag">効果カード</span></div>';
+    d.onclick=()=>shopPick(cid);cont.appendChild(d);
+  });
+}
+function shopPick(cid){
+  hand.push(cid);renderHand();
+  showMsg('🃏 '+CM[cid].nm+' を手札に追加！');
+  setTimeout(()=>{hideMsg();nextHole();},700);
+}
+function shopSkip(){nextHole();}
+function nextHole(){
+  G.nH++;el('gShop').style.display='none';el('gShop').style.flex='';
+  el('gCardArea').style.display='';el('gDistArea').style.display='flex';el('gShotRow').style.display='flex';
+  holeStart();
+}
+
+// ─── エンディング ───
+function endGame(){
+  el('endEmoji').textContent=totalSc<=-5?'🏆':totalSc<=-2?'🦅':totalSc<=0?'⛳':'😅';
+  el('endTitle').textContent=totalSc<=-5?'LEGEND':totalSc<=-2?'EAGLE RUN':totalSc<=0?'CLEAR!':'TOUGH RUN';
+  const sg=totalSc<0?'':totalSc>0?'+':'±';
+  el('endScore').innerHTML='<span style="color:'+(totalSc<0?'#44ff88':totalSc>0?'#ff8844':'#ffdd44')+'">'+sg+totalSc+'</span>';
+  el('endCards').textContent='🃏 使用カード: '+acquired.length+'枚';
+  let rows='';
+  holeLog.forEach((r,i)=>{
+    const col=r.df<0?'#44ff88':r.df===0?'#dde':r.df===1?'#ffaa44':'#ff6655';
+    rows+='<div class="row">H'+(i+1)+' Par'+r.par+'<span style="color:'+col+'">'+r.ns+'打('+(r.df>0?'+':'')+r.df+')</span></div>';
+  });
+  if(G.nHIO)rows+='<div class="row">Hole in One<span>'+G.nHIO+'回</span></div>';
+  if(G.nEAG)rows+='<div class="row">Eagle以上<span>'+G.nEAG+'回</span></div>';
+  if(G.nBIR)rows+='<div class="row">Birdie<span>'+G.nBIR+'回</span></div>';
+  rows+='<div class="row">最長進行<span>'+G.maxy+'マス</span></div>';
+  el('endBox').innerHTML=rows;sc('scEnd');
+}
+
+// ─── フラッシュ/メッセージ ───
+function showFlash(t,s,c){el('gFlashTxt').textContent=t;el('gFlashTxt').style.color=c||'#fff';el('gFlashSub').textContent=s||'';el('gFlash').style.display='block';}
+function hideFlash(){el('gFlash').style.display='none';}
+let _mt;
+function showMsg(t){el('gMsg').textContent=t;el('gMsg').style.display='block';clearTimeout(_mt);_mt=setTimeout(hideMsg,2400);}
+function hideMsg(){el('gMsg').style.display='none';}
+</script>
+</body>
+</html>
