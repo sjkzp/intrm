@@ -63,10 +63,10 @@ const L = {
     lbTot:'合計', lbCount:'回',
     // 遊び方
     htTitle:'HOW TO PLAY',
-    htBasicsH:'⛳ 基本操作', htBasicsP:'クラブを選んで「SHOT」ボタンを押すとゲージが動きます。ショットするとボールが飛びます。ゲージが高いほど飛距離が伸びます。',
-    htMobileH:'📱 スマホ操作', htMobileP:'<b>タップ</b> SHOT → <b>■STOP</b> でショット',
+    htBasicsH:'⛳ 基本操作', htBasicsP:'クラブを選んで「打つ」ボタンを押すとゲージが動きます。ショットするとボールが飛びます。ゲージが高いほど飛距離が伸びます。',
+    htMobileH:'📱 スマホ操作', htMobileP:'<b>タップ</b> 打つ → <b>■STOP</b> でショット',
     htPcH:'🖥️ PC操作', htPcP:'<b>クリック長押し</b> SHOT → 離してショット',
-    htWindH:'💨 風待ち', htWindP:'WAITボタンで風の値が変わります。＋なら飛距離が伸び、－なら縮みます。',
+    htWindH:'💨 風待ち', htWindP:'風待ちボタンで風の値が変わります。＋なら飛距離が伸び、－なら縮みます。',
     htTerrainH:'🏌️ 地形',
     htTerrainList:'<li><b style="color:#7fd87f">ROUGH</b>：飛距離が落ちます</li><li><b style="color:#ddcc44">BUNKER</b>：飛距離大幅減。アイアン(5I/8I)のみ使用可</li><li><b style="color:#6699ff">WATER / OB</b>：ペナルティ＋1打、前の位置から打ち直し</li><li><b style="color:#00ff88">GREEN</b>：パター(PT)を使用。傾斜±0のガイドが表示されます</li>',
     htSkillH:'✨ 特技',
@@ -423,272 +423,6 @@ const C2=[null,
  {par:6,wa:9,wz:9,kz:1,y:864,g:13,gkz:3,gwa:4,gwz:5,Ra:[140,287,405],Rz:[193,327,572],Wa:[328,710,800],Wz:[404,774,850],Ba:[219,573,775],Bz:[251,602,790]},
 ];
 
-// =============================================
-// ローグライトモード（cr=3）
-// =============================================
-
-// C2ホールに難易度タグを付与（C2インデックスに対応）
-const C2_META = [null,
-  {diff:1, label:'Par5 542yd'},  // H1
-  {diff:1, label:'Par3 155yd'},  // H2
-  {diff:2, label:'Par5 552yd'},  // H3
-  {diff:3, label:'Par6 666yd'},  // H4
-  {diff:2, label:'Par4 492yd'},  // H5
-  {diff:3, label:'Par5 787yd'},  // H6
-  {diff:2, label:'Par3 254yd'},  // H7
-  {diff:2, label:'Par5 478yd'},  // H8
-  {diff:3, label:'Par6 864yd'},  // H9
-];
-
-// RL専用コース（動的生成）。loadHD()がcr===3の時に参照
-let C_RL = [null];
-
-// RL用カードデッキ状態
-const RL = {
-  active: false,
-  _pending: false,
-  deck: [],       // 手持ちカード [{id, name, type, used}]
-  offered: [],    // ショップ提示中の3枚
-  holeBuffs: {},  // このホール有効なバフ {飛距離倍率, OB免除, etc.}
-};
-
-// カードマスターデータ
-const CARD_MASTER = [
-  // --- 飛距離カード (type:'dist') ---
-  {id:'d1', name:'1Wブースト',    type:'dist', desc:'+20yd (1H)',    icon:'🏌',
-   apply: ()=>{ G.w1 += 20; RL.holeBuffs._w1bonus = (RL.holeBuffs._w1bonus||0)+20; }},
-  {id:'d2', name:'全クラブ強化',  type:'dist', desc:'全クラブ+10yd', icon:'⬆',
-   apply: ()=>{ G.w1+=10; G.w2+=10; G.i1+=10; G.i2+=10; RL.holeBuffs._allClub=true; }},
-  {id:'d3', name:'アイアン磨き',  type:'dist', desc:'5I・8I +15yd',  icon:'🔧',
-   apply: ()=>{ G.i1+=15; G.i2+=15; }},
-  {id:'d4', name:'風読み強化',    type:'dist', desc:'風待ち+2回',    icon:'💨',
-   apply: ()=>{ G.nwt+=2; G.nw+=2; }},
-  {id:'d5', name:'パター精度UP',  type:'dist', desc:'PT全距離+5m',   icon:'🎯',
-   apply: ()=>{ G.p1+=5; G.p2+=5; }},
-
-  // --- 特技カード (type:'skill') ---
-  {id:'s1', name:'パワーショット', type:'skill', desc:'ゲージ上限120%', icon:'💪',
-   apply: ()=>{ G.nwz+=1; }},
-  {id:'s2', name:'地形無視',       type:'skill', desc:'ROUGH/BKR無効',  icon:'🦺',
-   apply: ()=>{ G.nwz+=1; }},
-  {id:'s3', name:'打ち直し権',     type:'skill', desc:'ペナなし再ショット', icon:'↩',
-   apply: ()=>{ G.nwz+=1; }},
-  {id:'s4', name:'風消しカード',   type:'skill', desc:'風・傾斜を±0に',   icon:'🌀',
-   apply: ()=>{ G.nwz+=1; }},
-  {id:'s5', name:'特技+2',         type:'skill', desc:'特技回数+2',        icon:'✨',
-   apply: ()=>{ G.nwz+=2; }},
-
-  // --- バフカード (type:'buff') ---
-  {id:'b1', name:'OB免除券',    type:'buff', desc:'OB→ROUGHに変換(1H)', icon:'🛡',
-   apply: ()=>{ RL.holeBuffs.obImmune = true; }},
-  {id:'b2', name:'池ポチャ保険', type:'buff', desc:'池→ROUGHに変換(1H)', icon:'🚤',
-   apply: ()=>{ RL.holeBuffs.waterImmune = true; }},
-  {id:'b3', name:'ポイント補填', type:'buff', desc:'開始pts+100',         icon:'💰',
-   apply: ()=>{ G.pts = Math.min(G.pts+100, 9999); }},
-  {id:'b4', name:'Par保証',      type:'buff', desc:'このホールParで終了', icon:'⛳',
-   apply: ()=>{ RL.holeBuffs.parGuarantee = true; }},
-  {id:'b5', name:'スコアUP',     type:'buff', desc:'ホール得点+50pts',    icon:'📈',
-   apply: ()=>{ RL.holeBuffs.scoreBuff = 50; }},
-];
-
-// カードIDからマスターデータ取得
-function cardById(id){ return CARD_MASTER.find(c=>c.id===id); }
-
-// RL用コース生成（C2の9ホールをシャッフル＋制約チェック）
-function rlGenerateCourse(){
-  const pool = [1,2,3,4,5,6,7,8,9]; // C2ホールインデックス
-  const MAX_RETRY = 10;
-  for(let attempt=0; attempt<MAX_RETRY; attempt++){
-    // シャッフル
-    for(let i=pool.length-1;i>0;i--){
-      const j=Math.floor(Math.random()*(i+1));
-      [pool[i],pool[j]]=[pool[j],pool[i]];
-    }
-    // 制約チェック
-    if(rlCheckConstraints(pool)){
-      C_RL = [null, ...pool.map(idx=>({...C2[idx]}))];
-      return pool; // 採用されたC2インデックスの順序
-    }
-  }
-  // フォールバック：固定安全配列
-  const safe = [2,5,7,1,3,8,6,4,9];
-  C_RL = [null, ...safe.map(idx=>({...C2[idx]}))];
-  return safe;
-}
-
-function rlCheckConstraints(arr){
-  // Par合計 34〜38
-  const parSum = arr.reduce((s,idx)=>s+(C2[idx]||{par:5}).par, 0);
-  if(parSum<34||parSum>38) return false;
-  // Par3を1〜2本含む
-  const par3cnt = arr.filter(idx=>(C2[idx]||{}).par===3).length;
-  if(par3cnt<1||par3cnt>2) return false;
-  // Par6は最大2本
-  const par6cnt = arr.filter(idx=>(C2[idx]||{}).par===6).length;
-  if(par6cnt>2) return false;
-  // 前半(H1-3)に難易度3は1本まで
-  const earlyHard = arr.slice(0,3).filter(idx=>(C2_META[idx]||{}).diff===3).length;
-  if(earlyHard>1) return false;
-  return true;
-}
-
-// RL初期デッキ生成（キャラ別）
-function rlInitDeck(ch){
-  // 全キャラ共通スターター
-  const starter = ['d1','d4','s1'];
-  // キャラ固有カード
-  const charaBonusMap = {
-    1:['b2'],   // 水無：池ポチャ保険
-    2:['d2'],   // 走馬：全クラブ強化
-    3:['s3'],   // 綴：打ち直し権
-    4:['s4'],   // 響子：風消し
-    5:['b1'],   // フィリップ：OB免除
-    6:['b5'],   // 六花：スコアUP
-  };
-  const ids = [...starter, ...(charaBonusMap[ch]||[])];
-  RL.deck = ids.map(id=>({ id, ...cardById(id), used:false }));
-}
-
-// RL開始エントリ
-function startGameRL(){
-  G.sc=0; G.nH=1; G.nHIO=0; G.nALB=0; G.nEAG=0; G.nBIR=0; G.nCHP=0; G.n4=0; G.maxy=0;
-  G.holeScores=[]; G.holePars=[];
-  G.sm=0; G.ss=0; G.st=0; G.sk=0; G.sp=0; G.sh=0;
-  G.cr=3; G.pts=1500;
-  RL.active=true; RL.deck=[]; RL.offered=[]; RL.holeBuffs={};
-  rlInitDeck(G.ch);
-  rlGenerateCourse();
-  applyStats();
-  // RL用デッキのカードを即時適用（永続バフ）
-  RL.deck.forEach(card=>{
-    if(card.type==='dist') card.apply();
-  });
-  const d=CD[G.ch];
-  const cf=$('cFace'); if(cf) cf.innerHTML=`<div style="font-size:52px;color:${d.col}">${d.ic}</div>`;
-  const ci=document.getElementById('gCharaImg');
-  if(ci&&typeof CHARA_IMG!=='undefined'&&CHARA_IMG[G.ch]){ci.src=CHARA_IMG[G.ch];ci.style.display='block';}
-  seStart();
-  sc('scG'); G.cmd=4; holeStart();
-}
-
-// RL用ショップ（ホール後カード選択）
-function rlEnterShop(){
-  G.nH++;
-  G.ns=0; G.cmd=11; loadHD();
-  // ショップUI流用
-  const scg=document.getElementById('scG');
-  if(scg) scg.style.background='#030d14';
-  const gt=document.getElementById('gTop');
-  if(gt) gt.style.background='#04100e';
-  document.getElementById('gBtnRow').style.background='#030c10';
-  document.getElementById('gClubArea').style.background='#030c10';
-  const sfShop=document.getElementById('gShotFormula');
-  if(sfShop){sfShop.textContent='';sfShop.style.display='none';} G._formula='';
-  E('bShot',false); $('bShot').textContent='スキップ'; $('bShot').className='';
-  document.getElementById('gClubNormal').style.display='none';
-  document.getElementById('gClubPutt').style.display='none';
-  document.getElementById('gClubShop').style.display='flex';
-  S('gGiveUp',false); S('bPro',false); S('gTerCard',false);
-  document.getElementById('gGaugeArea').style.display='none';
-  T('gHlV',G.nH); updPtsDisp(); T('gParV',G.par);
-  S('speBox','none');
-  document.querySelectorAll('#gTop .gTopSeg').forEach(s=>{s.style.visibility='';});
-  const gPtsEl=document.getElementById('gPtsV');
-  if(gPtsEl) gPtsEl.style.visibility='';
-  document.getElementById('bShot').style.visibility='';
-  S('lRest','none'); S('lFly','none');
-  { const nh=C_RL[G.nH]||C_RL[1]; if(nh) T('vYd1',nh.y); }
-  S('bVwC','');
-  E('bWnd',false); E('bSpe',false);
-  document.getElementById('bWnd').style.display='none';
-  document.getElementById('bSpe').style.display='none';
-  // バナー
-  const s=G.sc, sg=s<0?'-':s>0?'+':'±';
-  T('gGaugeClub','');
-  const banner=document.getElementById('gShopBanner');
-  if(banner){
-    document.getElementById('gShopScore').textContent=sg+Math.abs(s);
-    banner.style.display='flex';
-  }
-  const ti=document.getElementById('gTerrainInfo');
-  if(ti){ti.innerHTML='';ti.style.display='none';}
-  const mpShop=document.getElementById('mPos');
-  if(mpShop) mpShop.style.display='none';
-  // 進むボタン
-  document.getElementById('bPro').style.display='block';
-  T('bPro','次のホールへ ›');
-  // カード3枚提示
-  rlBuildCardShop();
-}
-
-// カードショップUI構築
-function rlBuildCardShop(){
-  // 未使用カード候補（バフ・スキル・飛距離をランダムに3枚）
-  const pool = CARD_MASTER.filter(c=>c.id!=='b4'); // Par保証は重すぎるので除外
-  const shuffled = [...pool].sort(()=>Math.random()-0.5);
-  RL.offered = shuffled.slice(0,3);
-  const sc2=document.getElementById('gClubShop');
-  sc2.innerHTML='';
-  sc2.style.flexWrap='wrap';
-  sc2.style.gap='6px';
-  RL.offered.forEach((card,i)=>{
-    const btn=document.createElement('button');
-    btn.className='cBtn';
-    btn.style.cssText='flex:1;min-width:80px;white-space:normal;font-size:11px;line-height:1.4;padding:8px 6px;text-align:center;min-height:64px';
-    btn.innerHTML=`<span style="font-size:18px">${card.icon}</span><br><b>${card.name}</b><br><span style="color:#aaa;font-size:10px">${card.desc}</span>`;
-    btn.onclick=()=>rlSelectCard(i);
-    sc2.appendChild(btn);
-  });
-  // gClubNormal も使ってデッキ表示（手持ちカード枚数）
-  const nc=document.getElementById('gClubNormal');
-  nc.style.display='flex';
-  nc.innerHTML=`<div style="color:#88ccaa;font-size:11px;padding:4px 8px;flex:1">🃏 手持ち：${RL.deck.length}枚</div>`;
-  T('gGaugeClub','🃏 カードを選ぼう');
-  T('gGaugeCost','');
-}
-
-function rlSelectCard(i){
-  const card=RL.offered[i];
-  if(!card) return;
-  // デッキに追加
-  RL.deck.push({...card, used:false});
-  // 永続バフ系（dist）はすぐ適用
-  if(card.type==='dist') card.apply();
-  seBuy();
-  // ショップをクリア
-  const sc2=document.getElementById('gClubShop');
-  sc2.innerHTML=`<div style="color:#8fdf8f;font-size:13px;padding:12px;flex:1;text-align:center">✅ ${card.name} を入手！<br><span style="font-size:10px;color:#aaa">${card.desc}</span></div>`;
-  const nc=document.getElementById('gClubNormal');
-  nc.innerHTML=`<div style="color:#88ccaa;font-size:11px;padding:4px 8px;flex:1">🃏 手持ち：${RL.deck.length}枚</div>`;
-  E('bShot',false);
-}
-
-// RL用loadHDのオーバーライド（cr===3時にC_RLを参照）
-// → loadHD関数内で cr===3 を分岐追加する
-
-// RL proCk（次ホールへ進む）
-function rlProCk(){
-  // バフリセット（1ホール限定バフ）
-  if(RL.holeBuffs._w1bonus){ G.w1-=RL.holeBuffs._w1bonus; }
-  RL.holeBuffs={};
-  // 永続スキルカード再適用（RL.deckのdistカードは累積済みなのでスキップ）
-  document.getElementById('gSubPanel').className='';
-  const tiPro=document.getElementById('gTerrainInfo');
-  if(tiPro){tiPro.innerHTML='';tiPro.style.display='none';}
-  document.getElementById('bPro').style.display='none';
-  document.getElementById('gClubShop').style.display='none';
-  document.getElementById('gStYd4') && (document.getElementById('gStYd4').style.display='none');
-  document.getElementById('gGaugeArea').style.display='';
-  S('gTerCard',true);
-  S('bVwS','none');
-  // WAITボタン・SPEボタン再表示
-  document.getElementById('bWnd').style.display='';
-  document.getElementById('bWnd').style.opacity='';
-  document.getElementById('bSpe').style.display='';
-  document.getElementById('bSpe').style.opacity='';
-  G.cmd=4; holeStart();
-}
-
 const G={
  bgm:true,cmd:0,ch:0,hcy:false,cr:0,
  nH:1,par:4,wa:0,wz:0,kz:0,y1:0,y2:0,y3:0,gz:15,gkz:0,gwa:0,gwz:0,holeScores:[],holePars:[],
@@ -718,7 +452,7 @@ function applyStats(){
 }
 
 function loadHD(){
-  const db=G.cr===3?C_RL:G.cr===2?C2:C1;
+  const db=G.cr===2?C2:C1;
   const h=db[G.nH]||db[1];
   G.par=h.par;G.wa=h.wa;G.wz=h.wz;G.kz=h.kz;G.y1=h.y;G.gz=h.g;
   G.gkz=h.gkz||0;G.gwa=h.gwa||0;G.gwz=h.gwz||0; // グリーン専用傾斜
@@ -1014,7 +748,7 @@ function startGameVS(){
 // VSモード用 afterJ: プレイヤーターン終了→CPUターン or ゲーム終了
 function afterJVS(){
   // プレイヤーターン終了
-  G.pts+=G.mpt; updPtsDisp(); S('scBox','none'); S('terBox','flex');
+  G.pts+=G.mpt; T('gPtsV',G.pts); S('scBox','none'); S('terBox','flex');
   // 重複push防止: このホールがまだ記録されていない場合のみpush
   if(G.holeScores.length < G.nH){
     G.holeScores.push(G.ns); G.holePars.push(G.par);
@@ -1455,7 +1189,7 @@ function cpuFireShot(){
   // pts消費
   // VS.cpuPts=Math.max(0,VS.cpuPts-G.mpt);
   // G.pts=VS.cpuPts; 
-  // updPtsDisp();
+  // T('gPtsV',G.pts);
   G.t0=Date.now();
   if(G.ji===5){ startPtCPU(); } else { startMvCPU(); }
 }
@@ -2264,7 +1998,7 @@ function cpuAutoFinish(){
 // VSリザルト表示
 function showVSResult(){
   // ★全ホール完走時にDBへ保存（VSモードはendGameを通らないためここで実行）
-  const _lastH=(G.cr===2||G.cr===3)?9:6;
+  const _lastH=G.cr===2?9:6;
   if(G.holeScores.length >= _lastH){
     const ch=VS._savedCh||G.ch;
     dbSaveRunBest(G.cr, ch, G.holeScores, G.holePars);
@@ -2439,7 +2173,7 @@ function startPt(){
       } else {
         // 届かず: 次打へ
         G.cp=G.y1-G.y2;updHUD();updPos();
-        const lastP=(G.cr===2||G.cr===3)?9:6;
+        const lastP=G.cr===2?9:6;
         if(G.ns>=(G.par+4)){
           S('gUp','block');S('speBox','none');showGiveUpFlash();
           if(G.nH===lastP){G.ns+=2;G.sc+=(G.ns-G.par);T('bPro',L[_lang].lbFinish);S('bPro','block');}
@@ -2471,7 +2205,7 @@ function dropChk(){
   setTer(G.ji, G.ji===5);
   // OBは即座にバーを非表示
   if(G.ji===6){ const mp=$('mPos'); if(mp) mp.style.display='none'; }
-  const last=(G.cr===2||G.cr===3)?9:6;
+  const last=G.cr===2?9:6;
 
   // グリーンにワンショットで乗った = チップイン扱い（ホールインワンは ns=1）
   if(G.ji===5){
@@ -2525,14 +2259,13 @@ function dropChk(){
 
 function afterJ(){
   if(VS.active){afterJVS();return;}
-  G.pts+=G.mpt;updPtsDisp();S('scBox','none');S('terBox','flex');
+  G.pts+=G.mpt;T('gPtsV',G.pts);S('scBox','none');S('terBox','flex');
   // ホール結果を記録
   G.holeScores.push(G.ns);
   G.holePars.push(G.par);
   rankime();
-  const last=(G.cr===2||G.cr===3)?9:6;
+  const last=G.cr===2?9:6;
   if(G.nH>=last){endGame();return;}
-  if(G.cr===3){ rlEnterShop(); return; }
   enterShop();
 }
 
@@ -2550,20 +2283,6 @@ function nextShot(){
   S('bx2','none');S('bx3','none');S('bx1','block');
   S('bVwC','block');S('bVwS','none');S('bTj2','none');
   if(G.ji===4||G.ji===6){
-    // RL: OB免除・水免除バフチェック
-    const isWater = G.ji===4;
-    const isOB = G.ji===6;
-    if(G.cr===3 && isWater && RL.holeBuffs.waterImmune){
-      // 池ポチャ→ROUGH変換（ペナなし）
-      RL.holeBuffs.waterImmune=false;
-      G.ji=2; setTer(G.ji); updPos();
-      T('gGaugeClub','💧→ROUGH (免除！)');
-    } else if(G.cr===3 && isOB && RL.holeBuffs.obImmune){
-      // OB→ROUGH変換（ペナなし）
-      RL.holeBuffs.obImmune=false;
-      G.ji=2; setTer(G.ji); updPos();
-      T('gGaugeClub','🛡 OB→ROUGH (免除！)');
-    } else {
     G.ns++;             // ペナルティ +1打
     T('vShot',G.ns);
     G.cp=G.lp;G.y2=G.y1-G.cp;T('vYd2',G.y2);
@@ -2574,7 +2293,6 @@ function nextShot(){
     }
     if(G.cp===0)G.ji=1;setTer(G.ji);
     updPos(); // ji再判定後にバー位置を更新（OB解除で再表示）
-    }
   }
   if(G.ji===5){
     // グリーン上: ここで「傾」ラベルに更新（>タップ後に反映）
@@ -2678,7 +2396,7 @@ function doUndo(){
     G.spc=0;G.mpt=0;G.cmd=4;
     // gMax をキャラデフォルトに戻す（水無特技後の打ち直し対応）
     G.gMax=CD[G.ch].mx;
-    updPtsDisp();T('vYd2',G.y2);T('vYd3','0');T('vShot',G.ns);
+    T('gPtsV',G.pts);T('vYd2',G.y2);T('vYd3','0');T('vShot',G.ns);
     setTer(G.ji);updPos();
     // クラブエリアを再表示してからresetClubs
     document.getElementById('gClubNormal').style.display='flex';
@@ -2798,15 +2516,7 @@ function onStart(){
   drawSlots(); sc('scC'); G.cmd=1;
 }
 
-function onStartRL(){
-  RL._pending=true; // RL開始フラグ
-  drawSlots(); sc('scC'); G.cmd=1;
-  // ヘッダーをRL用に変更
-  _setCharaHeader('🃏 ROGUELITE', 'キャラクターを選んでください', 'rlTitle', 'rlSub');
-  // SelectボタンをRL用に
-  const btn=document.getElementById('cBtnNormal');
-  if(btn){ btn.style.background='linear-gradient(#200830,#180520)'; btn.style.borderColor='#884acc'; btn.style.color='#cc99ff'; }
-}
+
 // ============ UI アダプター ============
 // =============================================
 // UI アダプター層（スマホ対応・旧API互換）
@@ -2867,18 +2577,6 @@ const ID_MAP = {
 const $=id=>{const mapped=ID_MAP.hasOwnProperty(id)?ID_MAP[id]:id; return mapped?document.getElementById(mapped):null;};
 const T=(id,v)=>{const e=$(id);if(e)e.textContent=v;};
 const S=(id,v)=>{const e=$(id);if(!e)return;
-// RL時のpts表示を一元管理するヘルパー
-function updPtsDisp(){
-  const el=document.getElementById('gPtsV');
-  const lb=document.getElementById('lbPoints');
-  if(G.cr===3){
-    if(el) el.textContent=RL.deck.length+'🃏';
-    if(lb) lb.textContent='DECK';
-  } else {
-    if(el) el.textContent=G.pts;
-    if(lb) lb.textContent='POINTS';
-  }
-}
   if(v==='flex')e.style.display='flex';
   else if(v||v==='')e.style.display=v===true?'':v;
   else e.style.display='none';
@@ -3012,14 +2710,6 @@ function confirmChara(){
   G.ch=pendingChara; G.hcy=false;
   applyStats();
   document.getElementById('cDetail').style.display='none';
-  // RLモードはコース選択をスキップして直接開始
-  if(RL._pending){
-    RL._pending=false;
-    const btn=document.getElementById('cBtnNormal');
-    if(btn){ btn.style.background=''; btn.style.borderColor=''; btn.style.color=''; }
-    startGameRL();
-    return;
-  }
   goToCR();
 }
 
@@ -3065,7 +2755,7 @@ function noClick(){
 // ゲーム HUD アダプター
 // =============================================
 function updHUD(){
-  T('gHlV',G.nH); updPtsDisp();
+  T('gHlV',G.nH); T('gPtsV',G.pts);
   T('gParV',G.par); T('gShotV',G.ns);
   T('vYd1',G.y1); T('vYd2',Math.abs(G.y2)); T('vYd3',G.y3);
   // 現在位置: アニメ中(G.mv!=null)はcp+y3、停止中はcp
@@ -3240,8 +2930,8 @@ function sRelease(){
   $('bShot').className='';
   $('bShot').textContent=L[_lang].lbShotBtn;
   E('bShot',false);
-  if(G.cr!==3) G.pts=Math.max(0,G.pts-G.mpt);
-  updPtsDisp();
+  G.pts=Math.max(0,G.pts-G.mpt);
+  T('gPtsV',G.pts);
   seShot();
   // ショット計算前の値をキャプチャ
   const _ng=G.ng, _gW=G.gW, _gMax=G.gMax, _wind=G.wind, _ji=G.ji;
@@ -3257,7 +2947,7 @@ function sCk(){
   else if(G.cmd===16){ vsStartPlayer(); return; } // CPU番終了後→1P開始
   else if(G.cmd===17){ vsStartCPU(); return; }    // 1P終了後→CPU開始
   else if(G.cmd===15){          // ギブアップ後→次ホール
-    const lastG=(G.cr===2||G.cr===3)?9:6;
+    const lastG=G.cr===2?9:6;
     if(G.nH>=lastG){
       if(VS.active) afterJ(); // VS時はafterJVSを経由してVSリザルトへ
       else endGame();
@@ -3417,10 +3107,9 @@ function selShop(n){
   E('bShot',true); $('bShot').textContent=L[_lang].lbBuy; $('bShot').className='ready';
 }
 function shopBuy(){
-  if(G.cr===3) return; // RLモードは通常ショップ不使用
   if(!G.sel||G.pts<G.price)return;
   seBuy();
-  G.pts-=G.price;updPtsDisp();
+  G.pts-=G.price;T('gPtsV',G.pts);
   if(G.sel===1){G.w1+=(G.kw1===3?20:10);G.kw1++;}
   else if(G.sel===2){G.w2+=(G.kw2===3?20:10);G.kw2++;}
   else if(G.sel===3){G.i1+=(G.ki1===3?20:10);G.ki1++;}
@@ -3451,7 +3140,7 @@ function enterShop(){
   S('gGiveUp',false);S('bPro',false);S('gTerCard',false);
   document.getElementById('gGaugeArea').style.display='none';
   // gClubArea は表示したまま（ショップボタンを見せる）
-  T('gHlV',G.nH);updPtsDisp();T('gParV',G.par);
+  T('gHlV',G.nH);T('gPtsV',G.pts);T('gParV',G.par);
   S('speBox','none'); // 特技名ラベルを非表示（カップイン時に表示されたままになる問題）
   // visibility を確実に戻す（CPU番で非表示にした可能性あり）
   document.querySelectorAll('#gTop .gTopSeg').forEach(s=>{s.style.visibility='';});
@@ -3508,7 +3197,6 @@ function enterShop(){
   if(mpShop) mpShop.style.display='none';
 }
 function proCk(){
-  if(G.cr===3){ rlProCk(); return; }
   if(G.cmd===11){
     document.getElementById('gSubPanel').className='';
     const tiPro=document.getElementById('gTerrainInfo');
@@ -3628,7 +3316,7 @@ function csend(){afterJ();}
 // =============================================
 function endGame(){
   // 最終ホールのスコアが未記録の場合（ギブアップ経由など）は補完
-  const _lastH=(G.cr===2||G.cr===3)?9:6;
+  const _lastH=G.cr===2?9:6;
   if(G.holeScores.length < _lastH && G.ns > 0){
     G.holeScores.push(G.ns);
     G.holePars.push(G.par);
@@ -3650,14 +3338,12 @@ function endGame(){
     ? `<img src="${endImgSrc}" style="width:165px;height:165px;object-fit:contain">`
     : `<span style="font-size:56px">${d.ic}</span>`;
   document.getElementById('endFig').style.borderColor='';
-  const cr={1:'Practice',2:'Championship',3:'Roguelite'};
+  const cr={1:'Practice',2:'Championship',3:'Edit'};
   T('endCrs',cr[G.cr]||'');
   const s=G.sc, sg=s<0?'-':s>0?'+':'±';
   document.getElementById('endScore').innerHTML=`<span style="color:${s<=0?'#4f4':'#f84'}">${sg}${Math.abs(s)}</span>`;
   document.getElementById('endScore').style.fontSize='32px';
-  document.getElementById('endPts').textContent=G.cr===3
-    ? '🃏 デッキ '+RL.deck.length+'枚'
-    : G.pts+' pts';
+  document.getElementById('endPts').textContent=G.pts+' pts';
   let rows='';
   if(G.nHIO>0)rows+=`<div class="row">Hole in One<span>${G.nHIO}${L[_lang].lbCount}</span></div>`;
   if(G.nALB>0)rows+=`<div class="row">Albatross<span>${G.nALB}${L[_lang].lbCount}</span></div>`;
@@ -3668,8 +3354,6 @@ function endGame(){
   // スコアカード
   rows+=`<div style="margin-top:10px;border-top:1px solid #1a1a2a;padding-top:8px">${buildScoreCardHTML()}</div>`;
   document.getElementById('endStatBox').innerHTML=rows;
-  // RLモード終了時にフラグリセット
-  if(G.cr===3){ RL.active=false; RL.deck=[]; RL.offered=[]; RL.holeBuffs={}; }
   sc('scEnd');
 }
 // =============================================
