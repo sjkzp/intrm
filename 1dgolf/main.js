@@ -63,10 +63,10 @@ const L = {
     lbTot:'合計', lbCount:'回',
     // 遊び方
     htTitle:'HOW TO PLAY',
-    htBasicsH:'⛳ 基本操作', htBasicsP:'クラブを選んで「SHOT」ボタンを押すとゲージが動きます。ショットするとボールが飛びます。ゲージが高いほど飛距離が伸びます。',
-    htMobileH:'📱 スマホ操作', htMobileP:'<b>タップ</b> SHOT → <b>■STOP</b> でショット',
+    htBasicsH:'⛳ 基本操作', htBasicsP:'クラブを選んで「打つ」ボタンを押すとゲージが動きます。ショットするとボールが飛びます。ゲージが高いほど飛距離が伸びます。',
+    htMobileH:'📱 スマホ操作', htMobileP:'<b>タップ</b> 打つ → <b>■STOP</b> でショット',
     htPcH:'🖥️ PC操作', htPcP:'<b>クリック長押し</b> SHOT → 離してショット',
-    htWindH:'💨 風待ち', htWindP:'WAITボタンで風の値が変わります。＋なら飛距離が伸び、－なら縮みます。',
+    htWindH:'💨 風待ち', htWindP:'風待ちボタンで風の値が変わります。＋なら飛距離が伸び、－なら縮みます。',
     htTerrainH:'🏌️ 地形',
     htTerrainList:'<li><b style="color:#7fd87f">ROUGH</b>：飛距離が落ちます</li><li><b style="color:#ddcc44">BUNKER</b>：飛距離大幅減。アイアン(5I/8I)のみ使用可</li><li><b style="color:#6699ff">WATER / OB</b>：ペナルティ＋1打、前の位置から打ち直し</li><li><b style="color:#00ff88">GREEN</b>：パター(PT)を使用。傾斜±0のガイドが表示されます</li>',
     htSkillH:'✨ 特技',
