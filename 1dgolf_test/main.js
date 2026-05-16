@@ -777,16 +777,14 @@ function startGameVS(){
   VS.cpuSc=0; VS.cpuPts=1300; VS.cpuScores=[]; VS.cpuPars=[];
   VS.playerTurn=true; VS.playerSc=0; VS.playerScores=[];
   if(_debugMode){
-    // デバッグ: 1PスキップのためstartGameを呼ばずに直接CPUホールへ
-    startGame(); // G/コース初期化のため呼ぶが、直後にスキップ
-    // holeStartが完了するまで少し待ってからスキップ処理
-    setTimeout(()=>{
-      if(!_debugMode||!VS.active) return;
-      G.ns=G.par; G.mpt=0; // スコア加算なし
-      if(G.holeScores.length < G.nH){ G.holeScores.push(null); G.holePars.push(G.par); VS.playerScores.push(null); }
-      VS.playerSc=G.sc; VS.playerTurn=false;
-      enterShopVS();
-    }, 300);
+    // デバッグ: 画面遷移なしで状態初期化のみ行いCPUへ
+    _initGameState();
+    seStart();
+    loadHD(); // ホールデータロード
+    G.ns=G.par; G.mpt=0;
+    G.holeScores.push(null); G.holePars.push(G.par); VS.playerScores.push(null);
+    VS.playerSc=G.sc; VS.playerTurn=false;
+    enterShopVS(); // → 300ms後にvsStartCPU
   } else {
     startGame();
   }
@@ -2525,16 +2523,18 @@ function rankime(){
   const sv=[null,'sm','ss','st','sk','sp','sh'];if(G.ch>=1&&G.ch<=6)G[sv[G.ch]]=G.sc;
 }
 
-function startGame(){
+function _initGameState(){
   G.sc=0;G.nH=1;G.nHIO=0;G.nALB=0;G.nEAG=0;G.nBIR=0;G.nCHP=0;G.n4=0;G.maxy=0;
   G.holeScores=[];G.holePars=[];
   G.sm=0;G.ss=0;G.st=0;G.sk=0;G.sp=0;G.sh=0;
-  // face (新UIではcFaceなし、endFigに反映)
   const d=CD[G.ch];
   const cf=$('cFace'); if(cf) cf.innerHTML=`<div style="font-size:52px;color:${d.col}">${d.ic}</div>`;
-  // ゲーム画面のキャラ画像を設定
   const ci=document.getElementById('gCharaImg');
   if(ci&&CHARA_IMG[G.ch]){ci.src=CHARA_IMG[G.ch];ci.style.display='block';}
+}
+
+function startGame(){
+  _initGameState();
   seStart();
   sc('scG'); G.cmd=4; holeStart();
 }
