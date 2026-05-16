@@ -60,7 +60,7 @@ const L = {
     lbWind:'風', lbSlope:'傾',
     lbShotBtn:'打つ', lbUseBtn:'使用', lbWaitBtn:'風待ち',
     lbBuy:'購入', lbSkillPlus:'特技+1', lbMax:'MAX', lbNopts:'pts不足', lbNextHole:'次のホールへ ›', lbFinish:'コース終了', lbStop:'■ STOP',
-    lbTot:'合計', lbCount:'回',
+    lbTot:'合計', lbCount:'回', lbTitle:'タイトルへ',
     // 遊び方
     htTitle:'HOW TO PLAY',
     htBasicsH:'⛳ 基本操作', htBasicsP:'クラブを選んで「SHOT」ボタンを押すとゲージが動きます。ショットするとボールが飛びます。ゲージが高いほど飛距離が伸びます。',
@@ -112,7 +112,7 @@ const L = {
     lbWind:'WIND', lbSlope:'SLP',
     lbShotBtn:'SHOT', lbUseBtn:'USE', lbWaitBtn:'WAIT',
     lbBuy:'BUY', lbSkillPlus:'SKILL+1', lbMax:'MAX', lbNopts:'pts low', lbNextHole:'NEXT HOLE ›', lbFinish:'FINISH', lbStop:'■ STOP',
-    lbTot:'TOT', lbCount:'x',
+    lbTot:'TOT', lbCount:'x', lbTitle:'TITLE',
     // 遊び方
     htTitle:'HOW TO PLAY',
     htBasicsH:'⛳ BASICS', htBasicsP:'Select a club and press the SHOT button to start the gauge. Release/stop to fire the ball. Higher gauge = more distance.',
@@ -250,6 +250,15 @@ function applyLang(){
     const cpuDa = CD[VS.cpuCh];
     if(cpuDa) cpuNameEl.textContent = cdN(cpuDa);
   }
+
+  // タイトルへボタン
+  ['endAgn'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.textContent=t.lbTitle;
+  });
+  document.querySelectorAll('#scEnd button, #scVSEnd button').forEach(b=>{
+    if(b.textContent==='TITLE'||b.textContent==='タイトルへ') b.textContent=t.lbTitle;
+  });
 
   // bPro ラベル更新
   const bProEl = document.getElementById('bPro');
