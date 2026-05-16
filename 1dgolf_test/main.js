@@ -23,21 +23,27 @@ let _debugMode = false;
 
 function toggleDebug(){
   _debugMode = !_debugMode;
-  const btn = document.getElementById('debugBtn');
-  if(btn){
-    btn.textContent      = 'DEBUG MODE: ' + (_debugMode ? 'ON' : 'OFF');
-    btn.style.background = _debugMode ? '#2a0a0a' : '#1a0a1a';
-    btn.style.borderColor= _debugMode ? '#cc4444' : '#664466';
-    btn.style.color      = _debugMode ? '#ff8888' : '#cc88cc';
-  }
+  const track = document.getElementById('debugTrack');
+  const thumb = document.getElementById('debugThumb');
+  const label = document.getElementById('debugLabel');
+  if(track) track.style.background = _debugMode ? '#aa3333' : '#333';
+  if(thumb){ thumb.style.left = _debugMode ? '18px' : '2px'; thumb.style.background = _debugMode ? '#ffaaaa' : '#888'; }
+  if(label) label.style.color = _debugMode ? '#ffaaaa' : '#cc88cc';
 }
 
 // VSモード開始時にデバッグボタンを表示
 function showDebugBtn(show){
   const btn = document.getElementById('debugBtn');
-  if(btn) btn.style.display = show ? '' : 'none';
-  // モード変更時はOFF状態にリセット
-  if(!show){ _debugMode=false; if(btn){btn.textContent='DEBUG MODE: OFF';btn.style.background='#1a0a1a';btn.style.borderColor='#664466';btn.style.color='#cc88cc';} }
+  if(btn) btn.style.display = show ? 'flex' : 'none';
+  if(!show){
+    _debugMode=false;
+    const track=document.getElementById('debugTrack');
+    const thumb=document.getElementById('debugThumb');
+    const label=document.getElementById('debugLabel');
+    if(track) track.style.background='#333';
+    if(thumb){ thumb.style.left='2px'; thumb.style.background='#888'; }
+    if(label) label.style.color='#cc88cc';
+  }
 }
 
 // =============================================
@@ -2091,6 +2097,7 @@ function showVSResult(){
   else{judgeText='DRAW';judgeColor='#ff4';}
   judgeEl.textContent=judgeText;
   judgeEl.style.color=judgeColor;
+  judgeEl.style.display=_debugMode?'none':'';
   // スコアカード2列
   const scoreCol=d=>d<=-2?'#f80':d===-1?'#4df':d===0?'#fff':d===1?'#fa4':'#f66';
   function makeCard(name,col,scores,isPlayer,charaKey){
@@ -2103,15 +2110,16 @@ function showVSResult(){
     html+=`<table style="width:100%;border-collapse:collapse;font-size:10px;font-family:monospace">`;
     html+=`<tr style="color:#556"><td style="padding:1px 2px">H</td><td>Par</td><td>S</td><td>±</td></tr>`;
     let tot=0,totPar=0;
-    scores.forEach((s,i)=>{
-      const p=pars[i]||4;
+    const maxRows=Math.max(scores.length, pars.length);
+    for(let i=0;i<maxRows;i++){
+      const s=scores[i], p=pars[i]||4;
       if(s===null||s===undefined){
         html+=`<tr style="border-bottom:1px solid #0f0f1a"><td style="padding:2px;color:#aaccee">${i+1}</td><td style="color:#556">${p}</td><td style="color:#556">-</td><td style="color:#556">-</td></tr>`;
       } else {
         const d=s-p;tot+=s;totPar+=p;
         html+=`<tr style="border-bottom:1px solid #0f0f1a"><td style="padding:2px;color:#aaccee">${i+1}</td><td style="color:#556">${p}</td><td style="color:#ccc;font-weight:bold">${s}</td><td style="color:${scoreCol(d)};font-weight:bold">${d>0?'+':''}${d}</td></tr>`;
       }
-    });
+    }
     const totD=tot>0?tot-totPar:0;
     const totTxt=tot>0?String(tot):'-';
     const totDTxt=tot>0?(totD>0?'+':'')+totD:'-';
