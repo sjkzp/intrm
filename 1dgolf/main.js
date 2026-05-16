@@ -17,6 +17,36 @@ window.addEventListener('unhandledrejection', function(e) {
 'use strict';
 
 // =============================================
+// デバッグモード
+// =============================================
+let _debugMode = false;
+
+function toggleDebug(){
+  _debugMode = !_debugMode;
+  const track = document.getElementById('debugTrack');
+  const thumb = document.getElementById('debugThumb');
+  const label = document.getElementById('debugLabel');
+  if(track) track.style.background = _debugMode ? '#aa3333' : '#333';
+  if(thumb){ thumb.style.left = _debugMode ? '18px' : '2px'; thumb.style.background = _debugMode ? '#ffaaaa' : '#888'; }
+  if(label) label.style.color = _debugMode ? '#ffaaaa' : '#cc88cc';
+}
+
+// VSモード開始時にデバッグボタンを表示
+function showDebugBtn(show){
+  const btn = document.getElementById('debugBtn');
+  if(btn) btn.style.display = show ? 'flex' : 'none';
+  if(!show){
+    _debugMode=false;
+    const track=document.getElementById('debugTrack');
+    const thumb=document.getElementById('debugThumb');
+    const label=document.getElementById('debugLabel');
+    if(track) track.style.background='#333';
+    if(thumb){ thumb.style.left='2px'; thumb.style.background='#888'; }
+    if(label) label.style.color='#cc88cc';
+  }
+}
+
+// =============================================
 // 言語切替システム
 // =============================================
 let _lang = 'ja'; // 'ja' | 'en'
@@ -635,8 +665,8 @@ function showScoreCard(){
       let tot=0,totPar=0;
       const maxLen=Math.max(scores.length, pars.length);
       for(let i=0;i<maxLen;i++){
-        const s=scores[i],p=pars[i]||4; // sがundefinedなら未プレイ
-        const played=s!==undefined&&s>0;
+        const s=scores[i],p=pars[i]||4;
+        const played=s!==null&&s!==undefined&&s>0;
         const d=played?s-p:0;
         if(played){tot+=s;totPar+=p;}
         h+=`<tr style="border-bottom:1px solid #0f0f1a"><td style="padding:2px 3px;color:#aaccee">${i+1}</td><td style="color:#556">${p}</td><td style="color:#ccc;font-weight:bold">${played?s:'-'}</td><td style="color:${played?scoreCol(d):'#666'};font-weight:bold">${played?(d>0?'+':'')+d:'-'}</td></tr>`;
@@ -685,6 +715,7 @@ const VS = {
 let vsStep = 0; // 0=通常, 1=自分選択中, 2=相手選択中
 
 function onStartVS(){
+  showDebugBtn(true);
   vsStep=1;
   VS.active=false;
   drawSlotsVS(1);
@@ -751,7 +782,18 @@ function confirmVSOppo(){
 function startGameVS(){
   VS.cpuSc=0; VS.cpuPts=1300; VS.cpuScores=[]; VS.cpuPars=[];
   VS.playerTurn=true; VS.playerSc=0; VS.playerScores=[];
-  startGame();
+  if(_debugMode){
+    // デバッグ: 画面遷移なしで状態初期化のみ行いCPUへ
+    _initGameState();
+    seStart();
+    loadHD(); // ホールデータロード
+    G.ns=G.par; G.mpt=0;
+    G.holeScores.push(null); G.holePars.push(G.par); VS.playerScores.push(null);
+    VS.playerSc=G.sc; VS.playerTurn=false;
+    enterShopVS(); // → 300ms後にvsStartCPU
+  } else {
+    startGame();
+  }
 }
 
 // VSモード用 afterJ: プレイヤーターン終了→CPUターン or ゲーム終了
@@ -780,6 +822,11 @@ function enterShopVS(){
   // G.nH はそのまま（プレイヤーと同じホールをCPUがプレイ）
   if(G.nH>9){ VS.playerTurn=true; VS.playerSc=G.sc; showVSResult(); return; }
   loadHD(); // 現在のホールデータを再ロード
+  if(_debugMode){
+    // デバッグ: ショップ・スコア確認をスキップして即CPUへ
+    setTimeout(()=>vsStartCPU(), 300);
+    return;
+  }
   // ショップ画面を出さず、VSスコア画面を表示してから次へ
   showVSInterScore();
 }
@@ -788,6 +835,17 @@ function enterShopVS(){
 function vsRestoreForPlayer(){
   // CPUバナー非表示
   const cb=document.getElementById('gCpuBanner'); if(cb) cb.style.display='none';
+  // デバッグモード: CPU番終了後も即次ホールスキップ（1P画面を表示しない）
+  if(_debugMode){
+    // ゲーム画面を非表示にしてからCPUホールへ（1P画面が一瞬映るのを防ぐ）
+    const _scG=document.getElementById('scG'); if(_scG) _scG.style.visibility='hidden';
+    if(G.nH>9){ VS.playerSc=G.sc; showVSResult(); return; }
+    G.ns=G.par; G.mpt=0;
+    if(G.holeScores.length < G.nH){ G.holeScores.push(null); G.holePars.push(G.par); VS.playerScores.push(null); }
+    VS.playerSc=G.sc; VS.playerTurn=false;
+    enterShopVS(); // → 300ms後にvsStartCPU → sc('scG')
+    return;
+  }
   // 1Pのキャラ情報を確実に復元
   const pCh=VS._savedCh||G.ch;
   G.ch=pCh;
@@ -810,6 +868,15 @@ function vsRestoreForPlayer(){
 function vsStartPlayer(){
   // G.nHが最終ホールを超えていたらリザルトへ（H9再プレイ防止）
   if(G.nH>9){ VS.playerSc=G.sc; showVSResult(); return; }
+  // デバッグモード: 1Pホールをスキップ
+  if(_debugMode){
+    G.ns=G.par; G.mpt=0; // スコア加算なし・pts加算なし
+    if(G.holeScores.length < G.nH){ G.holeScores.push(null); G.holePars.push(G.par); VS.playerScores.push(null); }
+    VS.playerSc=G.sc;
+    VS.playerTurn=false;
+    enterShopVS();
+    return;
+  }
   // 背景・UIをゲームモードに戻す
   const scg=document.getElementById('scG'); if(scg) scg.style.background='';
   const gt=document.getElementById('gTop'); if(gt) gt.style.background='';
@@ -907,6 +974,8 @@ function showVSInterScore(afterCPU){
 }
 
 function vsStartCPU(){
+  const _scGv=document.getElementById('scG'); if(_scGv) _scGv.style.visibility='';
+  sc('scG'); // ゲーム画面に遷移
   // ショップ背景をリセット
   const scg=document.getElementById('scG'); if(scg) scg.style.background='';
   const gt=document.getElementById('gTop'); if(gt) gt.style.background='';
@@ -2016,6 +2085,7 @@ function showVSResult(){
   const pc=VS._savedCh||G.ch;
   const cc=VS.cpuCh;
   const pd=CD[pc],cpud=CD[cc];
+  const _dbgMode=_debugMode; // リザルト生成時点のフラグを保持
   const pSc=VS.playerSc, cSc=VS.cpuSc;
   const pScores=G.holeScores, cScores=VS.cpuScores;
   const pars=G.holePars;
@@ -2026,6 +2096,7 @@ function showVSResult(){
   else{judgeText='DRAW';judgeColor='#ff4';}
   judgeEl.textContent=judgeText;
   judgeEl.style.color=judgeColor;
+  judgeEl.style.display=_debugMode?'none':'';
   // スコアカード2列
   const scoreCol=d=>d<=-2?'#f80':d===-1?'#4df':d===0?'#fff':d===1?'#fa4':'#f66';
   function makeCard(name,col,scores,isPlayer,charaKey){
@@ -2038,12 +2109,20 @@ function showVSResult(){
     html+=`<table style="width:100%;border-collapse:collapse;font-size:10px;font-family:monospace">`;
     html+=`<tr style="color:#556"><td style="padding:1px 2px">H</td><td>Par</td><td>S</td><td>±</td></tr>`;
     let tot=0,totPar=0;
-    scores.forEach((s,i)=>{
-      const p=pars[i]||4,d=s-p;tot+=s;totPar+=p;
-      html+=`<tr style="border-bottom:1px solid #0f0f1a"><td style="padding:2px;color:#aaccee">${i+1}</td><td style="color:#556">${p}</td><td style="color:#ccc;font-weight:bold">${s}</td><td style="color:${scoreCol(d)};font-weight:bold">${d>0?'+':''}${d}</td></tr>`;
-    });
-    const totD=tot-totPar;
-    html+=`<tr style="border-top:1px solid #2a2a4a"><td colspan="2" style="color:#aaccee;font-size:11px">${L[_lang].lbTot}</td><td style="color:#fff;font-weight:bold">${tot}</td><td style="color:${scoreCol(totD)};font-weight:bold">${totD>0?'+':''}${totD}</td></tr>`;
+    const maxRows=Math.max(scores.length, pars.length);
+    for(let i=0;i<maxRows;i++){
+      const s=scores[i], p=pars[i]||4;
+      if(s===null||s===undefined){
+        html+=`<tr style="border-bottom:1px solid #0f0f1a"><td style="padding:2px;color:#aaccee">${i+1}</td><td style="color:#556">${p}</td><td style="color:#556">-</td><td style="color:#556">-</td></tr>`;
+      } else {
+        const d=s-p;tot+=s;totPar+=p;
+        html+=`<tr style="border-bottom:1px solid #0f0f1a"><td style="padding:2px;color:#aaccee">${i+1}</td><td style="color:#556">${p}</td><td style="color:#ccc;font-weight:bold">${s}</td><td style="color:${scoreCol(d)};font-weight:bold">${d>0?'+':''}${d}</td></tr>`;
+      }
+    }
+    const totD=tot>0?tot-totPar:0;
+    const totTxt=tot>0?String(tot):'-';
+    const totDTxt=tot>0?(totD>0?'+':'')+totD:'-';
+    html+=`<tr style="border-top:1px solid #2a2a4a"><td colspan="2" style="color:#aaccee;font-size:11px">${L[_lang].lbTot}</td><td style="color:#fff;font-weight:bold">${totTxt}</td><td style="color:${tot>0?scoreCol(totD):'#556'};font-weight:bold">${totDTxt}</td></tr>`;
     html+='</table></div>';
     return html;
   }
@@ -2455,16 +2534,18 @@ function rankime(){
   const sv=[null,'sm','ss','st','sk','sp','sh'];if(G.ch>=1&&G.ch<=6)G[sv[G.ch]]=G.sc;
 }
 
-function startGame(){
+function _initGameState(){
   G.sc=0;G.nH=1;G.nHIO=0;G.nALB=0;G.nEAG=0;G.nBIR=0;G.nCHP=0;G.n4=0;G.maxy=0;
   G.holeScores=[];G.holePars=[];
   G.sm=0;G.ss=0;G.st=0;G.sk=0;G.sp=0;G.sh=0;
-  // face (新UIではcFaceなし、endFigに反映)
   const d=CD[G.ch];
   const cf=$('cFace'); if(cf) cf.innerHTML=`<div style="font-size:52px;color:${d.col}">${d.ic}</div>`;
-  // ゲーム画面のキャラ画像を設定
   const ci=document.getElementById('gCharaImg');
   if(ci&&CHARA_IMG[G.ch]){ci.src=CHARA_IMG[G.ch];ci.style.display='block';}
+}
+
+function startGame(){
+  _initGameState();
   seStart();
   sc('scG'); G.cmd=4; holeStart();
 }
@@ -2522,6 +2603,7 @@ function holeStart(){
 }
 
 function onStart(){
+  showDebugBtn(false);
   drawSlots(); sc('scC'); G.cmd=1;
 }
 
@@ -3425,6 +3507,7 @@ function dbIncr(key){
 // コース完走記録を保存。合計スコアが過去最小のときのみ全ホール上書き
 // キー: "run_${course}_${charId}" 値: {total, holes:[{score,par},...]}
 function dbSaveRunBest(course, charId, holeScores, holePars){
+  if(_debugMode) return Promise.resolve(false);
   if(course!==1&&course!==2) return Promise.resolve(false);
   const key=`run_${course}_${charId}`;
   const total=holeScores.reduce((a,b)=>a+b,0);
@@ -3437,9 +3520,9 @@ function dbSaveRunBest(course, charId, holeScores, holePars){
     return false;
   });
 }
-function dbRecordPlay(charId){return dbIncr(`play_${charId}`);}
-function dbRecordHIO(){return dbIncr('hio');}
-function dbRecordChipIn(){return dbIncr('chipIn');}
+function dbRecordPlay(charId){if(_debugMode)return Promise.resolve();return dbIncr(`play_${charId}`);}
+function dbRecordHIO(){if(_debugMode)return Promise.resolve();return dbIncr('hio');}
+function dbRecordChipIn(){if(_debugMode)return Promise.resolve();return dbIncr('chipIn');}
 function dbGetAllRecords(){
   return dbOpen().then(db=>new Promise((res,rej)=>{
     const result={bestScores:{},lifetimeStats:{}};
