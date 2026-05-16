@@ -829,14 +829,16 @@ function enterShopVS(){
 function vsRestoreForPlayer(){
   // CPUバナー非表示
   const cb=document.getElementById('gCpuBanner'); if(cb) cb.style.display='none';
-  // デバッグモード: CPU番終了後も即次ホールスキップ
+  // デバッグモード: CPU番終了後も即次ホールスキップ（1P画面を表示しない）
   if(_debugMode){
+    // ゲーム画面を非表示にしてからCPUホールへ（1P画面が一瞬映るのを防ぐ）
+    const _scG=document.getElementById('scG'); if(_scG) _scG.style.visibility='hidden';
     G.nH++;
     if(G.nH>9){ VS.playerSc=G.sc; showVSResult(); return; }
     G.ns=G.par; G.mpt=0;
     if(G.holeScores.length < G.nH){ G.holeScores.push(null); G.holePars.push(G.par); VS.playerScores.push(null); }
     VS.playerSc=G.sc; VS.playerTurn=false;
-    enterShopVS();
+    enterShopVS(); // → 300ms後にvsStartCPU → sc('scG')
     return;
   }
   // 1Pのキャラ情報を確実に復元
@@ -967,7 +969,8 @@ function showVSInterScore(afterCPU){
 }
 
 function vsStartCPU(){
-  sc('scG'); // ゲーム画面に遷移（デバッグ時はここで初めて遷移）
+  const _scGv=document.getElementById('scG'); if(_scGv) _scGv.style.visibility='';
+  sc('scG'); // ゲーム画面に遷移
   // ショップ背景をリセット
   const scg=document.getElementById('scG'); if(scg) scg.style.background='';
   const gt=document.getElementById('gTop'); if(gt) gt.style.background='';
