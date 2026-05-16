@@ -818,6 +818,11 @@ function enterShopVS(){
   // G.nH はそのまま（プレイヤーと同じホールをCPUがプレイ）
   if(G.nH>9){ VS.playerTurn=true; VS.playerSc=G.sc; showVSResult(); return; }
   loadHD(); // 現在のホールデータを再ロード
+  if(_debugMode){
+    // デバッグ: ショップ・スコア確認をスキップして即CPUへ
+    setTimeout(()=>vsStartCPU(), 300);
+    return;
+  }
   // ショップ画面を出さず、VSスコア画面を表示してから次へ
   showVSInterScore();
 }
@@ -826,6 +831,16 @@ function enterShopVS(){
 function vsRestoreForPlayer(){
   // CPUバナー非表示
   const cb=document.getElementById('gCpuBanner'); if(cb) cb.style.display='none';
+  // デバッグモード: CPU番終了後も即次ホールスキップ
+  if(_debugMode){
+    G.nH++;
+    if(G.nH>9){ VS.playerSc=G.sc; showVSResult(); return; }
+    G.ns=G.par; G.mpt=0;
+    if(G.holeScores.length < G.nH){ G.holeScores.push(null); G.holePars.push(G.par); VS.playerScores.push(null); }
+    VS.playerSc=G.sc; VS.playerTurn=false;
+    enterShopVS();
+    return;
+  }
   // 1Pのキャラ情報を確実に復元
   const pCh=VS._savedCh||G.ch;
   G.ch=pCh;
