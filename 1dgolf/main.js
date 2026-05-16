@@ -59,14 +59,14 @@ const L = {
     terNames:{1:'FAIRWAY',2:'ROUGH',3:'BUNKER',4:'WATER',5:'GREEN',6:'O B'},
     lbWind:'風', lbSlope:'傾',
     lbShotBtn:'打つ', lbUseBtn:'使用', lbWaitBtn:'風待ち',
-    lbBuy:'購入', lbSkillPlus:'特技+1', lbNextHole:'次のホールへ ›', lbFinish:'コース終了', lbStop:'■ STOP',
-    lbTot:'合計', lbCount:'回',
+    lbBuy:'購入', lbSkillPlus:'特技+1', lbMax:'MAX', lbNopts:'pts不足', lbNextHole:'次のホールへ ›', lbFinish:'コース終了', lbStop:'■ STOP',
+    lbTot:'合計', lbCount:'回', lbTitle:'タイトルへ',
     // 遊び方
     htTitle:'HOW TO PLAY',
-    htBasicsH:'⛳ 基本操作', htBasicsP:'クラブを選んで「打つ」ボタンを押すとゲージが動きます。ショットするとボールが飛びます。ゲージが高いほど飛距離が伸びます。',
-    htMobileH:'📱 スマホ操作', htMobileP:'<b>タップ</b> 打つ → <b>■STOP</b> でショット',
+    htBasicsH:'⛳ 基本操作', htBasicsP:'クラブを選んで「SHOT」ボタンを押すとゲージが動きます。ショットするとボールが飛びます。ゲージが高いほど飛距離が伸びます。',
+    htMobileH:'📱 スマホ操作', htMobileP:'<b>タップ</b> SHOT → <b>■STOP</b> でショット',
     htPcH:'🖥️ PC操作', htPcP:'<b>クリック長押し</b> SHOT → 離してショット',
-    htWindH:'💨 風待ち', htWindP:'風待ちボタンで風の値が変わります。＋なら飛距離が伸び、－なら縮みます。',
+    htWindH:'💨 風待ち', htWindP:'WAITボタンで風の値が変わります。＋なら飛距離が伸び、－なら縮みます。',
     htTerrainH:'🏌️ 地形',
     htTerrainList:'<li><b style="color:#7fd87f">ROUGH</b>：飛距離が落ちます</li><li><b style="color:#ddcc44">BUNKER</b>：飛距離大幅減。アイアン(5I/8I)のみ使用可</li><li><b style="color:#6699ff">WATER / OB</b>：ペナルティ＋1打、前の位置から打ち直し</li><li><b style="color:#00ff88">GREEN</b>：パター(PT)を使用。傾斜±0のガイドが表示されます</li>',
     htSkillH:'✨ 特技',
@@ -111,8 +111,8 @@ const L = {
     terNames:{1:'FAIRWAY',2:'ROUGH',3:'BUNKER',4:'WATER',5:'GREEN',6:'O B'},
     lbWind:'WIND', lbSlope:'SLP',
     lbShotBtn:'SHOT', lbUseBtn:'USE', lbWaitBtn:'WAIT',
-    lbBuy:'BUY', lbSkillPlus:'SKILL+1', lbNextHole:'NEXT HOLE ›', lbFinish:'FINISH', lbStop:'■ STOP',
-    lbTot:'TOT', lbCount:'x',
+    lbBuy:'BUY', lbSkillPlus:'SKILL+1', lbMax:'MAX', lbNopts:'pts low', lbNextHole:'NEXT HOLE ›', lbFinish:'FINISH', lbStop:'■ STOP',
+    lbTot:'TOT', lbCount:'x', lbTitle:'TITLE',
     // 遊び方
     htTitle:'HOW TO PLAY',
     htBasicsH:'⛳ BASICS', htBasicsP:'Select a club and press the SHOT button to start the gauge. Release/stop to fire the ball. Higher gauge = more distance.',
@@ -250,6 +250,15 @@ function applyLang(){
     const cpuDa = CD[VS.cpuCh];
     if(cpuDa) cpuNameEl.textContent = cdN(cpuDa);
   }
+
+  // タイトルへボタン
+  ['endAgn'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.textContent=t.lbTitle;
+  });
+  document.querySelectorAll('#scEnd button, #scVSEnd button').forEach(b=>{
+    if(b.textContent==='TITLE'||b.textContent==='タイトルへ') b.textContent=t.lbTitle;
+  });
 
   // bPro ラベル更新
   const bProEl = document.getElementById('bPro');
@@ -1783,8 +1792,8 @@ function cpuDropChk(){
   if(G.ji===5){
     seChime(); // オングリーン（CPUも同じ効果音）
     G.y2=Math.abs(G.y1-G.cp);
-    // ちょうどカップ位置に着地した場合は即カップイン
-    if(G.y2===0){G.bon=0;updHUD();updPos();cpuJudgeShot();return;}
+    // ちょうどカップ位置に着地した場合は即カップイン（チップイン）
+    if(G.y2===0){G.bon=0;updHUD();updPos();seHoleIn();setTimeout(()=>cpuJudgeShot(),800);return;}
     if(G.ns>=(G.par+4)){cpuFinishHole();return;}
     // グリーン傾斜設定
     G.wa=G.gwa;G.wz=G.gwz;G.kz=G.gkz;windK();
@@ -3089,12 +3098,30 @@ function buildShop(){
   const nc=document.getElementById('gClubNormal');
   pChk();
   nc.innerHTML=[
-    {n:1,k:G.kw1,lb:G.kw1>=4?'-':`1W+${G.kw1===3?'20':'10'}yd\n-${G.pw1}pts`,dis:G.kw1>=4||G.pts<G.pw1},
-    {n:2,k:G.kw2,lb:G.kw2>=4?'-':`3W+${G.kw2===3?'20':'10'}yd\n-${G.pw2}pts`,dis:G.kw2>=4||G.pts<G.pw2},
-    {n:3,k:G.ki1,lb:G.ki1>=4?'-':`5I+${G.ki1===3?'20':'10'}yd\n-${G.pi1}pts`,dis:G.ki1>=4||G.pts<G.pi1},
-    {n:4,k:G.ki2,lb:G.ki2>=4?'-':`8I+${G.ki2===3?'20':'10'}yd\n-${G.pi2}pts`,dis:G.ki2>=4||G.pts<G.pi2},
-  ].map(c=>`<button class="cBtn${c.dis?' dis':''}" id="rb${c.n}" onclick="selShop(${c.n})" style="white-space:pre-line;font-size:10px;line-height:1.3;flex:1">${c.lb}</button>`).join('');
-  sc2.innerHTML=G.nwz<9?`<button class="cBtn" id="rb7" onclick="selShop(7)" style="font-size:11px;flex:1">${L[_lang].lbSkillPlus}<br><span style="font-size:10px;color:#f88">-${G.pw}pts</span></button>`:'';
+    {n:1,k:G.kw1,lb:G.kw1>=4?L[_lang].lbMax:`1W+${G.kw1===3?'20':'10'}yd\n-${G.pw1}pts`,dis:G.kw1>=4,noPts:G.kw1<4&&G.pts<G.pw1},
+    {n:2,k:G.kw2,lb:G.kw2>=4?L[_lang].lbMax:`3W+${G.kw2===3?'20':'10'}yd\n-${G.pw2}pts`,dis:G.kw2>=4,noPts:G.kw2<4&&G.pts<G.pw2},
+    {n:3,k:G.ki1,lb:G.ki1>=4?L[_lang].lbMax:`5I+${G.ki1===3?'20':'10'}yd\n-${G.pi1}pts`,dis:G.ki1>=4,noPts:G.ki1<4&&G.pts<G.pi1},
+    {n:4,k:G.ki2,lb:G.ki2>=4?L[_lang].lbMax:`8I+${G.ki2===3?'20':'10'}yd\n-${G.pi2}pts`,dis:G.ki2>=4,noPts:G.ki2<4&&G.pts<G.pi2},
+  ].map(c=>{
+    if(c.dis){
+      // MAX: 枠なし・暗め背景・白文字
+      return `<button class="cBtn" id="rb${c.n}" style="white-space:pre-line;font-size:10px;line-height:1.3;flex:1;background:#0d0d0d;border-color:#2a2a2a;color:#fff;pointer-events:none">${c.lb}</button>`;
+    } else if(c.noPts){
+      // pts不足: 枠なし・暗め背景・白文字＋サブラベル
+      return `<button class="cBtn" id="rb${c.n}" style="white-space:pre-line;font-size:10px;line-height:1.3;flex:1;background:#0d0d0d;border-color:#2a2a2a;color:#fff;pointer-events:none">${c.lb}<br><span style="font-size:9px;color:#fff">${L[_lang].lbNopts}</span></button>`;
+    } else {
+      return `<button class="cBtn" id="rb${c.n}" onclick="selShop(${c.n})" style="white-space:pre-line;font-size:10px;line-height:1.3;flex:1;color:#fff">${c.lb}</button>`;
+    }
+  }).join('');
+  sc2.style.marginTop = G.nwz<9 ? '2px' : '0';
+  if(G.nwz<9){
+    const sk7NoPts=G.pw>0&&G.pts<G.pw;
+    if(sk7NoPts){
+      sc2.innerHTML=`<button class="cBtn" id="rb7" style="font-size:11px;flex:1;background:#0d0d0d;border-color:#2a2a2a;color:#fff;pointer-events:none">${L[_lang].lbSkillPlus}<br><span style="font-size:9px;color:#fff">${L[_lang].lbNopts}</span></button>`;
+    } else {
+      sc2.innerHTML=`<button class="cBtn" id="rb7" onclick="selShop(7)" style="font-size:11px;flex:1;color:#fff">${L[_lang].lbSkillPlus}<br><span style="font-size:10px;color:#f88">-${G.pw}pts</span></button>`;
+    }
+  } else { sc2.innerHTML=''; }
   if(G.pw<=0||G.nwz>=9) {const e=$(7);if(e)e.classList.add('dis');}
 }
 function selShop(n){
