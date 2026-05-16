@@ -98,11 +98,12 @@ const L = {
     htPcH:'🖥️ PC操作', htPcP:'<b>クリック長押し</b> SHOT → 離してショット',
     htWindH:'💨 風待ち', htWindP:'WAITボタンで風の値が変わります。＋なら飛距離が伸び、－なら縮みます。',
     htTerrainH:'🏌️ 地形',
-    htTerrainList:'<li><b style="color:#7fd87f">ROUGH</b>：飛距離が落ちます</li><li><b style="color:#ddcc44">BUNKER</b>：飛距離大幅減。アイアン(5I/8I)のみ使用可</li><li><b style="color:#6699ff">WATER / OB</b>：ペナルティ＋1打、前の位置から打ち直し</li><li><b style="color:#00ff88">GREEN</b>：パター(PT)を使用。傾斜±0のガイドが表示されます</li>',
+    htTerrainList:'<li style="background:#07120a;border-radius:6px;padding:5px 10px"><b style="color:#7fd87f">ROUGH</b><span style="color:#99aacc"> — 飛距離が落ちます</span></li><li style="background:#131000;border-radius:6px;padding:5px 10px"><b style="color:#ddcc44">BUNKER</b><span style="color:#99aacc"> — 飛距離大幅減。アイアン(5I/8I)のみ使用可</span></li><li style="background:#07091a;border-radius:6px;padding:5px 10px"><b style="color:#6699ff">WATER / OB</b><span style="color:#99aacc"> — ペナルティ＋1打、前の位置から打ち直し</span></li><li style="background:#06130a;border-radius:6px;padding:5px 10px"><b style="color:#00ff88">GREEN</b><span style="color:#99aacc"> — パター(PT)を使用。傾斜±0のガイドが表示されます</span></li>',
     htSkillH:'✨ 特技',
-    htSkillList:'<li><b>パワーショット</b>：ゲージ上限が120%に</li><li><b>地形無視ショット</b>：ROUGH/BUNKER上でもフェアウェイ飛距離</li><li><b>打ち直し</b>：打数を増やさず前の場所から再ショット</li><li><b>風・傾斜消し</b>：風・傾斜を±0にする</li><li><b>スタートオーバー</b>：ホール最初からやり直し</li>',
+    htSkillList:'<li style="background:#08100a;border-radius:6px;padding:5px 10px;color:#99aacc"><b style="color:#aaffaa">パワーショット</b> — ゲージ上限が120%に</li><li style="background:#08100a;border-radius:6px;padding:5px 10px;color:#99aacc"><b style="color:#aaffaa">地形無視ショット</b> — ROUGH/BUNKER上でもフェアウェイ飛距離</li><li style="background:#08100a;border-radius:6px;padding:5px 10px;color:#99aacc"><b style="color:#aaffaa">打ち直し</b> — 打数を増やさず前の場所から再ショット</li><li style="background:#08100a;border-radius:6px;padding:5px 10px;color:#99aacc"><b style="color:#aaffaa">風・傾斜消し</b> — 風・傾斜を±0にする</li><li style="background:#08100a;border-radius:6px;padding:5px 10px;color:#99aacc"><b style="color:#aaffaa">スタートオーバー</b> — ホール最初からやり直し</li>',
     htScoreH:'🏆 スコアとポイント', htScoreP:'ショットごとにポイント(pts)が減り、ホールクリアで獲得。par+4以上の打数でギブアップとなります。1ホール終了後はクラブ強化や特技回数増加のショップがあります。',
     htVsH:'⚔ VSモード', htVsP:'選手権コース（9H）のみ。1Pがホールをプレイした後、CPUが同じホールをプレイします。ショップで強化できるのは1Pのみ。',
+    htDbgP:'キャラ選択画面のDEBUG MODEをONにすると1Pのプレイをスキップし、CPUの動作のみを観戦できます。デバッグ中は結果とレコードは保存されません。',
   },
   en: {
     btnStart: '▶ S T A R T', btnVS: '⚔ V S  M O D E',
@@ -155,6 +156,7 @@ const L = {
     htSkillList:'<li><b>Power Shot</b>: Gauge cap raised to 120%</li><li><b>Terrain Ignore</b>: Fairway distance even on ROUGH/BUNKER</li><li><b>Retry Shot</b>: Reshoot from previous position without adding a stroke</li><li><b>Wind/Slope Cancel</b>: Sets wind and slope to ±0</li><li><b>Start Over</b>: Restart the hole from the beginning</li>',
     htScoreH:'🏆 SCORE & POINTS', htScoreP:'Points (pts) decrease per shot and are awarded on hole clear. Give up at par+4 strokes or more. After each hole, visit the SHOP to upgrade clubs or increase skill uses.',
     htVsH:'⚔ VS MODE', htVsP:'Championship course (9H) only. After Player 1 plays a hole, the CPU plays the same hole. Only Player 1 can upgrade in the SHOP.',
+    htDbgP:'Toggle DEBUG MODE on the character select screen to skip Player 1 and watch CPU play only. Results and records are not saved in debug mode.',
   }
 };
 
@@ -323,7 +325,7 @@ function applyLang(){
     htWindH:'htWindH', htWindP:'htWindP',
     htTerrainH:'htTerrainH', htSkillH:'htSkillH',
     htScoreH:'htScoreH', htScoreP:'htScoreP',
-    htVsH:'htVsH', htVsP:'htVsP',
+    htVsH:'htVsH', htVsP:'htVsP', htDbgP:'htDbgP',
   };
   Object.entries(htMap).forEach(([key,id])=>{
     const el = document.getElementById(id);
