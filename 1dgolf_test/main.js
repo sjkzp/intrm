@@ -3104,6 +3104,7 @@ function buildShop(){
       return `<button class="cBtn" id="rb${c.n}" onclick="selShop(${c.n})" style="white-space:pre-line;font-size:10px;line-height:1.3;flex:1;color:#fff">${c.lb}</button>`;
     }
   }).join('');
+  sc2.style.marginTop = G.nwz<9 ? '2px' : '0';
   if(G.nwz<9){
     const sk7NoPts=G.pw>0&&G.pts<G.pw;
     if(sk7NoPts){
