@@ -17,6 +17,30 @@ window.addEventListener('unhandledrejection', function(e) {
 'use strict';
 
 // =============================================
+// デバッグモード
+// =============================================
+let _debugMode = false;
+
+function toggleDebug(){
+  _debugMode = !_debugMode;
+  const btn = document.getElementById('debugBtn');
+  if(btn){
+    btn.textContent = _debugMode ? '🐛 DBG ON' : '🐛 DBG';
+    btn.style.background    = _debugMode ? '#2a0a2a' : '#1a0a1a';
+    btn.style.borderColor   = _debugMode ? '#cc44cc' : '#664466';
+    btn.style.color         = _debugMode ? '#ff88ff' : '#cc88cc';
+  }
+}
+
+// VSモード開始時にデバッグボタンを表示
+function showDebugBtn(show){
+  const btn = document.getElementById('debugBtn');
+  if(btn) btn.style.display = show ? '' : 'none';
+  // モード変更時はOFF状態にリセット
+  if(!show){ _debugMode=false; if(btn){btn.textContent='🐛 DBG';btn.style.background='#1a0a1a';btn.style.borderColor='#664466';btn.style.color='#cc88cc';} }
+}
+
+// =============================================
 // 言語切替システム
 // =============================================
 let _lang = 'ja'; // 'ja' | 'en'
@@ -685,6 +709,7 @@ const VS = {
 let vsStep = 0; // 0=通常, 1=自分選択中, 2=相手選択中
 
 function onStartVS(){
+  showDebugBtn(true);
   vsStep=1;
   VS.active=false;
   drawSlotsVS(1);
@@ -751,7 +776,20 @@ function confirmVSOppo(){
 function startGameVS(){
   VS.cpuSc=0; VS.cpuPts=1300; VS.cpuScores=[]; VS.cpuPars=[];
   VS.playerTurn=true; VS.playerSc=0; VS.playerScores=[];
-  startGame();
+  if(_debugMode){
+    // デバッグ: 1PスキップのためstartGameを呼ばずに直接CPUホールへ
+    startGame(); // G/コース初期化のため呼ぶが、直後にスキップ
+    // holeStartが完了するまで少し待ってからスキップ処理
+    setTimeout(()=>{
+      if(!_debugMode||!VS.active) return;
+      G.ns=G.par; G.mpt=0; // スコア加算なし
+      if(G.holeScores.length < G.nH){ G.holeScores.push(null); G.holePars.push(G.par); VS.playerScores.push(null); }
+      VS.playerSc=G.sc; VS.playerTurn=false;
+      enterShopVS();
+    }, 300);
+  } else {
+    startGame();
+  }
 }
 
 // VSモード用 afterJ: プレイヤーターン終了→CPUターン or ゲーム終了
@@ -810,6 +848,15 @@ function vsRestoreForPlayer(){
 function vsStartPlayer(){
   // G.nHが最終ホールを超えていたらリザルトへ（H9再プレイ防止）
   if(G.nH>9){ VS.playerSc=G.sc; showVSResult(); return; }
+  // デバッグモード: 1Pホールをスキップ
+  if(_debugMode){
+    G.ns=G.par; G.mpt=0; // スコア加算なし・pts加算なし
+    if(G.holeScores.length < G.nH){ G.holeScores.push(null); G.holePars.push(G.par); VS.playerScores.push(null); }
+    VS.playerSc=G.sc;
+    VS.playerTurn=false;
+    enterShopVS();
+    return;
+  }
   // 背景・UIをゲームモードに戻す
   const scg=document.getElementById('scG'); if(scg) scg.style.background='';
   const gt=document.getElementById('gTop'); if(gt) gt.style.background='';
@@ -2016,6 +2063,7 @@ function showVSResult(){
   const pc=VS._savedCh||G.ch;
   const cc=VS.cpuCh;
   const pd=CD[pc],cpud=CD[cc];
+  const _dbgMode=_debugMode; // リザルト生成時点のフラグを保持
   const pSc=VS.playerSc, cSc=VS.cpuSc;
   const pScores=G.holeScores, cScores=VS.cpuScores;
   const pars=G.holePars;
@@ -2522,6 +2570,7 @@ function holeStart(){
 }
 
 function onStart(){
+  showDebugBtn(false);
   drawSlots(); sc('scC'); G.cmd=1;
 }
 
@@ -3425,6 +3474,7 @@ function dbIncr(key){
 // コース完走記録を保存。合計スコアが過去最小のときのみ全ホール上書き
 // キー: "run_${course}_${charId}" 値: {total, holes:[{score,par},...]}
 function dbSaveRunBest(course, charId, holeScores, holePars){
+  if(_debugMode) return Promise.resolve(false);
   if(course!==1&&course!==2) return Promise.resolve(false);
   const key=`run_${course}_${charId}`;
   const total=holeScores.reduce((a,b)=>a+b,0);
@@ -3437,9 +3487,9 @@ function dbSaveRunBest(course, charId, holeScores, holePars){
     return false;
   });
 }
-function dbRecordPlay(charId){return dbIncr(`play_${charId}`);}
-function dbRecordHIO(){return dbIncr('hio');}
-function dbRecordChipIn(){return dbIncr('chipIn');}
+function dbRecordPlay(charId){if(_debugMode)return Promise.resolve();return dbIncr(`play_${charId}`);}
+function dbRecordHIO(){if(_debugMode)return Promise.resolve();return dbIncr('hio');}
+function dbRecordChipIn(){if(_debugMode)return Promise.resolve();return dbIncr('chipIn');}
 function dbGetAllRecords(){
   return dbOpen().then(db=>new Promise((res,rej)=>{
     const result={bestScores:{},lifetimeStats:{}};
