@@ -140,7 +140,7 @@ button:active{opacity:.75}
 #gClubNormal{display:flex;flex-wrap:wrap;gap:6px}
 #gClubPutt{display:none;flex-wrap:wrap;gap:6px}
 #gClubShop{display:none;flex-wrap:wrap;gap:6px}
-.cBtn{background:#0a0a14;border:2px solid #2a2a3a;color:#9aa;border-radius:8px;font-size:clamp(12px,3vw,15px);padding:9px 12px;touch-action:manipulation;flex:1;min-width:70px;text-align:center}
+.cBtn{background:#0a0a14;border:2px solid #fff;color:#fff;border-radius:8px;font-size:clamp(12px,3vw,15px);padding:9px 12px;touch-action:manipulation;flex:1;min-width:70px;text-align:center}
 .cBtn.sel{background:#141400;border-color:#886;color:#ffdd44}
 .cBtn.dis{opacity:.3;pointer-events:none}
 /* ショットボタン + サブボタン */
@@ -208,24 +208,3 @@ button:active{opacity:.75}
 .recStatRow span{color:#fff;font-weight:bold}
 .recEmpty{color:#778;font-size:12px;text-align:center;padding:10px 0}
 #recDelArea{padding:20px 12px 14px;text-align:center;margin-top:8px}
-/* ===========================
-   ローグライトモード
-   =========================== */
-/* カードショップ選択ボタン */
-#gClubShop .cBtn:hover{
-  border-color:#884acc;
-  color:#cc99ff;
-  background:#140828;
-}
-/* RLモード中のショップバナー上書き */
-#gShopBanner.rl-mode{
-  background:#0d0420;
-  border-bottom-color:#5522aa;
-}
-/* デッキ枚数表示 */
-#gClubNormal .rl-deck-info{
-  color:#88ccaa;
-  font-size:11px;
-  padding:4px 8px;
-  flex:1;
-}
