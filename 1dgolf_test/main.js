@@ -839,7 +839,6 @@ function vsRestoreForPlayer(){
   if(_debugMode){
     // ゲーム画面を非表示にしてからCPUホールへ（1P画面が一瞬映るのを防ぐ）
     const _scG=document.getElementById('scG'); if(_scG) _scG.style.visibility='hidden';
-    G.nH++;
     if(G.nH>9){ VS.playerSc=G.sc; showVSResult(); return; }
     G.ns=G.par; G.mpt=0;
     if(G.holeScores.length < G.nH){ G.holeScores.push(null); G.holePars.push(G.par); VS.playerScores.push(null); }
