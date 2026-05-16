@@ -3094,16 +3094,23 @@ function buildShop(){
     {n:3,k:G.ki1,lb:G.ki1>=4?L[_lang].lbMax:`5I+${G.ki1===3?'20':'10'}yd\n-${G.pi1}pts`,dis:G.ki1>=4,noPts:G.ki1<4&&G.pts<G.pi1},
     {n:4,k:G.ki2,lb:G.ki2>=4?L[_lang].lbMax:`8I+${G.ki2===3?'20':'10'}yd\n-${G.pi2}pts`,dis:G.ki2>=4,noPts:G.ki2<4&&G.pts<G.pi2},
   ].map(c=>{
-    const cls=c.dis?' dis':c.noPts?' dis':''; 
-    const extraStyle=c.noPts?'color:#f84;':c.dis?'color:#556;opacity:0.6;':'';
-    return `<button class="cBtn${cls}" id="rb${c.n}" onclick="selShop(${c.n})" style="white-space:pre-line;font-size:10px;line-height:1.3;flex:1;${extraStyle}">${c.lb}${c.noPts?'\n<span style="font-size:9px;color:#f84">'+L[_lang].lbNopts+'</span>':''}</button>`;
+    if(c.dis){
+      // MAX（最大強化済み）: グレー背景、くすんだ緑文字
+      return `<button class="cBtn dis" id="rb${c.n}" style="white-space:pre-line;font-size:10px;line-height:1.3;flex:1;background:#0a0a0a;border-color:#2a2a2a;color:#3a5a3a">${c.lb}</button>`;
+    } else if(c.noPts){
+      // pts不足: オレンジ枠＋白ラベル＋オレンジのpts不足表示
+      return `<button class="cBtn dis" id="rb${c.n}" style="white-space:pre-line;font-size:10px;line-height:1.3;flex:1;background:#1a0800;border-color:#a04000;color:#ffaa66">${c.lb}<br><span style="font-size:9px;color:#ff6622">${L[_lang].lbNopts}</span></button>`;
+    } else {
+      return `<button class="cBtn" id="rb${c.n}" onclick="selShop(${c.n})" style="white-space:pre-line;font-size:10px;line-height:1.3;flex:1">${c.lb}</button>`;
+    }
   }).join('');
   if(G.nwz<9){
     const sk7NoPts=G.pw>0&&G.pts<G.pw;
-    const sk7Cls=sk7NoPts?' dis':G.pw<=0?' dis':'';
-    const sk7Col=sk7NoPts?'color:#f84;':'';
-    const sk7Sub=sk7NoPts?`<span style="font-size:9px;color:#f84">${L[_lang].lbNopts}</span><br>`:`<span style="font-size:10px;color:#f88">-${G.pw}pts</span>`;
-    sc2.innerHTML=`<button class="cBtn${sk7Cls}" id="rb7" onclick="selShop(7)" style="font-size:11px;flex:1;${sk7Col}">${L[_lang].lbSkillPlus}<br>${sk7Sub}</button>`;
+    if(sk7NoPts){
+      sc2.innerHTML=`<button class="cBtn dis" id="rb7" style="font-size:11px;flex:1;background:#1a0800;border-color:#a04000;color:#ffaa66">${L[_lang].lbSkillPlus}<br><span style="font-size:9px;color:#ff6622">${L[_lang].lbNopts}</span></button>`;
+    } else {
+      sc2.innerHTML=`<button class="cBtn" id="rb7" onclick="selShop(7)" style="font-size:11px;flex:1">${L[_lang].lbSkillPlus}<br><span style="font-size:10px;color:#f88">-${G.pw}pts</span></button>`;
+    }
   } else { sc2.innerHTML=''; }
   if(G.pw<=0||G.nwz>=9) {const e=$(7);if(e)e.classList.add('dis');}
 }
