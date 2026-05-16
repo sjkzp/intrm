@@ -967,6 +967,7 @@ function showVSInterScore(afterCPU){
 }
 
 function vsStartCPU(){
+  sc('scG'); // ゲーム画面に遷移（デバッグ時はここで初めて遷移）
   // ショップ背景をリセット
   const scg=document.getElementById('scG'); if(scg) scg.style.background='';
   const gt=document.getElementById('gTop'); if(gt) gt.style.background='';
