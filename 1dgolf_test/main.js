@@ -25,10 +25,10 @@ function toggleDebug(){
   _debugMode = !_debugMode;
   const btn = document.getElementById('debugBtn');
   if(btn){
-    btn.textContent = _debugMode ? '🐛 DBG ON' : '🐛 DBG';
-    btn.style.background    = _debugMode ? '#2a0a2a' : '#1a0a1a';
-    btn.style.borderColor   = _debugMode ? '#cc44cc' : '#664466';
-    btn.style.color         = _debugMode ? '#ff88ff' : '#cc88cc';
+    btn.textContent      = 'DEBUG MODE: ' + (_debugMode ? 'ON' : 'OFF');
+    btn.style.background = _debugMode ? '#2a0a0a' : '#1a0a1a';
+    btn.style.borderColor= _debugMode ? '#cc4444' : '#664466';
+    btn.style.color      = _debugMode ? '#ff8888' : '#cc88cc';
   }
 }
 
@@ -37,7 +37,7 @@ function showDebugBtn(show){
   const btn = document.getElementById('debugBtn');
   if(btn) btn.style.display = show ? '' : 'none';
   // モード変更時はOFF状態にリセット
-  if(!show){ _debugMode=false; if(btn){btn.textContent='🐛 DBG';btn.style.background='#1a0a1a';btn.style.borderColor='#664466';btn.style.color='#cc88cc';} }
+  if(!show){ _debugMode=false; if(btn){btn.textContent='DEBUG MODE: OFF';btn.style.background='#1a0a1a';btn.style.borderColor='#664466';btn.style.color='#cc88cc';} }
 }
 
 // =============================================
@@ -659,8 +659,8 @@ function showScoreCard(){
       let tot=0,totPar=0;
       const maxLen=Math.max(scores.length, pars.length);
       for(let i=0;i<maxLen;i++){
-        const s=scores[i],p=pars[i]||4; // sがundefinedなら未プレイ
-        const played=s!==undefined&&s>0;
+        const s=scores[i],p=pars[i]||4;
+        const played=s!==null&&s!==undefined&&s>0;
         const d=played?s-p:0;
         if(played){tot+=s;totPar+=p;}
         h+=`<tr style="border-bottom:1px solid #0f0f1a"><td style="padding:2px 3px;color:#aaccee">${i+1}</td><td style="color:#556">${p}</td><td style="color:#ccc;font-weight:bold">${played?s:'-'}</td><td style="color:${played?scoreCol(d):'#666'};font-weight:bold">${played?(d>0?'+':'')+d:'-'}</td></tr>`;
@@ -2087,11 +2087,18 @@ function showVSResult(){
     html+=`<tr style="color:#556"><td style="padding:1px 2px">H</td><td>Par</td><td>S</td><td>±</td></tr>`;
     let tot=0,totPar=0;
     scores.forEach((s,i)=>{
-      const p=pars[i]||4,d=s-p;tot+=s;totPar+=p;
-      html+=`<tr style="border-bottom:1px solid #0f0f1a"><td style="padding:2px;color:#aaccee">${i+1}</td><td style="color:#556">${p}</td><td style="color:#ccc;font-weight:bold">${s}</td><td style="color:${scoreCol(d)};font-weight:bold">${d>0?'+':''}${d}</td></tr>`;
+      const p=pars[i]||4;
+      if(s===null||s===undefined){
+        html+=`<tr style="border-bottom:1px solid #0f0f1a"><td style="padding:2px;color:#aaccee">${i+1}</td><td style="color:#556">${p}</td><td style="color:#556">-</td><td style="color:#556">-</td></tr>`;
+      } else {
+        const d=s-p;tot+=s;totPar+=p;
+        html+=`<tr style="border-bottom:1px solid #0f0f1a"><td style="padding:2px;color:#aaccee">${i+1}</td><td style="color:#556">${p}</td><td style="color:#ccc;font-weight:bold">${s}</td><td style="color:${scoreCol(d)};font-weight:bold">${d>0?'+':''}${d}</td></tr>`;
+      }
     });
-    const totD=tot-totPar;
-    html+=`<tr style="border-top:1px solid #2a2a4a"><td colspan="2" style="color:#aaccee;font-size:11px">${L[_lang].lbTot}</td><td style="color:#fff;font-weight:bold">${tot}</td><td style="color:${scoreCol(totD)};font-weight:bold">${totD>0?'+':''}${totD}</td></tr>`;
+    const totD=tot>0?tot-totPar:0;
+    const totTxt=tot>0?String(tot):'-';
+    const totDTxt=tot>0?(totD>0?'+':'')+totD:'-';
+    html+=`<tr style="border-top:1px solid #2a2a4a"><td colspan="2" style="color:#aaccee;font-size:11px">${L[_lang].lbTot}</td><td style="color:#fff;font-weight:bold">${totTxt}</td><td style="color:${tot>0?scoreCol(totD):'#556'};font-weight:bold">${totDTxt}</td></tr>`;
     html+='</table></div>';
     return html;
   }
