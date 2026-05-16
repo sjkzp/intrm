@@ -3096,10 +3096,10 @@ function buildShop(){
   ].map(c=>{
     if(c.dis){
       // MAX: 枠なし・暗め背景・白文字
-      return `<button class="cBtn dis" id="rb${c.n}" style="white-space:pre-line;font-size:10px;line-height:1.3;flex:1;background:#0d0d0d;border-color:transparent;color:#fff">${c.lb}</button>`;
+      return `<button class="cBtn" id="rb${c.n}" style="white-space:pre-line;font-size:10px;line-height:1.3;flex:1;background:#0d0d0d;border-color:transparent;color:#fff;pointer-events:none">${c.lb}</button>`;
     } else if(c.noPts){
       // pts不足: 枠なし・暗め背景・白文字＋サブラベル
-      return `<button class="cBtn dis" id="rb${c.n}" style="white-space:pre-line;font-size:10px;line-height:1.3;flex:1;background:#0d0d0d;border-color:transparent;color:#fff">${c.lb}<br><span style="font-size:9px;color:#fff">${L[_lang].lbNopts}</span></button>`;
+      return `<button class="cBtn" id="rb${c.n}" style="white-space:pre-line;font-size:10px;line-height:1.3;flex:1;background:#0d0d0d;border-color:transparent;color:#fff;pointer-events:none">${c.lb}<br><span style="font-size:9px;color:#fff">${L[_lang].lbNopts}</span></button>`;
     } else {
       return `<button class="cBtn" id="rb${c.n}" onclick="selShop(${c.n})" style="white-space:pre-line;font-size:10px;line-height:1.3;flex:1">${c.lb}</button>`;
     }
@@ -3107,7 +3107,7 @@ function buildShop(){
   if(G.nwz<9){
     const sk7NoPts=G.pw>0&&G.pts<G.pw;
     if(sk7NoPts){
-      sc2.innerHTML=`<button class="cBtn dis" id="rb7" style="font-size:11px;flex:1;background:#0d0d0d;border-color:transparent;color:#fff">${L[_lang].lbSkillPlus}<br><span style="font-size:9px;color:#fff">${L[_lang].lbNopts}</span></button>`;
+      sc2.innerHTML=`<button class="cBtn" id="rb7" style="font-size:11px;flex:1;background:#0d0d0d;border-color:transparent;color:#fff;pointer-events:none">${L[_lang].lbSkillPlus}<br><span style="font-size:9px;color:#fff">${L[_lang].lbNopts}</span></button>`;
     } else {
       sc2.innerHTML=`<button class="cBtn" id="rb7" onclick="selShop(7)" style="font-size:11px;flex:1">${L[_lang].lbSkillPlus}<br><span style="font-size:10px;color:#f88">-${G.pw}pts</span></button>`;
     }
