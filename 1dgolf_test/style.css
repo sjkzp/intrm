@@ -141,7 +141,7 @@ button:active{opacity:.75}
 #gClubPutt{display:none;flex-wrap:wrap;gap:6px}
 #gClubShop{display:none;flex-wrap:wrap;gap:6px}
 .cBtn{background:#0a0a14;border:2px solid #fff;color:#fff;border-radius:8px;font-size:clamp(12px,3vw,15px);padding:9px 12px;touch-action:manipulation;flex:1;min-width:70px;text-align:center}
-.cBtn.sel{background:#141400;border-color:#886;color:#ffdd44}
+.cBtn.sel{background:#1a1400;border:3px solid #ffee00;color:#ffee00;text-shadow:0 0 6px #ffee00}
 .cBtn.dis{opacity:.3;pointer-events:none}
 /* ショットボタン + サブボタン */
 #gBtnRow{display:flex;gap:6px;padding:0 8px 8px;flex-shrink:0}
