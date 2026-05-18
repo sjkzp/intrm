@@ -1653,12 +1653,11 @@ function startMvCPU(){
       clearInterval(G.mv);G.mv=null;
       const remaining=G.y1-G.cp;
       G.cp=G.cp+G.drv;G.cp2=G.cp;G.y2=G.y1-G.cp;G.y3=G.drv;
-      // カップイン判定（ぴったり着地のみ）
-      if(G.drv>=remaining&&G.drv<=remaining+1){
-        G.y2=0;G.bon=800;showFormula(); updHUD();updPos();
-        seHoleIn(); setTimeout(()=>cpuJudgeShot(),800);return;
+      if(G.y2<0) G.y2=Math.abs(G.y2);
+      // チップイン判定: グリーン外から残り距離以上飛ばしてグリーン枠内に収まった場合
+      if(G.drv>=remaining && remaining>G.gz && G.cp>=(G.y1-G.gz) && G.cp<=(G.y1+G.gz)){
+        G.cp=G.y1; G.cp2=G.y1; G.y2=0; // カップ位置に補正
       }
-      if(G.y2<0) G.y2=Math.abs(G.y2); // オーバー量を正値に
       showFormula(); updHUD();updPos();cpuDropChk();
     }
   },16);
