@@ -1653,10 +1653,12 @@ function startMvCPU(){
       clearInterval(G.mv);G.mv=null;
       const remaining=G.y1-G.cp;
       G.cp=G.cp+G.drv;G.cp2=G.cp;G.y2=G.y1-G.cp;G.y3=G.drv;
+      // カップイン判定（ぴったり着地のみ）
       if(G.drv>=remaining&&G.drv<=remaining+1){
         G.y2=0;G.bon=800;showFormula(); updHUD();updPos();
         seHoleIn(); setTimeout(()=>cpuJudgeShot(),800);return;
       }
+      if(G.y2<0) G.y2=Math.abs(G.y2); // オーバー量を正値に
       showFormula(); updHUD();updPos();cpuDropChk();
     }
   },16);
@@ -1863,7 +1865,7 @@ function cpuDropChk(){
   if(G.ji===5){
     seChime(); // オングリーン（CPUも同じ効果音）
     G.y2=Math.abs(G.y1-G.cp);
-    // ちょうどカップ位置に着地した場合は即カップイン（チップイン）
+    // カップ位置に着地した場合のみカップイン
     if(G.y2===0){G.bon=0;updHUD();updPos();seHoleIn();setTimeout(()=>cpuJudgeShot(),800);return;}
     if(G.ns>=(G.par+4)){cpuFinishHole();return;}
     // グリーン傾斜設定
