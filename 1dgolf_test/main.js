@@ -1787,7 +1787,7 @@ function startPtCPU(){
     if(VS._cpuSkip){
       clearInterval(G.mv);G.mv=null;
       G.y3=stopAt;G.y2=y2init-stopAt;
-      if(willHole){G.y2=0;G.y3=y2init;G.bon=0;G.cp=G.y1;updHUD();updPos();cpuJudgeShot();}
+      if(willHole){G.y2=0;G.y3=y2init;G.bon=0;G.cp=G.y1;updHUD();updPos();seHoleIn();setTimeout(()=>cpuJudgeShot(),800);}
       else{G.cp=G.y1-G.y2;updHUD();updPos();setTimeout(()=>cpuTakeTurn(),CPU_DELAY);}
       return;
     }
