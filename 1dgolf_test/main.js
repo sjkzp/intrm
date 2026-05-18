@@ -1635,11 +1635,24 @@ function cpuCalcGauge(){
 // CPU専用のドライブアニメ（startMv相当、終了後にcpuDropChk）
 function startMvCPU(){
   G.y3=0; G.cp2=G.cp; G.t0=Date.now();
+  const _cpStartPos=G.cp; // チップイン判定用：ショット開始位置を保存
   if(G.mv)clearInterval(G.mv);
   G.mv=setInterval(()=>{
+    // スキップ時は即座に結果へ
+    if(VS._cpuSkip){
+      clearInterval(G.mv);G.mv=null;
+      const remaining=G.y1-_cpStartPos;
+      G.cp=_cpStartPos+G.drv;G.cp2=G.cp;G.y3=G.drv;
+      G.y2=G.y1-G.cp;
+      if(G.y2<0) G.y2=Math.abs(G.y2);
+      if(G.drv>=remaining && remaining>G.gz && G.cp>=(G.y1-G.gz) && G.cp<=(G.y1+G.gz)){
+        G.cp=G.y1;G.cp2=G.y1;G.y2=0;
+      }
+      showFormula();updHUD();updPos();cpuDropChk();return;
+    }
     const el=Date.now()-G.t0;
     const pct=G.drv?G.y3/G.drv:1;
-    const n=VS._cpuSkip?0:(pct<.25?24:pct<.3?30:pct<.4?34:pct<.6?39:pct<.8?36:39);
+    const n=pct<.25?24:pct<.3?30:pct<.4?34:pct<.6?39:pct<.8?36:39;
     if(el<n)return; G.t0=Date.now();
     G.y3+=2; G.cp2=G.cp+G.y3; G.y2=G.y1-G.cp2;
     const animPos=G.cp+G.y3;
@@ -1788,7 +1801,7 @@ function startPtCPU(){
     if(VS._cpuSkip){
       clearInterval(G.mv);G.mv=null;
       G.y3=stopAt;G.y2=y2init-stopAt;
-      if(willHole){G.y2=0;G.y3=y2init;G.bon=0;G.cp=G.y1;updHUD();updPos();seHoleIn();setTimeout(()=>cpuJudgeShot(),800);}
+      if(willHole){G.y2=0;G.y3=y2init;G.bon=0;G.cp=G.y1;updHUD();updPos();seHoleIn();setTimeout(()=>cpuJudgeShot(),400);}
       else{G.cp=G.y1-G.y2;updHUD();updPos();setTimeout(()=>cpuTakeTurn(),CPU_DELAY);}
       return;
     }
@@ -1865,7 +1878,7 @@ function cpuDropChk(){
     seChime(); // オングリーン（CPUも同じ効果音）
     G.y2=Math.abs(G.y1-G.cp);
     // カップ位置に着地した場合のみカップイン
-    if(G.y2===0){G.bon=0;updHUD();updPos();seHoleIn();setTimeout(()=>cpuJudgeShot(),800);return;}
+    if(G.y2===0){G.bon=0;updHUD();updPos();seHoleIn();setTimeout(()=>cpuJudgeShot(),400);return;}
     if(G.ns>=(G.par+4)){cpuFinishHole();return;}
     // グリーン傾斜設定
     G.wa=G.gwa;G.wz=G.gwz;G.kz=G.gkz;windK();
