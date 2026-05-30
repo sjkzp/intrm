@@ -60,10 +60,12 @@ const L = {
     vsTitle: '対戦相手選択', vsSub: 'CPUのキャラを選んでください', vsSub1: '操作するキャラを選んでください',
     btnDecide: '▶ 決定', btnVSDecide: '⚔ 決定',
     statPow: '腕力：', statTch: '器用さ：', statGeo: '土地勘：', statSpe: '特技：',
-    courseTitle: 'コース選択', coursePrac: '練 習 コ ー ス', courseChamp: '選 手 権 コ ー ス',
+    courseTitle: 'コース選択', coursePrac: '練 習 コ ー ス', courseChamp: '選 手 権 コ ー ス', courseRogue: 'R O G U E L I T E',
     coursePracMeta: '<span>1600pts</span><span>6ホール</span>',
     courseChampMeta: '<span>1300pts</span><span>9ホール</span>',
+    courseRogueMeta: '<span>1200pts</span><span>9 Random</span>',
     courseInfoPrac: '練習コース｜6H｜1600pts', courseInfoChamp: '選手権コース｜9H｜1300pts',
+    courseInfoRogue: 'Roguelite｜9H｜random hazards｜1200pts',
     howtoClose: '閉じる', recBack: '← 戻る',
     htCredits: '制作：int ／ キャラグラフィック：YUU（海無軒）',
     // ゲーム画面ラベル
@@ -82,7 +84,7 @@ const L = {
     recBest:'⛳ ベストスコア',
     recEmpty:'まだ記録がありません',
     recDelete:'🗑 記録をすべて削除',
-    recCrsNames:{1:'練習コース',2:'選手権コース'},
+    recCrsNames:{1:'練習コース',2:'選手権コース',3:'Roguelite'},
     recDelTitle:'記録を削除', recDelBody:'ホールベスト・プレイ回数・<br>実績データがすべて消えます。<br>本当に削除しますか？',
     recDelCancel:'キャンセル', recDelOk:'削除する', recDelDone:'記録を削除しました',
     // 地形名
@@ -113,10 +115,12 @@ const L = {
     vsTitle: 'SELECT OPPONENT', vsSub: 'Choose a CPU character', vsSub1: 'Choose your character',
     btnDecide: '▶ Select', btnVSDecide: '⚔ Select',
     statPow: 'Power：', statTch: 'Dexterity：', statGeo: 'Range Finding：', statSpe: 'Skill：',
-    courseTitle: 'SELECT COURSE', coursePrac: 'P R A C T I C E', courseChamp: 'C H A M P I O N S H I P',
+    courseTitle: 'SELECT COURSE', coursePrac: 'P R A C T I C E', courseChamp: 'C H A M P I O N S H I P', courseRogue: 'R O G U E L I T E',
     coursePracMeta: '<span>1600pts</span><span>6 Holes</span>',
     courseChampMeta: '<span>1300pts</span><span>9 Holes</span>',
+    courseRogueMeta: '<span>1200pts</span><span>9 Random</span>',
     courseInfoPrac: 'Practice | 6H | 1600pts', courseInfoChamp: 'Championship | 9H | 1300pts',
+    courseInfoRogue: 'Roguelite | 9H | random hazards | 1200pts',
     howtoClose: 'Close', recBack: '← Back',
     htCredits: 'Developer: int ／ Character Art: YUU',
     // ゲーム画面ラベル
@@ -135,7 +139,7 @@ const L = {
     recBest:'⛳ Best Scores',
     recEmpty:'No records yet',
     recDelete:'🗑 Delete All Records',
-    recCrsNames:{1:'Practice',2:'Championship'},
+    recCrsNames:{1:'Practice',2:'Championship',3:'Roguelite'},
     recDelTitle:'Delete Records', recDelBody:'All best scores, play counts<br>and stats will be erased.<br>Are you sure?',
     recDelCancel:'Cancel', recDelOk:'Delete', recDelDone:'Records deleted',
     // 地形名
@@ -205,12 +209,16 @@ function applyLang(){
   if(crH2) crH2.textContent = t.courseTitle;
   const cpName = document.querySelector('#crPrac .crName');
   const ccName = document.querySelector('#crChamp .crName');
+  const crName = document.querySelector('#crRogue .crName');
   const cpMeta = document.querySelector('#crPrac .crMeta');
   const ccMeta = document.querySelector('#crChamp .crMeta');
+  const crMeta = document.querySelector('#crRogue .crMeta');
   if(cpName) cpName.textContent = t.coursePrac;
   if(ccName) ccName.textContent = t.courseChamp;
+  if(crName) crName.textContent = t.courseRogue;
   if(cpMeta) cpMeta.innerHTML   = t.coursePracMeta;
   if(ccMeta) ccMeta.innerHTML   = t.courseChampMeta;
+  if(crMeta) crMeta.innerHTML   = t.courseRogueMeta;
   const cct = document.getElementById('crConfirmTitle');
   if(cct) cct.textContent = t.courseConfirmTitle || 'ARE YOU READY?';
 
@@ -464,6 +472,55 @@ const C2=[null,
  {par:6,wa:9,wz:9,kz:1,y:864,g:13,gkz:3,gwa:4,gwz:5,Ra:[140,287,405],Rz:[193,327,572],Wa:[328,710,800],Wz:[404,774,850],Ba:[219,573,775],Bz:[251,602,790]},
 ];
 
+function rndInt(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+function courseHoleCount(){return G.cr===3?9:(G.cr===2?9:6);}
+function cloneHole(h){
+  return {
+    par:h.par,wa:h.wa,wz:h.wz,kz:h.kz,y:h.y,g:h.g,gkz:h.gkz||0,gwa:h.gwa||0,gwz:h.gwz||0,
+    Ra:[...h.Ra],Rz:[...h.Rz],Wa:[...h.Wa],Wz:[...h.Wz],Ba:[...h.Ba],Bz:[...h.Bz]
+  };
+}
+function scaleZones(a,z,scale,y){
+  const outA=[], outZ=[];
+  for(let i=0;i<3;i++){
+    if(!a[i]&&!z[i]){outA[i]=0;outZ[i]=0;continue;}
+    const aa=Math.max(1,Math.min(y-10,Math.round(a[i]*scale)+rndInt(-12,12)));
+    const zz=Math.max(aa+1,Math.min(y-4,Math.round(z[i]*scale)+rndInt(-12,12)));
+    outA[i]=aa;outZ[i]=zz;
+  }
+  return [outA,outZ];
+}
+function makeRogueHole(i){
+  const src=(Math.random()<0.45?C1[rndInt(1,6)]:C2[rndInt(1,9)]);
+  const h=cloneHole(src);
+  const scale=[0.86,0.94,1.02,1.1,1.18][rndInt(0,4)];
+  h.y=Math.max(145,Math.min(890,Math.round(src.y*scale)+rndInt(-22,28)));
+  h.g=Math.max(10,Math.min(32,src.g+rndInt(-4,4)));
+  h.wa=Math.max(0,Math.min(9,src.wa+rndInt(-1,2)));
+  h.wz=Math.max(h.wa,Math.min(9,src.wz+rndInt(-1,2)));
+  h.kz=[1,1,2,3][rndInt(0,3)];
+  h.gkz=rndInt(0,3);
+  h.gwa=Math.max(0,Math.min(5,(src.gwa||0)+rndInt(-1,1)));
+  h.gwz=Math.max(h.gwa,Math.min(5,(src.gwz||0)+rndInt(-1,1)));
+  h.par=h.y<260?3:h.y<520?4:h.y<760?5:6;
+  [h.Ra,h.Rz]=scaleZones(src.Ra,src.Rz,h.y/src.y,h.y);
+  [h.Wa,h.Wz]=scaleZones(src.Wa,src.Wz,h.y/src.y,h.y);
+  [h.Ba,h.Bz]=scaleZones(src.Ba,src.Bz,h.y/src.y,h.y);
+  return h;
+}
+function buildRogueCourse(){
+  G.rogueHoles=[null];
+  for(let i=1;i<=9;i++)G.rogueHoles[i]=makeRogueHole(i);
+}
+function getCourseHole(n){
+  if(G.cr===3){
+    if(!G.rogueHoles||!G.rogueHoles[n])buildRogueCourse();
+    return G.rogueHoles[n]||G.rogueHoles[1];
+  }
+  const db=G.cr===2?C2:C1;
+  return db[n]||db[1];
+}
+
 const G={
  bgm:true,cmd:0,ch:0,hcy:false,cr:0,
  nH:1,par:4,wa:0,wz:0,kz:0,y1:0,y2:0,y3:0,gz:15,gkz:0,gwa:0,gwz:0,holeScores:[],holePars:[],
@@ -479,6 +536,7 @@ const G={
  mv:null,t0:0,
  sm:0,ss:0,st:0,sk:0,sp:0,sh:0,
  uf3:true,uf4:true,uf5:true,uf6:true, // chara3-6初期解放
+ rogueHoles:[],
 };
 
 
@@ -493,8 +551,7 @@ function applyStats(){
 }
 
 function loadHD(){
-  const db=G.cr===2?C2:C1;
-  const h=db[G.nH]||db[1];
+  const h=getCourseHole(G.nH);
   G.par=h.par;G.wa=h.wa;G.wz=h.wz;G.kz=h.kz;G.y1=h.y;G.gz=h.g;
   G.gkz=h.gkz||0;G.gwa=h.gwa||0;G.gwz=h.gwz||0; // グリーン専用傾斜
   G.Ra=[...h.Ra];G.Rz=[...h.Rz];G.Wa=[...h.Wa];G.Wz=[...h.Wz];G.Ba=[...h.Ba];G.Bz=[...h.Bz];
@@ -685,7 +742,7 @@ function showScoreCard(){
       makeCol(cdN(cpud).split(' ')[0], cpud.col, VS.cpuScores)+
       `</div>`;
   } else {
-    const crNames=L[_lang].recCrsNames||{1:'Practice',2:'Championship'};
+    const crNames=L[_lang].recCrsNames||{1:'Practice',2:'Championship',3:'Roguelite'};
     ttl.textContent = (crNames[G.cr]||'') + ' ' + L[_lang].scCardTitle;
     tbl.innerHTML = buildScoreCardHTML();
   }
@@ -2078,7 +2135,7 @@ function cpuAutoFinish(){
 // VSリザルト表示
 function showVSResult(){
   // ★全ホール完走時にDBへ保存（VSモードはendGameを通らないためここで実行）
-  const _lastH=G.cr===2?9:6;
+  const _lastH=courseHoleCount();
   if(G.holeScores.length >= _lastH){
     const ch=VS._savedCh||G.ch;
     dbSaveRunBest(G.cr, ch, G.holeScores, G.holePars);
@@ -2268,7 +2325,7 @@ function startPt(){
       } else {
         // 届かず: 次打へ
         G.cp=G.y1-G.y2;updHUD();updPos();
-        const lastP=G.cr===2?9:6;
+        const lastP=courseHoleCount();
         if(G.ns>=(G.par+4)){
           S('gUp','block');S('speBox','none');showGiveUpFlash();
           if(G.nH===lastP){G.ns+=2;G.sc+=(G.ns-G.par);T('bPro',L[_lang].lbFinish);S('bPro','block');}
@@ -2300,7 +2357,7 @@ function dropChk(){
   setTer(G.ji, G.ji===5);
   // OBは即座にバーを非表示
   if(G.ji===6){ const mp=$('mPos'); if(mp) mp.style.display='none'; }
-  const last=G.cr===2?9:6;
+  const last=courseHoleCount();
 
   // グリーンにワンショットで乗った = チップイン扱い（ホールインワンは ns=1）
   if(G.ji===5){
@@ -2359,7 +2416,7 @@ function afterJ(){
   G.holeScores.push(G.ns);
   G.holePars.push(G.par);
   rankime();
-  const last=G.cr===2?9:6;
+  const last=courseHoleCount();
   if(G.nH>=last){endGame();return;}
   enterShop();
 }
@@ -2544,6 +2601,7 @@ function rankime(){
 function _initGameState(){
   G.sc=0;G.nH=1;G.nHIO=0;G.nALB=0;G.nEAG=0;G.nBIR=0;G.nCHP=0;G.n4=0;G.maxy=0;
   G.holeScores=[];G.holePars=[];
+  if(G.cr===3)buildRogueCourse();else G.rogueHoles=[];
   G.sm=0;G.ss=0;G.st=0;G.sk=0;G.sp=0;G.sh=0;
   const d=CD[G.ch];
   const cf=$('cFace'); if(cf) cf.innerHTML=`<div style="font-size:52px;color:${d.col}">${d.ic}</div>`;
@@ -2823,9 +2881,9 @@ function goToCR(){
   updGaugeWaku();
 }
 function selCR(n){
-  if(n===3) return; // EDITコース廃止
-  G.cr=n; G.pts=n===1?1600:1300;
-  const info = {1:L[_lang].courseInfoPrac, 2:L[_lang].courseInfoChamp};
+  G.cr=n; G.pts=n===1?1600:(n===2?1300:1200);
+  if(n===3)buildRogueCourse();
+  const info = {1:L[_lang].courseInfoPrac, 2:L[_lang].courseInfoChamp, 3:L[_lang].courseInfoRogue};
   T('crConfirmInfo', info[n]||'');
   document.getElementById('crConfirm').style.display='flex';
 }
@@ -3045,7 +3103,7 @@ function sCk(){
   else if(G.cmd===16){ vsStartPlayer(); return; } // CPU番終了後→1P開始
   else if(G.cmd===17){ vsStartCPU(); return; }    // 1P終了後→CPU開始
   else if(G.cmd===15){          // ギブアップ後→次ホール
-    const lastG=G.cr===2?9:6;
+    const lastG=courseHoleCount();
     if(G.nH>=lastG){
       if(VS.active) afterJ(); // VS時はafterJVSを経由してVSリザルトへ
       else endGame();
@@ -3271,7 +3329,7 @@ function enterShop(){
 
   S('lRest','none'); S('lFly','none'); // ショップ中は残り・飛距離行を非表示
   // 次のホールのデータを取得して表示（全長のみ表示）
-  { const db2=G.cr===2?C2:C1; const nh=db2[G.nH]||db2[1];
+  { const nh=getCourseHole(G.nH);
     T('vYd1',nh.y); }
   S('bVwC',''); // bVwSは非表示のまま
   E('bWnd',false);E('bSpe',false);
@@ -3432,7 +3490,7 @@ function csend(){afterJ();}
 // =============================================
 function endGame(){
   // 最終ホールのスコアが未記録の場合（ギブアップ経由など）は補完
-  const _lastH=G.cr===2?9:6;
+  const _lastH=courseHoleCount();
   if(G.holeScores.length < _lastH && G.ns > 0){
     G.holeScores.push(G.ns);
     G.holePars.push(G.par);
@@ -3454,7 +3512,7 @@ function endGame(){
     ? `<img src="${endImgSrc}" style="width:165px;height:165px;object-fit:contain">`
     : `<span style="font-size:56px">${d.ic}</span>`;
   document.getElementById('endFig').style.borderColor='';
-  const cr={1:'Practice',2:'Championship',3:'Edit'};
+  const cr={1:'Practice',2:'Championship',3:'Roguelite'};
   T('endCrs',cr[G.cr]||'');
   const s=G.sc, sg=s<0?'-':s>0?'+':'±';
   document.getElementById('endScore').innerHTML=`<span style="color:${s<=0?'#4f4':'#f84'}">${sg}${Math.abs(s)}</span>`;
@@ -3557,7 +3615,7 @@ function openRecords(){
   body.innerHTML='<div style="color:#667;font-size:13px;text-align:center;padding:20px">'+tRec.recLoading+'</div>';
 
   const COURSE_NAMES=tRec.recCrsNames;
-  const HOLE_COUNTS={1:6,2:9};
+  const HOLE_COUNTS={1:6,2:9,3:9};
 
   dbGetAllRecords().then(rec=>{
     const bs=rec.bestScores||{};
