@@ -17,6 +17,36 @@ window.addEventListener('unhandledrejection', function(e) {
 'use strict';
 
 // =============================================
+// デバッグモード
+// =============================================
+let _debugMode = false;
+
+function toggleDebug(){
+  _debugMode = !_debugMode;
+  const track = document.getElementById('debugTrack');
+  const thumb = document.getElementById('debugThumb');
+  const label = document.getElementById('debugLabel');
+  if(track) track.style.background = _debugMode ? '#aa3333' : '#333';
+  if(thumb){ thumb.style.left = _debugMode ? '18px' : '2px'; thumb.style.background = _debugMode ? '#ffaaaa' : '#888'; }
+  if(label) label.style.color = _debugMode ? '#ffaaaa' : '#cc88cc';
+}
+
+// VSモード開始時にデバッグボタンを表示
+function showDebugBtn(show){
+  const btn = document.getElementById('debugBtn');
+  if(btn) btn.style.display = show ? 'flex' : 'none';
+  if(!show){
+    _debugMode=false;
+    const track=document.getElementById('debugTrack');
+    const thumb=document.getElementById('debugThumb');
+    const label=document.getElementById('debugLabel');
+    if(track) track.style.background='#333';
+    if(thumb){ thumb.style.left='2px'; thumb.style.background='#888'; }
+    if(label) label.style.color='#cc88cc';
+  }
+}
+
+// =============================================
 // 言語切替システム
 // =============================================
 let _lang = 'ja'; // 'ja' | 'en'
@@ -59,20 +89,21 @@ const L = {
     terNames:{1:'FAIRWAY',2:'ROUGH',3:'BUNKER',4:'WATER',5:'GREEN',6:'O B'},
     lbWind:'風', lbSlope:'傾',
     lbShotBtn:'打つ', lbUseBtn:'使用', lbWaitBtn:'風待ち',
-    lbBuy:'購入', lbSkillPlus:'特技+1', lbNextHole:'次のホールへ ›', lbFinish:'コース終了', lbStop:'■ STOP',
-    lbTot:'合計', lbCount:'回',
+    lbBuy:'購入', lbSkillPlus:'特技+1', lbMax:'MAX', lbNopts:'pts不足', lbNextHole:'次のホールへ ›', lbFinish:'コース終了', lbStop:'■ STOP',
+    lbTot:'合計', lbCount:'回', lbTitle:'タイトルへ',
     // 遊び方
     htTitle:'HOW TO PLAY',
-    htBasicsH:'⛳ 基本操作', htBasicsP:'クラブを選んで「打つ」ボタンを押すとゲージが動きます。ショットするとボールが飛びます。ゲージが高いほど飛距離が伸びます。',
-    htMobileH:'📱 スマホ操作', htMobileP:'<b>タップ</b> 打つ → <b>■STOP</b> でショット',
+    htBasicsH:'⛳ 基本操作', htBasicsP:'クラブを選んで「SHOT」ボタンを押すとゲージが動きます。ショットするとボールが飛びます。ゲージが高いほど飛距離が伸びます。',
+    htMobileH:'📱 スマホ操作', htMobileP:'<b>タップ</b> SHOT → <b>■STOP</b> でショット',
     htPcH:'🖥️ PC操作', htPcP:'<b>クリック長押し</b> SHOT → 離してショット',
-    htWindH:'💨 風待ち', htWindP:'風待ちボタンで風の値が変わります。＋なら飛距離が伸び、－なら縮みます。',
+    htWindH:'💨 風待ち', htWindP:'WAITボタンで風の値が変わります。＋なら飛距離が伸び、－なら縮みます。',
     htTerrainH:'🏌️ 地形',
-    htTerrainList:'<li><b style="color:#7fd87f">ROUGH</b>：飛距離が落ちます</li><li><b style="color:#ddcc44">BUNKER</b>：飛距離大幅減。アイアン(5I/8I)のみ使用可</li><li><b style="color:#6699ff">WATER / OB</b>：ペナルティ＋1打、前の位置から打ち直し</li><li><b style="color:#00ff88">GREEN</b>：パター(PT)を使用。傾斜±0のガイドが表示されます</li>',
+    htTerrainList:'<li style="background:#07120a;border-radius:6px;padding:5px 10px"><b style="color:#7fd87f">ROUGH</b><span style="color:#99aacc"> — 飛距離が落ちます</span></li><li style="background:#131000;border-radius:6px;padding:5px 10px"><b style="color:#ddcc44">BUNKER</b><span style="color:#99aacc"> — 飛距離大幅減。アイアン(5I/8I)のみ使用可</span></li><li style="background:#07091a;border-radius:6px;padding:5px 10px"><b style="color:#6699ff">WATER / OB</b><span style="color:#99aacc"> — ペナルティ＋1打、前の位置から打ち直し</span></li><li style="background:#06130a;border-radius:6px;padding:5px 10px"><b style="color:#00ff88">GREEN</b><span style="color:#99aacc"> — パター(PT)を使用。傾斜±0のガイドが表示されます</span></li>',
     htSkillH:'✨ 特技',
-    htSkillList:'<li><b>パワーショット</b>：ゲージ上限が120%に</li><li><b>地形無視ショット</b>：ROUGH/BUNKER上でもフェアウェイ飛距離</li><li><b>打ち直し</b>：打数を増やさず前の場所から再ショット</li><li><b>風・傾斜消し</b>：風・傾斜を±0にする</li><li><b>スタートオーバー</b>：ホール最初からやり直し</li>',
+    htSkillList:'<li style="background:#08100a;border-radius:6px;padding:5px 10px;color:#99aacc"><b style="color:#aaffaa">パワーショット</b> — ゲージ上限が120%に</li><li style="background:#08100a;border-radius:6px;padding:5px 10px;color:#99aacc"><b style="color:#aaffaa">地形無視ショット</b> — ROUGH/BUNKER上でもフェアウェイ飛距離</li><li style="background:#08100a;border-radius:6px;padding:5px 10px;color:#99aacc"><b style="color:#aaffaa">打ち直し</b> — 打数を増やさず前の場所から再ショット</li><li style="background:#08100a;border-radius:6px;padding:5px 10px;color:#99aacc"><b style="color:#aaffaa">風・傾斜消し</b> — 風・傾斜を±0にする</li><li style="background:#08100a;border-radius:6px;padding:5px 10px;color:#99aacc"><b style="color:#aaffaa">スタートオーバー</b> — ホール最初からやり直し</li>',
     htScoreH:'🏆 スコアとポイント', htScoreP:'ショットごとにポイント(pts)が減り、ホールクリアで獲得。par+4以上の打数でギブアップとなります。1ホール終了後はクラブ強化や特技回数増加のショップがあります。',
     htVsH:'⚔ VSモード', htVsP:'選手権コース（9H）のみ。1Pがホールをプレイした後、CPUが同じホールをプレイします。ショップで強化できるのは1Pのみ。',
+    htDbgP:'キャラ選択画面のDEBUG MODEをONにすると1Pのプレイをスキップし、CPUの動作のみを観戦できます。デバッグ中は結果とレコードは保存されません。',
   },
   en: {
     btnStart: '▶ S T A R T', btnVS: '⚔ V S  M O D E',
@@ -111,8 +142,8 @@ const L = {
     terNames:{1:'FAIRWAY',2:'ROUGH',3:'BUNKER',4:'WATER',5:'GREEN',6:'O B'},
     lbWind:'WIND', lbSlope:'SLP',
     lbShotBtn:'SHOT', lbUseBtn:'USE', lbWaitBtn:'WAIT',
-    lbBuy:'BUY', lbSkillPlus:'SKILL+1', lbNextHole:'NEXT HOLE ›', lbFinish:'FINISH', lbStop:'■ STOP',
-    lbTot:'TOT', lbCount:'x',
+    lbBuy:'BUY', lbSkillPlus:'SKILL+1', lbMax:'MAX', lbNopts:'pts low', lbNextHole:'NEXT HOLE ›', lbFinish:'FINISH', lbStop:'■ STOP',
+    lbTot:'TOT', lbCount:'x', lbTitle:'TITLE',
     // 遊び方
     htTitle:'HOW TO PLAY',
     htBasicsH:'⛳ BASICS', htBasicsP:'Select a club and press the SHOT button to start the gauge. Release/stop to fire the ball. Higher gauge = more distance.',
@@ -125,6 +156,7 @@ const L = {
     htSkillList:'<li><b>Power Shot</b>: Gauge cap raised to 120%</li><li><b>Terrain Ignore</b>: Fairway distance even on ROUGH/BUNKER</li><li><b>Retry Shot</b>: Reshoot from previous position without adding a stroke</li><li><b>Wind/Slope Cancel</b>: Sets wind and slope to ±0</li><li><b>Start Over</b>: Restart the hole from the beginning</li>',
     htScoreH:'🏆 SCORE & POINTS', htScoreP:'Points (pts) decrease per shot and are awarded on hole clear. Give up at par+4 strokes or more. After each hole, visit the SHOP to upgrade clubs or increase skill uses.',
     htVsH:'⚔ VS MODE', htVsP:'Championship course (9H) only. After Player 1 plays a hole, the CPU plays the same hole. Only Player 1 can upgrade in the SHOP.',
+    htDbgP:'Toggle DEBUG MODE on the character select screen to skip Player 1 and watch CPU play only. Results and records are not saved in debug mode.',
   }
 };
 
@@ -251,6 +283,15 @@ function applyLang(){
     if(cpuDa) cpuNameEl.textContent = cdN(cpuDa);
   }
 
+  // タイトルへボタン
+  ['endAgn'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.textContent=t.lbTitle;
+  });
+  document.querySelectorAll('#scEnd button, #scVSEnd button').forEach(b=>{
+    if(b.textContent==='TITLE'||b.textContent==='タイトルへ') b.textContent=t.lbTitle;
+  });
+
   // bPro ラベル更新
   const bProEl = document.getElementById('bPro');
   if(bProEl && bProEl.style.display !== 'none'){
@@ -284,7 +325,7 @@ function applyLang(){
     htWindH:'htWindH', htWindP:'htWindP',
     htTerrainH:'htTerrainH', htSkillH:'htSkillH',
     htScoreH:'htScoreH', htScoreP:'htScoreP',
-    htVsH:'htVsH', htVsP:'htVsP',
+    htVsH:'htVsH', htVsP:'htVsP', htDbgP:'htDbgP',
   };
   Object.entries(htMap).forEach(([key,id])=>{
     const el = document.getElementById(id);
@@ -626,8 +667,8 @@ function showScoreCard(){
       let tot=0,totPar=0;
       const maxLen=Math.max(scores.length, pars.length);
       for(let i=0;i<maxLen;i++){
-        const s=scores[i],p=pars[i]||4; // sがundefinedなら未プレイ
-        const played=s!==undefined&&s>0;
+        const s=scores[i],p=pars[i]||4;
+        const played=s!==null&&s!==undefined&&s>0;
         const d=played?s-p:0;
         if(played){tot+=s;totPar+=p;}
         h+=`<tr style="border-bottom:1px solid #0f0f1a"><td style="padding:2px 3px;color:#aaccee">${i+1}</td><td style="color:#556">${p}</td><td style="color:#ccc;font-weight:bold">${played?s:'-'}</td><td style="color:${played?scoreCol(d):'#666'};font-weight:bold">${played?(d>0?'+':'')+d:'-'}</td></tr>`;
@@ -676,6 +717,7 @@ const VS = {
 let vsStep = 0; // 0=通常, 1=自分選択中, 2=相手選択中
 
 function onStartVS(){
+  showDebugBtn(true);
   vsStep=1;
   VS.active=false;
   drawSlotsVS(1);
@@ -742,7 +784,18 @@ function confirmVSOppo(){
 function startGameVS(){
   VS.cpuSc=0; VS.cpuPts=1300; VS.cpuScores=[]; VS.cpuPars=[];
   VS.playerTurn=true; VS.playerSc=0; VS.playerScores=[];
-  startGame();
+  if(_debugMode){
+    // デバッグ: 画面遷移なしで状態初期化のみ行いCPUへ
+    _initGameState();
+    seStart();
+    loadHD(); // ホールデータロード
+    G.ns=G.par; G.mpt=0;
+    G.holeScores.push(null); G.holePars.push(G.par); VS.playerScores.push(null);
+    VS.playerSc=G.sc; VS.playerTurn=false;
+    enterShopVS(); // → 300ms後にvsStartCPU
+  } else {
+    startGame();
+  }
 }
 
 // VSモード用 afterJ: プレイヤーターン終了→CPUターン or ゲーム終了
@@ -771,6 +824,11 @@ function enterShopVS(){
   // G.nH はそのまま（プレイヤーと同じホールをCPUがプレイ）
   if(G.nH>9){ VS.playerTurn=true; VS.playerSc=G.sc; showVSResult(); return; }
   loadHD(); // 現在のホールデータを再ロード
+  if(_debugMode){
+    // デバッグ: ショップ・スコア確認をスキップして即CPUへ
+    setTimeout(()=>vsStartCPU(), 300);
+    return;
+  }
   // ショップ画面を出さず、VSスコア画面を表示してから次へ
   showVSInterScore();
 }
@@ -779,6 +837,17 @@ function enterShopVS(){
 function vsRestoreForPlayer(){
   // CPUバナー非表示
   const cb=document.getElementById('gCpuBanner'); if(cb) cb.style.display='none';
+  // デバッグモード: CPU番終了後も即次ホールスキップ（1P画面を表示しない）
+  if(_debugMode){
+    // ゲーム画面を非表示にしてからCPUホールへ（1P画面が一瞬映るのを防ぐ）
+    const _scG=document.getElementById('scG'); if(_scG) _scG.style.visibility='hidden';
+    if(G.nH>9){ VS.playerSc=G.sc; showVSResult(); return; }
+    G.ns=G.par; G.mpt=0;
+    if(G.holeScores.length < G.nH){ G.holeScores.push(null); G.holePars.push(G.par); VS.playerScores.push(null); }
+    VS.playerSc=G.sc; VS.playerTurn=false;
+    enterShopVS(); // → 300ms後にvsStartCPU → sc('scG')
+    return;
+  }
   // 1Pのキャラ情報を確実に復元
   const pCh=VS._savedCh||G.ch;
   G.ch=pCh;
@@ -801,6 +870,15 @@ function vsRestoreForPlayer(){
 function vsStartPlayer(){
   // G.nHが最終ホールを超えていたらリザルトへ（H9再プレイ防止）
   if(G.nH>9){ VS.playerSc=G.sc; showVSResult(); return; }
+  // デバッグモード: 1Pホールをスキップ
+  if(_debugMode){
+    G.ns=G.par; G.mpt=0; // スコア加算なし・pts加算なし
+    if(G.holeScores.length < G.nH){ G.holeScores.push(null); G.holePars.push(G.par); VS.playerScores.push(null); }
+    VS.playerSc=G.sc;
+    VS.playerTurn=false;
+    enterShopVS();
+    return;
+  }
   // 背景・UIをゲームモードに戻す
   const scg=document.getElementById('scG'); if(scg) scg.style.background='';
   const gt=document.getElementById('gTop'); if(gt) gt.style.background='';
@@ -898,6 +976,8 @@ function showVSInterScore(afterCPU){
 }
 
 function vsStartCPU(){
+  const _scGv=document.getElementById('scG'); if(_scGv) _scGv.style.visibility='';
+  sc('scG'); // ゲーム画面に遷移
   // ショップ背景をリセット
   const scg=document.getElementById('scG'); if(scg) scg.style.background='';
   const gt=document.getElementById('gTop'); if(gt) gt.style.background='';
@@ -1783,8 +1863,8 @@ function cpuDropChk(){
   if(G.ji===5){
     seChime(); // オングリーン（CPUも同じ効果音）
     G.y2=Math.abs(G.y1-G.cp);
-    // ちょうどカップ位置に着地した場合は即カップイン
-    if(G.y2===0){G.bon=0;updHUD();updPos();cpuJudgeShot();return;}
+    // ちょうどカップ位置に着地した場合は即カップイン（チップイン）
+    if(G.y2===0){G.bon=0;updHUD();updPos();seHoleIn();setTimeout(()=>cpuJudgeShot(),800);return;}
     if(G.ns>=(G.par+4)){cpuFinishHole();return;}
     // グリーン傾斜設定
     G.wa=G.gwa;G.wz=G.gwz;G.kz=G.gkz;windK();
@@ -2007,6 +2087,7 @@ function showVSResult(){
   const pc=VS._savedCh||G.ch;
   const cc=VS.cpuCh;
   const pd=CD[pc],cpud=CD[cc];
+  const _dbgMode=_debugMode; // リザルト生成時点のフラグを保持
   const pSc=VS.playerSc, cSc=VS.cpuSc;
   const pScores=G.holeScores, cScores=VS.cpuScores;
   const pars=G.holePars;
@@ -2017,6 +2098,7 @@ function showVSResult(){
   else{judgeText='DRAW';judgeColor='#ff4';}
   judgeEl.textContent=judgeText;
   judgeEl.style.color=judgeColor;
+  judgeEl.style.display=_debugMode?'none':'';
   // スコアカード2列
   const scoreCol=d=>d<=-2?'#f80':d===-1?'#4df':d===0?'#fff':d===1?'#fa4':'#f66';
   function makeCard(name,col,scores,isPlayer,charaKey){
@@ -2029,12 +2111,20 @@ function showVSResult(){
     html+=`<table style="width:100%;border-collapse:collapse;font-size:10px;font-family:monospace">`;
     html+=`<tr style="color:#556"><td style="padding:1px 2px">H</td><td>Par</td><td>S</td><td>±</td></tr>`;
     let tot=0,totPar=0;
-    scores.forEach((s,i)=>{
-      const p=pars[i]||4,d=s-p;tot+=s;totPar+=p;
-      html+=`<tr style="border-bottom:1px solid #0f0f1a"><td style="padding:2px;color:#aaccee">${i+1}</td><td style="color:#556">${p}</td><td style="color:#ccc;font-weight:bold">${s}</td><td style="color:${scoreCol(d)};font-weight:bold">${d>0?'+':''}${d}</td></tr>`;
-    });
-    const totD=tot-totPar;
-    html+=`<tr style="border-top:1px solid #2a2a4a"><td colspan="2" style="color:#aaccee;font-size:11px">${L[_lang].lbTot}</td><td style="color:#fff;font-weight:bold">${tot}</td><td style="color:${scoreCol(totD)};font-weight:bold">${totD>0?'+':''}${totD}</td></tr>`;
+    const maxRows=Math.max(scores.length, pars.length);
+    for(let i=0;i<maxRows;i++){
+      const s=scores[i], p=pars[i]||4;
+      if(s===null||s===undefined){
+        html+=`<tr style="border-bottom:1px solid #0f0f1a"><td style="padding:2px;color:#aaccee">${i+1}</td><td style="color:#556">${p}</td><td style="color:#556">-</td><td style="color:#556">-</td></tr>`;
+      } else {
+        const d=s-p;tot+=s;totPar+=p;
+        html+=`<tr style="border-bottom:1px solid #0f0f1a"><td style="padding:2px;color:#aaccee">${i+1}</td><td style="color:#556">${p}</td><td style="color:#ccc;font-weight:bold">${s}</td><td style="color:${scoreCol(d)};font-weight:bold">${d>0?'+':''}${d}</td></tr>`;
+      }
+    }
+    const totD=tot>0?tot-totPar:0;
+    const totTxt=tot>0?String(tot):'-';
+    const totDTxt=tot>0?(totD>0?'+':'')+totD:'-';
+    html+=`<tr style="border-top:1px solid #2a2a4a"><td colspan="2" style="color:#aaccee;font-size:11px">${L[_lang].lbTot}</td><td style="color:#fff;font-weight:bold">${totTxt}</td><td style="color:${tot>0?scoreCol(totD):'#556'};font-weight:bold">${totDTxt}</td></tr>`;
     html+='</table></div>';
     return html;
   }
@@ -2451,16 +2541,18 @@ function rankime(){
   const sv=[null,'sm','ss','st','sk','sp','sh'];if(G.ch>=1&&G.ch<=6)G[sv[G.ch]]=G.sc;
 }
 
-function startGame(){
+function _initGameState(){
   G.sc=0;G.nH=1;G.nHIO=0;G.nALB=0;G.nEAG=0;G.nBIR=0;G.nCHP=0;G.n4=0;G.maxy=0;
   G.holeScores=[];G.holePars=[];
   G.sm=0;G.ss=0;G.st=0;G.sk=0;G.sp=0;G.sh=0;
-  // face (新UIではcFaceなし、endFigに反映)
   const d=CD[G.ch];
   const cf=$('cFace'); if(cf) cf.innerHTML=`<div style="font-size:52px;color:${d.col}">${d.ic}</div>`;
-  // ゲーム画面のキャラ画像を設定
   const ci=document.getElementById('gCharaImg');
   if(ci&&CHARA_IMG[G.ch]){ci.src=CHARA_IMG[G.ch];ci.style.display='block';}
+}
+
+function startGame(){
+  _initGameState();
   seStart();
   sc('scG'); G.cmd=4; holeStart();
 }
@@ -2518,6 +2610,7 @@ function holeStart(){
 }
 
 function onStart(){
+  showDebugBtn(false);
   drawSlots(); sc('scC'); G.cmd=1;
 }
 
@@ -3094,12 +3187,30 @@ function buildShop(){
   const nc=document.getElementById('gClubNormal');
   pChk();
   nc.innerHTML=[
-    {n:1,k:G.kw1,lb:G.kw1>=4?'-':`1W+${G.kw1===3?'20':'10'}yd\n-${G.pw1}pts`,dis:G.kw1>=4||G.pts<G.pw1},
-    {n:2,k:G.kw2,lb:G.kw2>=4?'-':`3W+${G.kw2===3?'20':'10'}yd\n-${G.pw2}pts`,dis:G.kw2>=4||G.pts<G.pw2},
-    {n:3,k:G.ki1,lb:G.ki1>=4?'-':`5I+${G.ki1===3?'20':'10'}yd\n-${G.pi1}pts`,dis:G.ki1>=4||G.pts<G.pi1},
-    {n:4,k:G.ki2,lb:G.ki2>=4?'-':`8I+${G.ki2===3?'20':'10'}yd\n-${G.pi2}pts`,dis:G.ki2>=4||G.pts<G.pi2},
-  ].map(c=>`<button class="cBtn${c.dis?' dis':''}" id="rb${c.n}" onclick="selShop(${c.n})" style="white-space:pre-line;font-size:10px;line-height:1.3;flex:1">${c.lb}</button>`).join('');
-  sc2.innerHTML=G.nwz<9?`<button class="cBtn" id="rb7" onclick="selShop(7)" style="font-size:11px;flex:1">${L[_lang].lbSkillPlus}<br><span style="font-size:10px;color:#f88">-${G.pw}pts</span></button>`:'';
+    {n:1,k:G.kw1,lb:G.kw1>=4?L[_lang].lbMax:`1W+${G.kw1===3?'20':'10'}yd\n-${G.pw1}pts`,dis:G.kw1>=4,noPts:G.kw1<4&&G.pts<G.pw1},
+    {n:2,k:G.kw2,lb:G.kw2>=4?L[_lang].lbMax:`3W+${G.kw2===3?'20':'10'}yd\n-${G.pw2}pts`,dis:G.kw2>=4,noPts:G.kw2<4&&G.pts<G.pw2},
+    {n:3,k:G.ki1,lb:G.ki1>=4?L[_lang].lbMax:`5I+${G.ki1===3?'20':'10'}yd\n-${G.pi1}pts`,dis:G.ki1>=4,noPts:G.ki1<4&&G.pts<G.pi1},
+    {n:4,k:G.ki2,lb:G.ki2>=4?L[_lang].lbMax:`8I+${G.ki2===3?'20':'10'}yd\n-${G.pi2}pts`,dis:G.ki2>=4,noPts:G.ki2<4&&G.pts<G.pi2},
+  ].map(c=>{
+    if(c.dis){
+      // MAX: 枠なし・暗め背景・白文字
+      return `<button class="cBtn" id="rb${c.n}" style="white-space:pre-line;font-size:10px;line-height:1.3;flex:1;background:#0d0d0d;border-color:#2a2a2a;color:#fff;pointer-events:none">${c.lb}</button>`;
+    } else if(c.noPts){
+      // pts不足: 枠なし・暗め背景・白文字＋サブラベル
+      return `<button class="cBtn" id="rb${c.n}" style="white-space:pre-line;font-size:10px;line-height:1.3;flex:1;background:#0d0d0d;border-color:#2a2a2a;color:#fff;pointer-events:none">${c.lb}<br><span style="font-size:9px;color:#fff">${L[_lang].lbNopts}</span></button>`;
+    } else {
+      return `<button class="cBtn" id="rb${c.n}" onclick="selShop(${c.n})" style="white-space:pre-line;font-size:10px;line-height:1.3;flex:1;color:#fff">${c.lb}</button>`;
+    }
+  }).join('');
+  sc2.style.marginTop = G.nwz<9 ? '2px' : '0';
+  if(G.nwz<9){
+    const sk7NoPts=G.pw>0&&G.pts<G.pw;
+    if(sk7NoPts){
+      sc2.innerHTML=`<button class="cBtn" id="rb7" style="font-size:11px;flex:1;background:#0d0d0d;border-color:#2a2a2a;color:#fff;pointer-events:none">${L[_lang].lbSkillPlus}<br><span style="font-size:9px;color:#fff">${L[_lang].lbNopts}</span></button>`;
+    } else {
+      sc2.innerHTML=`<button class="cBtn" id="rb7" onclick="selShop(7)" style="font-size:11px;flex:1;color:#fff">${L[_lang].lbSkillPlus}<br><span style="font-size:10px;color:#f88">-${G.pw}pts</span></button>`;
+    }
+  } else { sc2.innerHTML=''; }
   if(G.pw<=0||G.nwz>=9) {const e=$(7);if(e)e.classList.add('dis');}
 }
 function selShop(n){
@@ -3403,6 +3514,7 @@ function dbIncr(key){
 // コース完走記録を保存。合計スコアが過去最小のときのみ全ホール上書き
 // キー: "run_${course}_${charId}" 値: {total, holes:[{score,par},...]}
 function dbSaveRunBest(course, charId, holeScores, holePars){
+  if(_debugMode) return Promise.resolve(false);
   if(course!==1&&course!==2) return Promise.resolve(false);
   const key=`run_${course}_${charId}`;
   const total=holeScores.reduce((a,b)=>a+b,0);
@@ -3415,9 +3527,9 @@ function dbSaveRunBest(course, charId, holeScores, holePars){
     return false;
   });
 }
-function dbRecordPlay(charId){return dbIncr(`play_${charId}`);}
-function dbRecordHIO(){return dbIncr('hio');}
-function dbRecordChipIn(){return dbIncr('chipIn');}
+function dbRecordPlay(charId){if(_debugMode)return Promise.resolve();return dbIncr(`play_${charId}`);}
+function dbRecordHIO(){if(_debugMode)return Promise.resolve();return dbIncr('hio');}
+function dbRecordChipIn(){if(_debugMode)return Promise.resolve();return dbIncr('chipIn');}
 function dbGetAllRecords(){
   return dbOpen().then(db=>new Promise((res,rej)=>{
     const result={bestScores:{},lifetimeStats:{}};
