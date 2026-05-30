@@ -1655,7 +1655,7 @@ function startMvCPU(){
       G.cp=G.cp+G.drv;G.cp2=G.cp;G.y2=G.y1-G.cp;G.y3=G.drv;
       if(G.drv>=remaining&&G.drv<=remaining+1){
         G.y2=0;G.bon=800;showFormula(); updHUD();updPos();
-        seHoleIn(); setTimeout(()=>cpuJudgeShot(),800);return;
+        seHoleIn(); setTimeout(()=>cpuJudgeShot(),400);return;
       }
       showFormula(); updHUD();updPos();cpuDropChk();
     }
@@ -1668,7 +1668,7 @@ function startPtCPU() {
   if (y2init <= 0) {
     // すでにカップイン地点
     seHoleIn();
-    setTimeout(() => cpuJudgeShot(), 800);
+    setTimeout(() => cpuJudgeShot(), 400);
     return;
   }
 
@@ -1707,7 +1707,7 @@ function startPtCPU() {
       if (G.y2 === 0) {
         G.bon = 0;
         seHoleIn();
-        setTimeout(() => cpuJudgeShot(), 800);
+        setTimeout(() => cpuJudgeShot(), 400);
       } else {
         setTimeout(() => cpuTakeTurn(), CPU_DELAY);
       }
@@ -1757,7 +1757,7 @@ function startPtCPU() {
         showFormula();
         updHUD(); updPos();
         seHoleIn();
-        setTimeout(() => cpuJudgeShot(), 800);
+        setTimeout(() => cpuJudgeShot(), 400);
       } else {
         // 入らなかった場合
         G.cp = G.y1 - G.y2;
@@ -1806,7 +1806,7 @@ function startPtCPU(){
     if(G.y2<=0&&!willHole){ // y2が0になったらカップイン（willHole未設定でも）
       clearInterval(G.mv);G.mv=null;
       G.y2=0;G.y3=y2init;G.bon=0;G.cp=G.y1;showFormula();updHUD();updPos();
-      seHoleIn(); setTimeout(()=>cpuJudgeShot(), 800); return;
+      seHoleIn(); setTimeout(()=>cpuJudgeShot(), 400); return;
     }
     if(G.y3>=stopAt){
       clearInterval(G.mv);G.mv=null;
@@ -1815,7 +1815,7 @@ function startPtCPU(){
         G.cp=G.y1;showFormula();updHUD();updPos();
         // カップインのSEを鳴らして少し間を置く
         seHoleIn();
-        setTimeout(()=>cpuJudgeShot(), 800);
+        setTimeout(()=>cpuJudgeShot(), 400);
       } else {
         G.cp=G.y1-G.y2;showFormula();updHUD();updPos();
         setTimeout(()=>cpuTakeTurn(),CPU_DELAY);
@@ -1864,7 +1864,7 @@ function cpuDropChk(){
     seChime(); // オングリーン（CPUも同じ効果音）
     G.y2=Math.abs(G.y1-G.cp);
     // ちょうどカップ位置に着地した場合は即カップイン（チップイン）
-    if(G.y2===0){G.bon=0;updHUD();updPos();seHoleIn();setTimeout(()=>cpuJudgeShot(),800);return;}
+    if(G.y2===0){G.bon=0;updHUD();updPos();seHoleIn();setTimeout(()=>cpuJudgeShot(),400);return;}
     if(G.ns>=(G.par+4)){cpuFinishHole();return;}
     // グリーン傾斜設定
     G.wa=G.gwa;G.wz=G.gwz;G.kz=G.gkz;windK();
@@ -2195,7 +2195,7 @@ function skipAnim(){
     showFormula();
     if(VS.active&&!VS.playerTurn){
       seHoleIn();
-      setTimeout(()=>cpuJudgeShot(),800);
+      setTimeout(()=>cpuJudgeShot(),400);
     } else {
       judgeShot();
     }
